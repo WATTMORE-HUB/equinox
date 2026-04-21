@@ -1,0 +1,95 @@
+const express = require('express');
+const multer = require('multer');
+const csv = require('csv-parser');
+const { Readable } = require('stream');
+
+const stateManager = require('../stateManager');
+const { deployServices } = require('../services/deployer');
+
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+// POST /api/deployment/deploy
+// Body: { balenaToken, deviceId, csvData }
+router.post('/deploy', upload.single('csvFile'), async (req, res) => {
+  try {
+    const { balenaToken, deviceId } = req.body;
+    const csvFile = req.file;
+
+    if (!balenaToken || !deviceId) {
+      return res.status(400).json({ error: 'balenaToken and deviceId are required' });
+    }
+
+    if (!csvFile) {
+      return res.status(400).json({ error: 'CSV file is required' });
+    }
+
+    // Parse CSV
+    const services = [];
+    await new Promise((resolve, reject) => {
+      Readable.from([csvFile.buffer.toString()])
+        .pipe(csv())
+        .on('data', (row) => {
+          services.push(row);
+        })
+        .on('error', reject)
+        .on('end', resolve);
+    });
+
+    if (services.length === 0) {
+      return res.status(400).json({ error: 'CSV file is empty' });
+    }
+
+    // Call deployer service
+    const result = await deployServices({
+      balenaToken,
+      deviceId,
+      services,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    // Record deployment in state
+    const deployment = stateManager.addDeployment({
+      deviceId,
+      services: services.map(s => s.name || s.service),
+      expectedJsonFiles: services.map(s => s.jsonOutput || `${s.name || s.service}_*.json`),
+    });
+
+    if (!deployment) {
+      return res.status(500).json({ error: 'Failed to record deployment' });
+    }
+
+    res.json({
+      success: true,
+      deploymentId: deployment.id,
+      message: `Deployment initiated for device ${deviceId}`,
+      services: services.length,
+    });
+
+  } catch (err) {
+    console.error('Deployment error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/deployment/:deploymentId
+// Get deployment details
+router.get('/:deploymentId', (req, res) => {
+  try {
+    const deployment = stateManager.getDeployment(req.params.deploymentId);
+
+    if (!deployment) {
+      return res.status(404).json({ error: 'Deployment not found' });
+    }
+
+    res.json(deployment);
+  } catch (err) {
+    console.error('Error fetching deployment:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

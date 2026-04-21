@@ -1,0 +1,15 @@
+node_modules
+.env
+.env.local
+*.log
+.DS_Store
+state.json
+state.json.tmp
+.git
+.gitignore
+README.md
+DEPLOYMENT.md
+test-local.js
+npm-debug.log*
+.nodemon*
+collect_data/
