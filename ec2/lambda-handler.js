@@ -1,27 +1,26 @@
 /**
  * Lambda Handler for Cloud-Based Deployment
  * Triggered by API call from CM4 dashboard
- * Sends command to EC2 instance via AWS Systems Manager
+ * Enqueues deployment request to S3 for EC2 poller to process
  * 
  * Expected event body:
  * {
  *   "deploymentId": "deploy_...",
  *   "balenaToken": "...",
  *   "deviceId": "...",
- *   "csvData": "base64-encoded-csv",
- *   "statusCallbackUrl": "http://cm4-ip/api/deployment/status"
+ *   "csvData": "base64-encoded-csv"
  * }
  */
 
 const AWS = require('aws-sdk');
 
-const ssm = new AWS.SSM();
+const s3 = new AWS.S3();
 
-const EC2_INSTANCE_ID = process.env.EC2_INSTANCE_ID;
-const REPO_PATH = process.env.REPO_PATH || '/home/ec2-user/enform-llm-deployment';
+const S3_BUCKET = process.env.S3_BUCKET;
+const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
 async function validateInput(body) {
-  const required = ['deploymentId', 'balenaToken', 'deviceId', 'csvData', 'statusCallbackUrl'];
+  const required = ['deploymentId', 'balenaToken', 'deviceId', 'csvData'];
   const missing = required.filter(field => !body[field]);
   
   if (missing.length > 0) {
@@ -38,56 +37,46 @@ async function validateInput(body) {
   return body;
 }
 
-async function sendSSMCommand(params) {
+async function enqueueToS3(params) {
   try {
-    if (!EC2_INSTANCE_ID) {
-      throw new Error('EC2_INSTANCE_ID environment variable not set');
+    if (!S3_BUCKET) {
+      throw new Error('S3_BUCKET environment variable not set');
     }
     
-    // Build the deployment runner command
-    const command = [
-      'cd',
-      REPO_PATH,
-      '&&',
-      'node',
-      'ec2/runner.js'
-    ].join(' ');
+    const deploymentId = params.deploymentId;
+    const key = `deployments/pending/${deploymentId}.json`;
     
-    const ssmParams = {
-      InstanceIds: [EC2_INSTANCE_ID],
-      DocumentName: 'AWS-RunShellScript',
-      Parameters: {
-        command: [command],
-        workingDirectory: [REPO_PATH]
-      },
-      Environment: {
-        DEPLOYMENT_ID: params.deploymentId,
-        BALENA_TOKEN: params.balenaToken,
-        DEVICE_ID: params.deviceId,
-        CSV_DATA: params.csvData,
-        STATUS_CALLBACK_URL: params.statusCallbackUrl,
-        ENFORM_REPO_PATH: REPO_PATH
-      }
+    const deploymentRequest = {
+      deploymentId,
+      balenaToken: params.balenaToken,
+      deviceId: params.deviceId,
+      csvData: params.csvData,
+      timestamp: new Date().toISOString(),
+      status: 'pending'
     };
     
-    console.log('Sending SSM command to instance:', EC2_INSTANCE_ID);
+    console.log(`Enqueueing deployment ${deploymentId} to S3 bucket ${S3_BUCKET}`);
     
-    const response = await ssm.sendCommand(ssmParams).promise();
+    const s3Params = {
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: JSON.stringify(deploymentRequest, null, 2),
+      ContentType: 'application/json'
+    };
     
-    if (!response.Command) {
-      throw new Error('Failed to send SSM command');
-    }
+    await s3.putObject(s3Params).promise();
     
-    const command_id = response.Command.CommandId;
-    console.log('SSM Command sent:', command_id);
+    console.log(`Deployment enqueued at s3://${S3_BUCKET}/${key}`);
     
     return {
-      commandId: command_id,
-      commandStatus: response.Command.Status || 'PENDING',
-      instanceId: EC2_INSTANCE_ID
+      deploymentId,
+      status: 'queued',
+      s3Key: key,
+      message: 'Deployment request enqueued for EC2 processing'
     };
   } catch (err) {
-    throw new Error(`Failed to send SSM command: ${err.message}`);
+    console.error('S3 Enqueue Error:', err);
+    throw new Error(`Failed to enqueue deployment: ${err.message}`);
   }
 }
 
@@ -106,20 +95,19 @@ async function handler(event, context) {
     // Validate input
     const params = await validateInput(body);
     
-    // Send SSM command to EC2 instance
-    const commandResult = await sendSSMCommand(params);
+    // Enqueue deployment to S3 for EC2 poller to process
+    const queueResult = await enqueueToS3(params);
     
     // Return success response
     return {
       statusCode: 202, // Accepted - async processing
       body: JSON.stringify({
         success: true,
-        message: 'Deployment command sent to EC2 instance',
-        deploymentId: params.deploymentId,
-        commandId: commandResult.commandId,
-        instanceId: commandResult.instanceId,
-        status: commandResult.commandStatus,
-        note: 'Check status via the deployment status endpoint'
+        message: queueResult.message,
+        deploymentId: queueResult.deploymentId,
+        status: queueResult.status,
+        s3Key: queueResult.s3Key,
+        note: 'Deployment enqueued; EC2 poller will process it shortly'
       })
     };
     

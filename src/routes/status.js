@@ -64,6 +64,36 @@ router.get('/errors/:deploymentId', (req, res) => {
   }
 });
 
+// POST /api/status/callback
+// Receive status updates from EC2 runner
+router.post('/callback', (req, res) => {
+  try {
+    const { deploymentId, status, message, level, timestamp } = req.body;
+    
+    if (!deploymentId) {
+      return res.status(400).json({ error: 'deploymentId is required' });
+    }
+    
+    // Update deployment status in state
+    const deployment = stateManager.getDeployment(deploymentId);
+    if (deployment) {
+      if (status) deployment.status = status;
+      if (message) deployment.lastMessage = message;
+      if (level === 'error') {
+        deployment.errorLog = deployment.errorLog || [];
+        deployment.errorLog.push({ message, timestamp: timestamp || new Date().toISOString() });
+      }
+      stateManager.saveState();
+      console.log(`[Status Callback] Deployment ${deploymentId}: ${status || level} - ${message}`);
+    }
+    
+    res.json({ success: true, deploymentId });
+  } catch (err) {
+    console.error('Error updating status callback:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/status/state
 // Get entire state (for debugging)
 router.get('/state', (req, res) => {

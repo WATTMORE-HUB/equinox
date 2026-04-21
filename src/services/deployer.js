@@ -38,9 +38,15 @@ async function deployViaCloud(options) {
     // Encode as base64
     const csvBase64 = Buffer.from(csvData).toString('base64');
     
-    // Get status callback URL from environment or construct it
-    const statusCallbackUrl = process.env.STATUS_CALLBACK_URL || 
-      `http://localhost:3000/api/deployment/status`;
+    // Get status callback URL from environment or construct from device UUID
+    let statusCallbackUrl = process.env.STATUS_CALLBACK_URL;
+    if (!statusCallbackUrl && process.env.BALENA_DEVICE_UUID) {
+      const deviceUuid = process.env.BALENA_DEVICE_UUID;
+      statusCallbackUrl = `https://${deviceUuid}.balena-devices.com/api/status/callback`;
+    }
+    if (!statusCallbackUrl) {
+      statusCallbackUrl = `http://localhost:3000/api/status/callback`; // fallback for local dev
+    }
     
     // Call API Gateway (which triggers Lambda → EC2 via SSM)
     console.log('Sending deployment request to cloud API...');

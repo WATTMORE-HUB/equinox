@@ -1,29 +1,28 @@
-# AWS Cloud Deployment Setup Guide (EC2 + Lambda + Systems Manager)
+# AWS Cloud Deployment Setup Guide (Lambda + S3 + EC2 Poller)
 
-This guide sets up cloud-based deployment orchestration. When you submit a deployment from your CM4 dashboard, it triggers a Lambda function that sends a command to an EC2 instance via AWS Systems Manager. The EC2 instance generates a project directory and runs `balena push`, exactly like the local configurator workflow.
+This guide sets up cloud-based deployment orchestration using a simple and reliable approach: Lambda enqueues deployment requests to S3, and an EC2 poller processes them.
 
 ## Architecture Overview
 
 ```
-
-`components/` is now the cloud-side source of truth for the golden masters. The project no longer depends on `/Volumes/Macintosh HD/Users/drb/Documents/Enform/src/components`; that content has been copied into this repository so EC2 can work from the repo alone.
 CM4 Dashboard
     ↓ POST /deploy (with CSV)
     ↓
 API Gateway
     ↓
 Lambda Function
-    ↓ sendCommand via SSM
+    ↓ writes JSON to S3
     ↓
-EC2 Instance
-    ├─ Decodes CSV
-    ├─ Calls ProjectCreator
+S3 Bucket (deployments/pending/)
+    ↓
+EC2 Poller (runs every 60 seconds)
+    ├─ Reads pending deployment JSON
+    ├─ Runs: node ec2/runner.js locally
     ├─ Generates project directory
-    ├─ Runs: balena login --token
-    ├─ Runs: balena push <device-name>
-    └─ POSTs status updates back to CM4
+    ├─ Executes: balena push <device-name>
+    └─ Moves result to S3 (completed/ or failed/)
         ↓
-    CM4 Status Endpoint
+    CM4 Status Endpoint (via runner.js callback)
         ↓ Records deployment
         ↓ Updates dashboard
 ```
@@ -31,28 +30,30 @@ EC2 Instance
 ## Prerequisites
 
 - AWS Account with federated console access
-- EC2, Lambda, API Gateway, Systems Manager (SSM), and S3 permissions
+- EC2, Lambda, API Gateway, and S3 permissions
 - SSH or RDP access to EC2 instance (for initial setup and debugging)
-- The Enform repository already cloned or ready to clone on EC2
-- S3 bucket for storing archived deployments (optional but recommended)
+- The Equinox repository cloned and ready to deploy to EC2
+- S3 bucket for deployment queue (same one created in Step 1)
 
-## Step 1: Create S3 Bucket (Console) - Optional but Recommended
-
-If you want generated deployment projects to be easy to pull back down later, create a bucket to archive them after each successful `balena push`.
+## Step 1: Create S3 Bucket (Console)
 
 1. Go to **AWS Console** → **S3**
 2. Click **Create bucket**
-3. **Bucket name**: `enform-deployment-archives-<your-account-id>` (must be globally unique)
+3. **Bucket name**: `equinox-deployments-<your-account-id>` (must be globally unique)
 4. **AWS Region**: Use the same region as EC2 and Lambda
 5. Keep **Block all public access** enabled
 6. Click **Create bucket**
 
-The EC2 runner will upload archives to:
-`s3://your-bucket-name/deployments/<deployment-id>/<project-name>.tar.gz`
+The bucket will store deployment requests in this structure:
+```
+s3://your-bucket/
+├─ deployments/
+│  ├─ pending/        (Lambda writes here)
+│  ├─ completed/      (Poller moves successful deployments here)
+│  └─ failed/         (Poller moves failed deployments here)
+```
 
 ## Step 2: Create IAM Roles (Console)
-
-You need two roles: one for EC2 instances (so they can be managed by SSM), and one for Lambda (so it can send SSM commands).
 
 ### 2.1 Create EC2 Instance Role
 
@@ -62,10 +63,10 @@ You need two roles: one for EC2 instances (so they can be managed by SSM), and o
 4. Find and select **EC2**
 5. Click **Next**
 6. Search for and attach these managed policies:
-   - `AmazonSSMManagedInstanceCore` (allows SSM to manage the instance)
-   - `AmazonS3FullAccess` (allows uploading project archives to S3; can be restricted later)
+   - `AmazonSSMManagedInstanceCore` (allows Systems Manager to manage the instance)
+   - `AmazonS3FullAccess` (allows reading/writing deployment queue to S3; can be restricted later)
 7. Click **Next**
-8. **Role name**: `ec2-deployment-runner-role`
+8. **Role name**: `equinox-ec2-deployment-role`
 9. Click **Create role**
 
 ### 2.2 Create Lambda Execution Role
@@ -74,49 +75,27 @@ You need two roles: one for EC2 instances (so they can be managed by SSM), and o
 2. Select **Trusted entity type**: AWS service
 3. Find and select **Lambda**
 4. Click **Next**
-5. Click **Next** again (no policies to attach yet)
-6. **Role name**: `lambda-cloud-deployer-role`
-7. Click **Create role**
-8. Once created, click on the role to open it
-9. Click **Add permissions** → **Create inline policy**
-10. Switch to **JSON** tab and paste:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ssm:SendCommand",
-        "ssm:GetCommandInvocation",
-        "ssm:DescribeCommand"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-11. Click **Review policy**
-12. **Policy name**: `lambda-ssm-policy`
-13. Click **Create policy**
+5. Search for and attach these managed policies:
+   - `AWSLambdaBasicExecutionRole` (allows writing logs to CloudWatch)
+   - `AmazonS3FullAccess` (allows putting deployment requests to S3)
+6. Click **Next**
+7. **Role name**: `equinox-lambda-deployer-role`
+8. Click **Create role**
 
 ## Step 3: Launch EC2 Instance (Console)
 
 1. Go to **AWS Console** → **EC2** → **Instances**
 2. Click **Launch instances**
-3. **Name**: `enform-deployment-runner`
+3. **Name**: `equinox-deployment-poller`
 4. **AMI**: Select **Amazon Linux 2 AMI** (free tier eligible)
 5. **Instance type**: `t3.micro` or `t2.micro` (free tier eligible)
 6. **Key pair**: Create or select an existing key pair for SSH access
 7. **Network settings**:
    - VPC: Default VPC
    - Auto-assign public IP: **Enable**
-   - Security group: Create or use existing (must allow outbound HTTPS to balenaCloud)
-8. **IAM instance profile**: Select `ec2-deployment-runner-role` (from Step 2.1)
+   - Security group: Create or use existing (must allow outbound HTTPS to AWS APIs and balenaCloud)
+8. **IAM instance profile**: Select `equinox-ec2-deployment-role` (from Step 2.1)
 9. **Advanced details** → **User data**: Copy and paste the contents of `ec2/bootstrap.sh`
-   - This will automatically install Node.js, balena-cli, git, etc.
 10. **Storage**: Default 30 GB is fine
 11. Click **Launch instance**
 12. Wait for the instance to reach **Running** state
@@ -124,13 +103,12 @@ You need two roles: one for EC2 instances (so they can be managed by SSM), and o
 ## Step 4: Connect to EC2 and Prepare Repository
 
 1. Once the instance is running, click on it to see details
-2. Click **Connect** button
-3. Choose **EC2 Instance Connect** or **SSH client** (whichever you prefer)
-4. Once connected, run these commands:
+2. Click **Connect** button → choose **EC2 Instance Connect** or **SSH client**
+3. Once connected, run these commands:
 
 ```bash
 # Clone the repository
-git clone <your-repository-url> ~/equinox
+git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
 cd ~/equinox
 
 # Verify Node.js and balena-cli are installed
@@ -141,7 +119,7 @@ balena --version
 # Install npm dependencies for the project
 npm install
 
-# Install dependencies for ec2 runner
+# Install dependencies for EC2 scripts
 cd ec2
 npm install
 cd ..
@@ -150,78 +128,65 @@ cd ..
 ls components | head
 ```
 
-## Step 5: Find Your EC2 Instance ID
+## Step 5: Create Lambda Function (Console)
 
-1. Go to **EC2** → **Instances**
-2. Find your `enform-deployment-runner` instance
-3. Copy the **Instance ID** (format: `i-0123456789abcdef0`)
+### 5.1 Package Lambda Code
 
-**Save this - you'll need it for Lambda environment variables.**
-
-## Step 6: Create Lambda Function (Console)
-
-### 6.1 Package Lambda Code
-
-On your local machine (not the EC2 instance):
+On your local machine:
 
 ```bash
 cd /Users/drb/documents/equinox/ec2
-
-# Install AWS SDK (Lambda already has this, but for local testing)
-npm install
 
 # Create deployment package
 zip -r ../lambda-function.zip lambda-handler.js node_modules/
 ```
 
-### 6.2 Create Function in Console
+### 5.2 Create Function in Console
 
 1. Go to **AWS Console** → **Lambda**
 2. Click **Create function**
-3. **Function name**: `cloud-deployment-trigger`
-4. **Runtime**: Node.js 18.x
+3. **Function name**: `equinox-cloud-deployment`
+4. **Runtime**: Node.js 24.x
 5. **Architecture**: x86_64
-6. **Execution role**: **Use an existing role** → Select `lambda-cloud-deployer-role` (from Step 2.2)
+6. **Execution role**: **Use an existing role** → Select `equinox-lambda-deployer-role` (from Step 2.2)
 7. Click **Create function**
 
-### 6.3 Upload Code
+### 5.3 Upload Code
 
 1. Scroll down to **Code** section
 2. Click **Upload from** → **.zip file**
-3. Click **Upload** and select `lambda-function.zip` from Step 5.1
+3. Click **Upload** and select `lambda-function.zip` from your local machine
 4. Click **Save**
 
-### 6.4 Set Environment Variables
+### 5.4 Set Environment Variables
 
 1. Scroll down to **Environment variables**
 2. Click **Edit**
 3. Add:
-   - `EC2_INSTANCE_ID`: Paste the instance ID from Step 5
-   - `REPO_PATH`: `/home/ec2-user/equinox` (or wherever you cloned it)
-   - `S3_BUCKET`: Your archive bucket from Step 1
-   - `AWS_REGION`: Your AWS region (example: `us-east-1`)
+   - `S3_BUCKET`: Your bucket name from Step 1 (e.g., `equinox-deployments-123456`)
+   - `AWS_REGION`: Your AWS region (example: `us-east-2`)
 4. Click **Save**
 
-### 6.5 Configure Function Timeout
+### 5.5 Configure Function Timeout
 
 1. Click **Configuration** tab
 2. Click **General configuration** → **Edit**
-3. **Timeout**: `5 minutes` (300 seconds - balena push can take a while)
+3. **Timeout**: `30` seconds (deployment is async via S3, so Lambda doesn't wait)
 4. **Memory**: `256` MB
 5. Click **Save**
 
-## Step 7: Create API Gateway (Console)
+## Step 6: Create API Gateway (Console)
 
-### 7.1 Create REST API
+### 6.1 Create REST API
 
 1. Go to **AWS Console** → **API Gateway**
 2. Click **Create API**
 3. Choose **REST API** (not HTTP API)
-4. **API name**: `cloud-deployment-api`
+4. **API name**: `equinox-cloud-api`
 5. **Description**: `API for triggering cloud-based deployments`
 6. Click **Create API**
 
-### 7.2 Create /deploy Resource
+### 6.2 Create /deploy Resource
 
 1. In your API, click on `/` (root resource)
 2. Click **Create resource**
@@ -229,21 +194,21 @@ zip -r ../lambda-function.zip lambda-handler.js node_modules/
 4. **Resource path**: `deploy`
 5. Click **Create resource**
 
-### 7.3 Create POST Method
+### 6.3 Create POST Method
 
 1. Click on `/deploy` resource
 2. Click **Create method**
 3. Select **POST**
 4. Click the checkmark
 
-### 7.4 Configure Lambda Integration
+### 6.4 Configure Lambda Integration
 
 1. **Integration type**: **Lambda function**
-2. **Lambda function**: Type `cloud-deployment-trigger` (should autocomplete)
+2. **Lambda function**: Type `equinox-cloud-deployment` (should autocomplete)
 3. Click **Create**
 4. **Save** if prompted
 
-### 7.5 Deploy API
+### 6.5 Deploy API
 
 1. Click **Deploy API** at the top
 2. **Stage**: `prod`
@@ -252,20 +217,75 @@ zip -r ../lambda-function.zip lambda-handler.js node_modules/
 
 **Copy and save this Invoke URL - you'll need it for CM4.**
 
+## Step 7: Start EC2 Poller (on EC2 instance)
+
+1. SSH into your EC2 instance (or use Instance Connect)
+2. Run the poller in the foreground to test:
+
+```bash
+cd ~/equinox
+export S3_BUCKET=equinox-deployments-123456
+export REPO_PATH=~/equinox
+export AWS_REGION=us-east-2
+node ec2/poller.js
+```
+
+You should see:
+```
+[2026-04-21T...] [INFO] EC2 Deployment Poller started (interval: 60000ms)
+[2026-04-21T...] [INFO] S3 Bucket: equinox-deployments-123456
+[2026-04-21T...] [INFO] Repository Path: ~/equinox
+[2026-04-21T...] [INFO] Checking for pending deployments...
+[2026-04-21T...] [INFO] No pending deployments found
+```
+
+Once confirmed working, create a systemd service to run the poller automatically:
+
+```bash
+sudo tee /etc/systemd/system/equinox-poller.service > /dev/null <<'EOF'
+[Unit]
+Description=Equinox Deployment Poller
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/equinox
+Environment="S3_BUCKET=equinox-deployments-123456"
+Environment="REPO_PATH=/home/ec2-user/equinox"
+Environment="AWS_REGION=us-east-2"
+ExecStart=/usr/bin/node /home/ec2-user/equinox/ec2/poller.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable equinox-poller
+sudo systemctl start equinox-poller
+sudo systemctl status equinox-poller
+```
+
+Check logs with:
+```bash
+sudo journalctl -u equinox-poller -f
+```
+
 ## Step 8: Update CM4 Configuration
 
-Add these environment variables to your CM4 deployment (in docker-compose.yml or via environment):
+Add these environment variables to your CM4 deployment (in docker-compose.yml):
 
 ```yaml
 environment:
   - USE_CLOUD=true
-  - CLOUD_API_URL=https://abc123.execute-api.us-east-1.amazonaws.com/prod/deploy
-  - STATUS_CALLBACK_URL=http://your-cm4-ip/api/deployment/status
+  - CLOUD_API_URL=https://abc123.execute-api.us-east-2.amazonaws.com/prod/deploy
 ```
 
-Replace:
-- `https://abc123.execute-api.us-east-1.amazonaws.com/prod/deploy` with your Invoke URL from Step 7.5
-- `http://your-cm4-ip` with your actual CM4 IP address
+Replace `https://abc123.execute-api.us-east-2.amazonaws.com/prod/deploy` with your Invoke URL from Step 6.5.
+
+The `STATUS_CALLBACK_URL` is automatically constructed from `BALENA_DEVICE_UUID`.
 
 Then redeploy:
 
@@ -277,126 +297,93 @@ balena push your-cm4-device-name
 
 ### Test Lambda Directly
 
-1. Go to **Lambda** → `cloud-deployment-trigger`
+1. Go to **Lambda** → `equinox-cloud-deployment`
 2. Click **Test** tab
 3. **Test event name**: `test-deploy`
 4. Paste this JSON:
 
 ```json
 {
-  "body": {
-    "deploymentId": "test_001",
-    "balenaToken": "your-actual-token",
-    "deviceId": "your-actual-device-uuid",
-    "csvData": "bmFtZSxzZXJ2aWNlCnRlc3Qsc2VydmljZTEK",
-    "statusCallbackUrl": "http://localhost:3000/api/deployment/status"
-  }
+  "body": "{\"deploymentId\": \"test_001\", \"balenaToken\": \"fake-token\", \"deviceId\": \"fake-device\", \"csvData\": \"bmFtZSxzZXJ2aWNlCnRlc3Qsc2VydmljZTEK\"}"
 }
 ```
 
 5. Click **Test**
-6. Should return 202 with a `commandId`
+6. Should return 202 with `status: "queued"`
 
 ### Test API Gateway
 
 ```bash
-curl -X POST https://abc123.execute-api.us-east-1.amazonaws.com/prod/deploy \
+curl -X POST https://abc123.execute-api.us-east-2.amazonaws.com/prod/deploy \
   -H "Content-Type: application/json" \
   -d '{
-    "deploymentId": "test_001",
-    "balenaToken": "your-actual-token",
-    "deviceId": "your-actual-device-uuid",
-    "csvData": "bmFtZSxzZXJ2aWNlCnRlc3Qsc2VydmljZTEK",
-    "statusCallbackUrl": "http://localhost:3000/api/deployment/status"
+    "deploymentId": "test_002",
+    "balenaToken": "fake-token",
+    "deviceId": "fake-device",
+    "csvData": "bmFtZSxzZXJ2aWNlCnRlc3Qsc2VydmljZTEK"
   }'
 ```
 
-### Monitor EC2 Execution
+### Monitor S3 Queue
 
-1. Go to **AWS Console** → **Systems Manager** → **Command history**
-2. You should see commands sent to your EC2 instance
-3. Click on a command to see execution status
-4. Click **Output** to view logs from the runner script
-
-## Monitoring & Troubleshooting
-
-### View Lambda Logs
-
-1. Go to **Lambda** → `cloud-deployment-trigger`
-2. Click **Monitor** tab
-3. Click **View logs in CloudWatch**
-4. Browse log streams
-
-### View EC2 SSM Agent Logs
-
-1. Go to **Systems Manager** → **Run Command** or **Command history**
-2. Find your command
-3. Click it to see output and logs
-
-### SSH into EC2 for Manual Debugging
-
+Check that deployments appear in S3:
 ```bash
-# Find your instance
-aws ec2 describe-instances --filters "Name=tag:Name,Values=enform-deployment-runner"
-
-# SSH in (replace with your key and public IP)
-ssh -i /path/to/key.pem ec2-user@<public-ip>
-
-# Check if runner script works manually
-cd ~/enform-llm-deployment
-DEPLOYMENT_ID=test_001 \
-BALENA_TOKEN=your-token \
-DEVICE_ID=your-uuid \
-CSV_DATA=bmFtZSxzZXJ2aWNlCnRlc3Qsc2VydmljZTEK \
-STATUS_CALLBACK_URL=http://cm4-ip/api/deployment/status \
-node ec2/runner.js
+aws s3 ls s3://equinox-deployments-123456/deployments/pending/ --recursive
 ```
 
-### Troubleshoot "Failed to send SSM command"
+### Monitor EC2 Poller
 
-1. Verify EC2 instance has IAM role `ec2-deployment-runner-role`
-2. Verify Lambda has IAM role `lambda-cloud-deployer-role` with SSM permissions
-3. Check Systems Manager → **Managed nodes** - instance should be listed as "online"
-4. Check EC2 instance security group allows SSM (SSM uses HTTPS outbound to AWS APIs)
+On the EC2 instance, watch the logs:
+```bash
+sudo journalctl -u equinox-poller -f
+```
 
-### Troubleshoot "EC2 command failed"
+## Troubleshooting
 
-1. Go to Systems Manager → **Command history**
-2. Find the failed command
-3. Click it and view the output/errors
-4. SSH into the instance and check:
-   - Repository exists: `ls ~/enform-llm-deployment`
-   - Node.js works: `node --version`
-   - balena-cli works: `balena version`
-   - Balena token is valid: `balena auth logout && balena login --token <token>`
+### Lambda Test Returns 202 but S3 Bucket is Empty
+
+1. Verify Lambda has `AmazonS3FullAccess` policy attached
+2. Verify `S3_BUCKET` environment variable is set correctly
+3. Check CloudWatch logs in Lambda console
+
+### Poller Runs but Nothing Happens
+
+1. Verify EC2 instance has `AmazonS3FullAccess` policy in its role
+2. Verify `S3_BUCKET` environment variable matches Lambda's setting
+3. Check poller logs: `sudo journalctl -u equinox-poller -f`
+
+### balena push Fails on EC2
+
+1. Verify balena CLI is installed: `~/balena/bin/balena --version`
+2. Verify balena token is valid by trying: `balena login --token <token>`
+3. Check `/var/log/deployment-logs/` if logging is enabled in runner.js
 
 ## Cost Estimation
 
-**Monthly (1-2 deployments/week with t2.micro):**
-- EC2 t2.micro: ~$7-10/month (may be free tier eligible)
-- Lambda: <$1 (<10,000 invocations)
-- API Gateway: ~$0.50 (~100 requests)
-- Systems Manager: <$1
+**Monthly (1-2 deployments/week):**
+- EC2 t2/t3.micro: ~$7-10/month (may be free tier eligible)
+- Lambda: <$1 (<100 invocations)
+- API Gateway: ~$0.35 (~100 requests)
+- S3: <$1 (storage + requests)
 
 **Total: ~$8-12/month** (or free if eligible for EC2 free tier)
-
-EC2 is simpler than Fargate because you have a persistent instance ready to go, versus spinning up containers each time.
 
 ## Summary
 
 You've now set up:
 1. ✅ IAM roles for EC2 and Lambda
-2. ✅ EC2 instance with deployment runner dependencies
+2. ✅ EC2 instance with deployment poller dependencies
 3. ✅ Repository cloned on EC2
-4. ✅ Lambda function that sends SSM commands
+4. ✅ Lambda function that writes deployment requests to S3
 5. ✅ API Gateway that triggers Lambda
-6. ✅ CM4 configured to use the cloud API
+6. ✅ EC2 poller that processes queued deployments
+7. ✅ CM4 configured to use the cloud API
 
 Next time you deploy from the CM4 dashboard with `USE_CLOUD=true`, it will:
 1. Send request to API Gateway
-2. Lambda receives it
-3. Lambda sends SSM command to EC2
-4. EC2 runner generates project + runs `balena push`
+2. Lambda receives it and writes to S3 (returns 202 immediately)
+3. EC2 poller finds the request and processes it
+4. `balena push` executes on EC2
 5. Status updates appear on CM4 dashboard
 
 No more manual `balena push` commands needed!

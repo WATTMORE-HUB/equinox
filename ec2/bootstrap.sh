@@ -32,29 +32,34 @@ sudo yum install -y python3 python3-pip
 echo "Installing build essentials..."
 sudo yum groupinstall -y "Development Tools"
 
-# Install balena-cli globally
+# Install balena-cli from standalone binary
 echo "Installing balena-cli..."
-sudo npm install -g balena-cli
+cd ~
+wget https://github.com/balena-io/balena-cli/releases/download/v24.1.3/balena-cli-v24.1.3-linux-x64-standalone.tar.gz
+tar xzf balena-cli-v24.1.3-linux-x64-standalone.tar.gz
+rm balena-cli-v24.1.3-linux-x64-standalone.tar.gz
+
+# Add balena-cli to PATH
+echo 'export PATH="$HOME/balena/bin:$PATH"' >> ~/.bashrc
+export PATH="$HOME/balena/bin:$PATH"
 
 # Verify balena-cli installation
 echo "Balena CLI version: $(balena version)"
 
-# Create deployment directory if it doesn't exist
+# Create deployment directories
 echo "Creating deployment directories..."
-mkdir -p ~/enform-llm-deployment/.deployments
+mkdir -p ~/equinox/.deployments
 mkdir -p ~/.balena
-
-# Clone the repository (this should be done manually or via user-data with the repo URL)
-# For now, just create the directory structure
-echo "Repository will be cloned by SSM commands or manual setup"
-
-# Create a log directory for deployment logs
 mkdir -p ~/deployment-logs
+
+echo "Repository will be cloned manually or via user data"
 
 echo "EC2 bootstrap completed successfully!"
 echo ""
 echo "Next steps:"
-echo "1. Clone this repository to ~/enform-llm-deployment"
-echo "2. Run: git clone <repo-url> ~/enform-llm-deployment"
-echo "3. Ensure the EC2 instance has an IAM role with SSM permissions"
-echo "4. Test by running: node ~/enform-llm-deployment/ec2/runner.js"
+echo "1. Clone this repository to ~/equinox"
+echo "2. Run: git clone <repo-url> ~/equinox"
+echo "3. Install dependencies: cd ~/equinox && npm install && cd ec2 && npm install"
+echo "4. Ensure the EC2 instance has an IAM role with S3 access"
+echo "5. Start the poller:"
+echo "   S3_BUCKET=<bucket-name> REPO_PATH=/home/ec2-user/equinox nohup node ~/equinox/ec2/poller.js > ~/deployment-logs/poller.log 2>&1 &"
