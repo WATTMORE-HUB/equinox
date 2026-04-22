@@ -399,7 +399,18 @@
           body: formData
         });
 
-        const data = await response.json();
+        logProgress(`API response status: ${response.status}`, 'info');
+        const responseText = await response.text();
+        logProgress(`Raw API response: ${responseText.substring(0, 500)}`, 'info');
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (err) {
+          logProgress(`Failed to parse API response as JSON: ${err.message}`, 'error');
+          logProgress(`Raw response: ${responseText}`, 'error');
+          throw err;
+        }
 
         if (response.ok) {
           logProgress('', 'info');
