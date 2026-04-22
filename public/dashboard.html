@@ -199,6 +199,80 @@
       return selected;
     }
 
+    // Parse configuration CSV and extract environment variables
+    async function parseConfigCSV(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const csv = e.target.result;
+            const lines = csv.trim().split('\n');
+            const variables = [];
+            
+            // Parse CSV format: index|key,value
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              const match = line.match(/^\d+\|(.+),(.+)$/);
+              if (match) {
+                variables.push({
+                  name: match[1].trim(),
+                  value: match[2].trim()
+                });
+              }
+            }
+            
+            resolve(variables);
+          } catch (err) {
+            reject(new Error(`Failed to parse CSV: ${err.message}`));
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+    }
+
+    // Set environment variables on Balena device
+    async function setDeviceEnvironmentVariables(balenaToken, deviceId, variables) {
+      const results = { success: 0, failed: 0, errors: [] };
+      const balenaApiUrl = 'https://api.balena-cloud.com/v7/device_environment_variable';
+      
+      for (const variable of variables) {
+        try {
+          logProgress(`Setting environment variable: ${variable.name}`, 'info');
+          
+          const response = await fetch(balenaApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${balenaToken}`
+            },
+            body: JSON.stringify({
+              device: deviceId,
+              name: variable.name,
+              value: variable.value
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+          
+          logProgress(`✓ ${variable.name} set successfully`, 'success');
+          results.success++;
+        } catch (err) {
+          logProgress(`✗ Failed to set ${variable.name}: ${err.message}`, 'error');
+          results.failed++;
+          results.errors.push(`${variable.name}: ${err.message}`);
+        }
+        
+        // Small delay between API calls
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      return results;
+    }
+
     // Generate service selection CSV
     function generateServiceCSV(services) {
       if (services.length === 0) {
@@ -234,22 +308,44 @@
       logProgress(`Device: ${deviceId}`, 'info');
       logProgress(`Selected services: ${selectedServices.join(', ')}`, 'info');
 
-      // Generate service selection CSV
-      const servicesCsvContent = generateServiceCSV(selectedServices);
-      logProgress(`Generated service CSV: ${servicesCsvContent.split('\n').length - 1} services`, 'info');
-      
-      const servicesCsvFile = new File(
-        [servicesCsvContent],
-        'services.csv',
-        { type: 'text/csv' }
-      );
-
-      const formData = new FormData();
-      formData.append('balenaToken', balenaToken);
-      formData.append('deviceId', deviceId);
-      formData.append('csvFile', servicesCsvFile);
-
       try {
+        // Step 1: Parse and set environment variables from config CSV
+        logProgress('', 'info');
+        logProgress('=== Step 1: Setting Environment Variables ===', 'info');
+        const configVariables = await parseConfigCSV(configCsvFile);
+        logProgress(`Parsed ${configVariables.length} environment variables from config CSV`, 'info');
+        
+        if (configVariables.length > 0) {
+          logProgress('Setting variables on Balena device...', 'info');
+          const varResults = await setDeviceEnvironmentVariables(balenaToken, deviceId, configVariables);
+          logProgress(``, 'info');
+          logProgress(`Environment variables: ${varResults.success} success, ${varResults.failed} failed`, varResults.failed === 0 ? 'success' : 'error');
+          
+          if (varResults.failed > 0) {
+            logProgress('Some variables failed to set. Continuing with service deployment...', 'error');
+          }
+        } else {
+          logProgress('No environment variables found in config CSV', 'info');
+        }
+
+        // Step 2: Generate and send service deployment
+        logProgress('', 'info');
+        logProgress('=== Step 2: Deploying Services ===', 'info');
+        
+        const servicesCsvContent = generateServiceCSV(selectedServices);
+        logProgress(`Generated service CSV: ${servicesCsvContent.split('\n').length - 1} services`, 'info');
+        
+        const servicesCsvFile = new File(
+          [servicesCsvContent],
+          'services.csv',
+          { type: 'text/csv' }
+        );
+
+        const formData = new FormData();
+        formData.append('balenaToken', balenaToken);
+        formData.append('deviceId', deviceId);
+        formData.append('csvFile', servicesCsvFile);
+
         logProgress('Sending deployment request to API...', 'info');
         const response = await fetch(`${API_BASE}/deployment/deploy`, {
           method: 'POST',
@@ -259,9 +355,12 @@
         const data = await response.json();
 
         if (response.ok) {
-          logProgress(`✓ Deployment initiated successfully!`, 'success');
+          logProgress('', 'info');
+          logProgress('=== Deployment Complete ===', 'success');
+          logProgress(`✓ Services deployed successfully!`, 'success');
           logProgress(`Deployment ID: ${data.deploymentId}`, 'success');
           logProgress(`Services: ${data.services} services queued for deployment`, 'success');
+          logProgress('Environment variables and services will be applied to the device shortly.', 'info');
           showMessage(`✓ Deployment initiated! ID: ${data.deploymentId}`, 'success');
           
           setTimeout(() => {
