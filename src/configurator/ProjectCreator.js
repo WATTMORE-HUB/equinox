@@ -89,22 +89,38 @@ class ProjectCreator {
         console.warn('Warnings:', stderr);
       }
 
-      // Parse the JSON result from the output
-      // The create-project.js script outputs JSON at the end
+      // Parse the JSON result from the output.
+      // create-project.js prints pretty JSON at the end, so capture the full object.
       const lines = stdout.split('\n');
-      let resultLine = '';
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].trim().startsWith('{')) {
-          resultLine = lines[i];
+      const jsonStartIndex = lines.findIndex((line) => line.trim().startsWith('{'));
+
+      if (jsonStartIndex === -1) {
+        throw new Error('Could not parse project creation result');
+      }
+
+      let resultJson = '';
+      let braceDepth = 0;
+      let foundOpeningBrace = false;
+
+      for (let i = jsonStartIndex; i < lines.length; i++) {
+        const line = lines[i];
+        resultJson += `${line}\n`;
+
+        for (const char of line) {
+          if (char === '{') {
+            braceDepth += 1;
+            foundOpeningBrace = true;
+          } else if (char === '}') {
+            braceDepth -= 1;
+          }
+        }
+
+        if (foundOpeningBrace && braceDepth === 0) {
           break;
         }
       }
 
-      if (!resultLine) {
-        throw new Error('Could not parse project creation result');
-      }
-
-      const result = JSON.parse(resultLine);
+      const result = JSON.parse(resultJson.trim());
 
       return {
         success: true,
