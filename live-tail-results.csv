@@ -1,0 +1,23 @@
+Event Time,Message,Log group,Log stream
+2026-04-22T17:04:17.626Z,"INIT_START Runtime Version: nodejs:24.v35	Runtime Version ARN: arn:aws:lambda:us-east-2::runtime:c2302199ed31b0efd546d792325846c2846e78ac566d3f1f711dfae134309d24
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T17:04:18.374Z,"START RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6 Version: $LATEST
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T17:04:18.375Z,"2026-04-22T17:04:18.375Z	95263d5d-691f-4203-8b8d-ad42f6e359b6	INFO	Lambda handler invoked with event: {""deploymentId"":""deploy_13380183_1776877456822"",""balenaToken"":""juZrel6Q8TdO4vifdwwJfKlNqlhNEnkP"",""deviceId"":""13380183"",""csvData"":""bmFtZSxzZXJ2aWNlCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZA=="",""statusCallbackUrl"":""https://0cbbcfdb2421d87b21fefe5de76d4745.balena-devices.com/api/status/callback""}
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T17:04:18.378Z,"2026-04-22T17:04:18.378Z	95263d5d-691f-4203-8b8d-ad42f6e359b6	ERROR	Error: TypeError: Cannot read properties of undefined (reading 'deploymentId')
+    at /var/task/lambda-handler.js:24:49
+    at Array.filter (<anonymous>)
+    at validateInput (/var/task/lambda-handler.js:24:28)
+    at BufferedInvokeProcessor.handler (/var/task/lambda-handler.js:96:26)
+    at BufferedInvokeProcessor.processInvoke (file:///var/runtime/index.mjs:1092:33)
+    at file:///var/runtime/index.mjs:1178:98
+    at InvokeStoreSingle.run (file:///var/runtime/index.mjs:83:12)
+    at _Runtime.runWithInvokeContext (file:///var/runtime/index.mjs:1191:24)
+    at async _Runtime.processSingleConcurrent (file:///var/runtime/index.mjs:1178:7)
+    at async _Runtime.start (file:///var/runtime/index.mjs:1165:7)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T17:04:18.397Z,"END RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T17:04:18.398Z,"REPORT RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6	Duration: 23.19 ms	Billed Duration: 767 ms	Memory Size: 256 MB	Max Memory Used: 103 MB	Init Duration: 743.65 ms	
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed

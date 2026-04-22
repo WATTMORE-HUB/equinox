@@ -88,8 +88,11 @@ async function handler(event, context) {
     let body;
     if (typeof event.body === 'string') {
       body = JSON.parse(event.body);
-    } else {
+    } else if (typeof event.body === 'object' && event.body) {
       body = event.body;
+    } else {
+      // If no body wrapper, use event directly (direct Lambda invocation)
+      body = event;
     }
     
     // Validate input
