@@ -10,11 +10,16 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // POST /api/deployment/deploy
-// Body: { balenaToken, deviceId, csvData }
+// Body: { balenaToken, deviceId, fleetName, csvFile }
 router.post('/deploy', upload.single('csvFile'), async (req, res) => {
   try {
+    console.log('[DEPLOYMENT ROUTE] req.body:', JSON.stringify(req.body, null, 2));
+    console.log('[DEPLOYMENT ROUTE] Extracted fleetName:', req.body.fleetName);
+    
     const { balenaToken, deviceId, fleetName } = req.body;
     const csvFile = req.file;
+
+    console.log('[DEPLOYMENT ROUTE] After destructuring - fleetName:', fleetName);
 
     if (!balenaToken || !deviceId || !fleetName) {
       return res.status(400).json({ error: 'balenaToken, deviceId, and fleetName are required' });

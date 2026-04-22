@@ -49,15 +49,21 @@ async function deployViaCloud(options) {
     }
     
     // Call API Gateway (which triggers Lambda → EC2 via SSM)
-    console.log('Sending deployment request to cloud API...');
-    const response = await axios.post(CLOUD_API_URL, {
+    console.log('[DEPLOYER] Sending deployment request to cloud API...');
+    console.log('[DEPLOYER] fleetName value before POST:', fleetName);
+    
+    const requestBody = {
       deploymentId: `deploy_${deviceId.substring(0, 8)}_${Date.now()}`,
       balenaToken,
       deviceId,
       fleetName,
       csvData: csvBase64,
       statusCallbackUrl
-    });
+    };
+    
+    console.log('[DEPLOYER] Full request body:', JSON.stringify(requestBody, (k, v) => k === 'csvData' ? 'BASE64...' : v, 2));
+    
+    const response = await axios.post(CLOUD_API_URL, requestBody);
     
     const commandId = response.data.commandId || response.data.taskId;
     console.log(`✓ Cloud deployment started: ${commandId}`);
