@@ -14,8 +14,8 @@ echo ""
 
 # Step 1: Pull latest code
 echo "Step 1: Pulling latest code..."
-cd ~/equinox
-git pull origin main
+sudo rm -r ~/equinox
+git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
 echo "✓ Code updated"
 echo ""
 

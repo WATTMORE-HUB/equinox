@@ -74,8 +74,10 @@ async function executeDeployment(deploymentRequest) {
 
   try {
     await log(`Executing deployment ${deploymentId} for device ${deviceId}`);
+    await log(`Fleet Name: ${fleetName}`);
 
     // Run the runner script with environment variables
+    // IMPORTANT: Preserve existing environment to keep AWS credentials and system vars
     const env = {
       ...process.env,
       DEPLOYMENT_ID: deploymentId,
@@ -83,8 +85,12 @@ async function executeDeployment(deploymentRequest) {
       DEVICE_ID: deviceId,
       FLEET_NAME: fleetName,
       CSV_DATA: csvData,
-      ENFORM_REPO_PATH: REPO_PATH
+      ENFORM_REPO_PATH: REPO_PATH,
+      S3_BUCKET: process.env.S3_BUCKET,
+      AWS_REGION: process.env.AWS_REGION || 'us-east-1'
     };
+
+    await log(`Environment variables being passed: DEPLOYMENT_ID, BALENA_TOKEN, DEVICE_ID, FLEET_NAME, CSV_DATA, ENFORM_REPO_PATH, S3_BUCKET`);
 
     const { stdout, stderr } = await execFileAsync('node', ['ec2/runner.js'], {
       cwd: REPO_PATH,

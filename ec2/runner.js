@@ -79,6 +79,15 @@ async function reportStatus(status, message) {
 async function validateInputs() {
   const errors = [];
   
+  // Log all environment variables for debugging
+  await log(`[DEBUG] DEPLOYMENT_ID: ${DEPLOYMENT_ID}`);
+  await log(`[DEBUG] BALENA_TOKEN: ${BALENA_TOKEN ? '***set***' : 'NOT SET'}`);
+  await log(`[DEBUG] DEVICE_ID: ${DEVICE_ID}`);
+  await log(`[DEBUG] FLEET_NAME: ${FLEET_NAME}`);
+  await log(`[DEBUG] CSV_DATA: ${CSV_DATA ? 'set (' + CSV_DATA.length + ' bytes)' : 'NOT SET'}`);
+  await log(`[DEBUG] ENFORM_REPO_PATH: ${ENFORM_REPO_PATH}`);
+  await log(`[DEBUG] S3_BUCKET: ${S3_BUCKET}`);
+  
   if (!DEPLOYMENT_ID) errors.push('DEPLOYMENT_ID not set');
   if (!BALENA_TOKEN) errors.push('BALENA_TOKEN not set');
   if (!DEVICE_ID) errors.push('DEVICE_ID not set');
