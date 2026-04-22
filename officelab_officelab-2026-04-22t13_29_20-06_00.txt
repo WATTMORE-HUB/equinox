@@ -1,0 +1,1000 @@
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Deleted image 'registry2.balena-cloud.com/v2/cd76022c90ddf04b7b04c6918986b6be@sha256:c9b33f8387c39f42f8674ae78a6fd3bd356bfbb435f27f1fbc3ad0aa00c6daa2'
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Deleted image 'registry2.balena-cloud.com/v2/c8d2620b963ea15a5e46ff58ab2e0315@sha256:e10a088412d446ccf2db49d93029c607b397b81a91126d1c17abe8c0a683a1ad'
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Service exited 'open-webui sha256:67a67abead402592aba2c039012296eb9d3d83177373d5fff5c39d262a96f8e1'
+Failed to kill service 'open-webui sha256:67a67abead402592aba2c039012296eb9d3d83177373d5fff5c39d262a96f8e1' due to '(HTTP code 409) unexpected - removal of container 444440363fdb477123a68aff1f052e32ce6b604a22b4ef5211f5351126ab75d9 is already in progress '
+Removing network 'default'
+Killed service 'open-webui sha256:67a67abead402592aba2c039012296eb9d3d83177373d5fff5c39d262a96f8e1'
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Deleting image 'registry2.balena-cloud.com/v2/1b0be21342c152417b2d025e41cfeeeb@sha256:8969e04f0b349b8f3a992b20c2f0ab014a264f846392133662deae73925a9fb0'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Service exited 'log-analyzer sha256:0e912df852f025b32682921c6131e690722d08ecdf9e0d25bc7a3d662a89a866'
+Failed to kill service 'log-analyzer sha256:0e912df852f025b32682921c6131e690722d08ecdf9e0d25bc7a3d662a89a866' due to '(HTTP code 409) unexpected - removal of container 5cbef4515a679d77a5e4b4388a6b3f277beeae1ac92bbf58ae038d9f63bdc192 is already in progress '
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Taking update locks
+Killed service 'log-analyzer sha256:0e912df852f025b32682921c6131e690722d08ecdf9e0d25bc7a3d662a89a866'
+Deleted image 'registry2.balena-cloud.com/v2/1b0be21342c152417b2d025e41cfeeeb@sha256:8969e04f0b349b8f3a992b20c2f0ab014a264f846392133662deae73925a9fb0'
+Deleting image 'registry2.balena-cloud.com/v2/2212ded45ae655c843f619ba9198c9c8@sha256:356512be927c020fdb30a03a32e4fda6ccc633bdbdb3a91904760f214134cd2d'
+Deleted image 'registry2.balena-cloud.com/v2/2212ded45ae655c843f619ba9198c9c8@sha256:356512be927c020fdb30a03a32e4fda6ccc633bdbdb3a91904760f214134cd2d'
+Restarting service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Removing network 'webui'
+Creating network 'default'
+Releasing update locks
+Killing service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Releasing update locks
+<undefined> node:internal/modules/cjs/loader:1143
+<undefined>   throw err;
+<undefined>   ^
+<undefined> 
+<undefined> Error: Cannot find module '../../../configurator/NEW_configurator/create-project.js'
+<undefined> Require stack:
+<undefined> - /app/src/configurator/ProjectCreator.js
+<undefined> - /app/src/services/deployer.js
+<undefined> - /app/src/routes/deployment.js
+<undefined> - /app/src/server.js
+<undefined>     at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:981:27)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19)
+<undefined>     at require (node:internal/modules/helpers:177:18)
+<undefined>     at Object.<anonymous> (/app/src/configurator/ProjectCreator.js:10:32)
+<undefined>     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+<undefined>     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+<undefined>     at Module.load (node:internal/modules/cjs/loader:1203:32)
+<undefined>     at Module._load (node:internal/modules/cjs/loader:1019:12)
+<undefined>     at Module.require (node:internal/modules/cjs/loader:1231:19) {
+<undefined>   code: 'MODULE_NOT_FOUND',
+<undefined>   requireStack: [
+<undefined>     '/app/src/configurator/ProjectCreator.js',
+<undefined>     '/app/src/services/deployer.js',
+<undefined>     '/app/src/routes/deployment.js',
+<undefined>     '/app/src/server.js'
+<undefined>   ]
+<undefined> }
+<undefined> 
+<undefined> Node.js v18.20.8
+Killed service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Service exited 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Killing service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Releasing update locks
+Service is already stopped, removing container 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Killed service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Taking update locks
+Downloading delta for image 'registry2.balena-cloud.com/v2/5f29e5f577be8373f75bf4fd52b1c07c@sha256:a12a00bed812dd9e067f65b871e48f1a7ff02b89fe49b69b246638d770e9bb15'
+Taking update locks
+Killing service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Service is already stopped, removing container 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Killed service 'main sha256:7c29a362602be552797983c86b01c69ef699062bab6fb43f338a2aba3fd411d9'
+Deleting image 'registry2.balena-cloud.com/v2/875952164af5bcc11eae6abb8aa0721d@sha256:ead0599ba3306be9d3803b62f18529d81f972c76145c9e513525f172518c10c9'
+Deleted image 'registry2.balena-cloud.com/v2/875952164af5bcc11eae6abb8aa0721d@sha256:ead0599ba3306be9d3803b62f18529d81f972c76145c9e513525f172518c10c9'
+Installing service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Installed service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Starting service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Started service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Releasing update locks
+Downloaded image 'registry2.balena-cloud.com/v2/5f29e5f577be8373f75bf4fd52b1c07c@sha256:a12a00bed812dd9e067f65b871e48f1a7ff02b89fe49b69b246638d770e9bb15'
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 3000
+<undefined> State file: /app/state.json
+<undefined> collect_data path does not exist: /app/collect_data
+<undefined> collect_data path does not exist: /app/collect_data
+<undefined> [2026-04-20T17:00:00.199Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> collect_data path does not exist: /app/collect_data
+Killing service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Releasing update locks
+<undefined> SIGTERM received, shutting down gracefully
+Taking update locks
+Service exited 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Killed service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Downloading delta for image 'registry2.balena-cloud.com/v2/47af3cd00a78e8e637e4afb801e701f4@sha256:acab11465753ac6d5d52353cd25dfb4644fa40ee78329ca1bb87fcdd7bb03a48'
+Downloaded image 'registry2.balena-cloud.com/v2/47af3cd00a78e8e637e4afb801e701f4@sha256:acab11465753ac6d5d52353cd25dfb4644fa40ee78329ca1bb87fcdd7bb03a48'
+Taking update locks
+Killing service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Service is already stopped, removing container 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Killed service 'main sha256:4eead6bd4ad72ebf1b0444d2992f16b4725ff1c05eae325884060606df2637e7'
+Deleting image 'registry2.balena-cloud.com/v2/5f29e5f577be8373f75bf4fd52b1c07c@sha256:a12a00bed812dd9e067f65b871e48f1a7ff02b89fe49b69b246638d770e9bb15'
+Deleted image 'registry2.balena-cloud.com/v2/5f29e5f577be8373f75bf4fd52b1c07c@sha256:a12a00bed812dd9e067f65b871e48f1a7ff02b89fe49b69b246638d770e9bb15'
+Installing service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+Installed service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+Starting service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+Started service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/c6ae7ce4966a922ee75bba2c6ccc5493@sha256:be101ad19d16ec878442a64c9fbdbdc1126e35522e23e27504ae7466c03d8545'
+Downloaded image 'registry2.balena-cloud.com/v2/c6ae7ce4966a922ee75bba2c6ccc5493@sha256:be101ad19d16ec878442a64c9fbdbdc1126e35522e23e27504ae7466c03d8545'
+Taking update locks
+Killing service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+<undefined> SIGTERM received, shutting down gracefully
+Killed service 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+Deleting image 'registry2.balena-cloud.com/v2/47af3cd00a78e8e637e4afb801e701f4@sha256:acab11465753ac6d5d52353cd25dfb4644fa40ee78329ca1bb87fcdd7bb03a48'
+Deleted image 'registry2.balena-cloud.com/v2/47af3cd00a78e8e637e4afb801e701f4@sha256:acab11465753ac6d5d52353cd25dfb4644fa40ee78329ca1bb87fcdd7bb03a48'
+Installing service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+Installed service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+Starting service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+Started service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Service exited 'main sha256:732e977a22fe863f393fc0cf7892076a7dd88a4b85429e144cf6877111f8a7e1'
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/e819b88583b9d7deaea9f4e3d3dabbb4@sha256:c6f26ec7b32ba0b59e895de704194978b984a184c9583bed9835a84626e4e3cc'
+Downloaded image 'registry2.balena-cloud.com/v2/e819b88583b9d7deaea9f4e3d3dabbb4@sha256:c6f26ec7b32ba0b59e895de704194978b984a184c9583bed9835a84626e4e3cc'
+Taking update locks
+Killing service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+<undefined> SIGTERM received, shutting down gracefully
+Killed service 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+Deleting image 'registry2.balena-cloud.com/v2/c6ae7ce4966a922ee75bba2c6ccc5493@sha256:be101ad19d16ec878442a64c9fbdbdc1126e35522e23e27504ae7466c03d8545'
+Deleted image 'registry2.balena-cloud.com/v2/c6ae7ce4966a922ee75bba2c6ccc5493@sha256:be101ad19d16ec878442a64c9fbdbdc1126e35522e23e27504ae7466c03d8545'
+Installing service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Installed service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Starting service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Started service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Service exited 'main sha256:44e9442908da3c02fc2926de1d6d63a0000d59dcc083008f833d815b54a860fc'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/2f837b1ecabadabaa6019d6b10cf8abf@sha256:d6618bcb8102e644fcba9096264b10f548cc8a8164edf338056082907c14b5a7'
+Downloaded image 'registry2.balena-cloud.com/v2/2f837b1ecabadabaa6019d6b10cf8abf@sha256:d6618bcb8102e644fcba9096264b10f548cc8a8164edf338056082907c14b5a7'
+Taking update locks
+Killing service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+<undefined> SIGTERM received, shutting down gracefully
+Killed service 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Deleting image 'registry2.balena-cloud.com/v2/e819b88583b9d7deaea9f4e3d3dabbb4@sha256:c6f26ec7b32ba0b59e895de704194978b984a184c9583bed9835a84626e4e3cc'
+Deleted image 'registry2.balena-cloud.com/v2/e819b88583b9d7deaea9f4e3d3dabbb4@sha256:c6f26ec7b32ba0b59e895de704194978b984a184c9583bed9835a84626e4e3cc'
+Installing service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+Installed service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+Starting service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+Service exited 'main sha256:dfb05ef8d2070c9dad3a4ab40bee2102610d1c343f843b95c7876eb5b258f06a'
+Started service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/02975c1ea57fd2ec73bcc63187e1576d@sha256:5b7c30ba1fe60a098cbb8fea460ba1487e3175f0fa57c6094c0862c3f95a849f'
+Downloaded image 'registry2.balena-cloud.com/v2/02975c1ea57fd2ec73bcc63187e1576d@sha256:5b7c30ba1fe60a098cbb8fea460ba1487e3175f0fa57c6094c0862c3f95a849f'
+Taking update locks
+Killing service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+<undefined> SIGTERM received, shutting down gracefully
+Killed service 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+Deleting image 'registry2.balena-cloud.com/v2/2f837b1ecabadabaa6019d6b10cf8abf@sha256:d6618bcb8102e644fcba9096264b10f548cc8a8164edf338056082907c14b5a7'
+Deleted image 'registry2.balena-cloud.com/v2/2f837b1ecabadabaa6019d6b10cf8abf@sha256:d6618bcb8102e644fcba9096264b10f548cc8a8164edf338056082907c14b5a7'
+Installing service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+Installed service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+Starting service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+Started service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Service exited 'main sha256:584a7dbe117bdce68be06c89958039b2639dfaa91ff5b3abb1bba792b45cffb9'
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/6e131802364079cfced183c87ce64679@sha256:264ccd684dab4464ec22029819449019a5025dd51c037735d96fcf2bc363753d'
+Downloaded image 'registry2.balena-cloud.com/v2/6e131802364079cfced183c87ce64679@sha256:264ccd684dab4464ec22029819449019a5025dd51c037735d96fcf2bc363753d'
+Taking update locks
+Killing service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+<undefined> SIGTERM received, shutting down gracefully
+Killed service 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+Deleting image 'registry2.balena-cloud.com/v2/02975c1ea57fd2ec73bcc63187e1576d@sha256:5b7c30ba1fe60a098cbb8fea460ba1487e3175f0fa57c6094c0862c3f95a849f'
+Deleted image 'registry2.balena-cloud.com/v2/02975c1ea57fd2ec73bcc63187e1576d@sha256:5b7c30ba1fe60a098cbb8fea460ba1487e3175f0fa57c6094c0862c3f95a849f'
+Installing service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Installed service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Starting service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Started service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Service exited 'main sha256:6dea403caef253137cf3268e7d19a5d7aa36b9918a3fe5b9f290d637619d3f93'
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+Releasing update locks
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+<undefined> [2026-04-20T18:00:00.802Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-20T19:00:00.355Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-20T20:00:00.815Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-20T21:00:00.361Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-20T22:00:00.921Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-20T23:00:00.421Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T00:00:00.870Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T01:00:00.431Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T02:00:00.892Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T03:00:00.341Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T04:00:00.798Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T05:00:00.269Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T06:00:00.665Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T07:00:00.070Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T08:00:00.542Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T09:00:00.949Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T10:00:00.453Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T11:00:00.909Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T12:00:00.297Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T13:00:00.734Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T14:00:00.186Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T15:00:00.624Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T16:00:00.165Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> â ï¸  WARNING: create-project.js not found in expected locations
+<undefined>    The deployment feature will not work until the configurator is available.
+<undefined>    Expected locations:
+<undefined>      - /configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined>      - /app/configurator/NEW_configurator/create-project.js
+<undefined> 
+<undefined>    If deploying standalone, copy the configurator directory to the container.
+<undefined>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<undefined> 
+<undefined> ð Starting LLM Deployment Manager...
+<undefined> Background schedulers started
+<undefined> - Log analysis: every hour
+<undefined> - Data validation: every 30 seconds (during 10-minute validation windows)
+<undefined> LLM Deployment server listening on port 80
+<undefined> State file: /app/state.json
+Supervisor starting
+<undefined> [2026-04-21T17:00:00.440Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T18:00:00.019Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+<undefined> [2026-04-21T19:00:00.501Z] Starting hourly log analysis...
+<undefined> Analyzing logs for deployment deploy_1776703932218_91lq0vzns...
+<undefined> Error analyzing logs for deployment deploy_1776703932218_91lq0vzns: Error: connect ENOENT /var/run/docker.sock
+<undefined>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<undefined>   errno: -2,
+<undefined>   code: 'ENOENT',
+<undefined>   syscall: 'connect',
+<undefined>   address: '/var/run/docker.sock'
+<undefined> }
+Killing service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Releasing update locks
+<undefined> SIGTERM received, shutting down gracefully
+Taking update locks
+Service exited 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Killed service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Downloading image 'registry2.balena-cloud.com/v2/eeda22aa59567a96d0a4ce60225373f6@sha256:5b3fd7638c518ed74aa679f7af5d6fa6c5b6a9f1a64d4d2cfdec062076d98c0a'
+Removing network 'default'
+Taking update locks
+Creating network 'default'
+Killing service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Service is already stopped, removing container 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Installing service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Killed service 'main sha256:6f27e36683654b13ee0d043721bbc1119982b258a6e460544986f62b8072905e'
+Installed service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Starting service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Started service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Deleting image 'registry2.balena-cloud.com/v2/6e131802364079cfced183c87ce64679@sha256:264ccd684dab4464ec22029819449019a5025dd51c037735d96fcf2bc363753d'
+<llm-deployment> â ï¸  WARNING: create-project.js not found in expected locations
+<llm-deployment>    The deployment feature will not work until the configurator is available.
+<llm-deployment>    Expected locations:
+<llm-deployment>      - /configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> 
+<llm-deployment>    If deploying standalone, copy the configurator directory to the container.
+<llm-deployment>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<llm-deployment> 
+<llm-deployment> ð Starting LLM Deployment Manager...
+Deleted image 'registry2.balena-cloud.com/v2/6e131802364079cfced183c87ce64679@sha256:264ccd684dab4464ec22029819449019a5025dd51c037735d96fcf2bc363753d'
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+Downloaded image 'registry2.balena-cloud.com/v2/eeda22aa59567a96d0a4ce60225373f6@sha256:5b3fd7638c518ed74aa679f7af5d6fa6c5b6a9f1a64d4d2cfdec062076d98c0a'
+Releasing update locks
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+<llm-deployment> [2026-04-21T21:00:00.261Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-21T22:00:00.865Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-21T23:00:00.780Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T00:00:00.277Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T01:00:00.756Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T02:00:00.243Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T03:00:00.707Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T04:00:00.215Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T05:00:00.718Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T06:00:00.201Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T07:00:00.699Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T08:00:00.206Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T09:00:00.703Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T10:00:00.221Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T11:00:00.731Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T12:00:00.223Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T13:00:00.713Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T14:00:00.171Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T15:00:00.687Z] Starting hourly log analysis...
+<llm-deployment> [2026-04-22T16:00:00.136Z] Starting hourly log analysis...
+Killing service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Releasing update locks
+<llm-deployment> SIGTERM received, shutting down gracefully
+Taking update locks
+Service exited 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Killed service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Killing service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Service is already stopped, removing container 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Killed service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Installing service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Installed service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Starting service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Started service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+<llm-deployment> â ï¸  WARNING: create-project.js not found in expected locations
+Releasing update locks
+<llm-deployment>    The deployment feature will not work until the configurator is available.
+<llm-deployment>    Expected locations:
+<llm-deployment>      - /configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> 
+<llm-deployment>    If deploying standalone, copy the configurator directory to the container.
+<llm-deployment>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<llm-deployment> 
+<llm-deployment> ð Starting LLM Deployment Manager...
+Taking update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/a825adf568ca6f4c5acc0114ac6193b1@sha256:fe94aa7653484c8eb4f4363e7a9d02d5adcb24bdefed8bd4127ed83278283610'
+Taking update locks
+Killing service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+<llm-deployment> SIGTERM received, shutting down gracefully
+Downloaded image 'registry2.balena-cloud.com/v2/a825adf568ca6f4c5acc0114ac6193b1@sha256:fe94aa7653484c8eb4f4363e7a9d02d5adcb24bdefed8bd4127ed83278283610'
+Killed service 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Deleting image 'registry2.balena-cloud.com/v2/eeda22aa59567a96d0a4ce60225373f6@sha256:5b3fd7638c518ed74aa679f7af5d6fa6c5b6a9f1a64d4d2cfdec062076d98c0a'
+Deleted image 'registry2.balena-cloud.com/v2/eeda22aa59567a96d0a4ce60225373f6@sha256:5b3fd7638c518ed74aa679f7af5d6fa6c5b6a9f1a64d4d2cfdec062076d98c0a'
+Installing service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+Installed service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+Starting service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+Service exited 'llm-deployment sha256:7a159bb55b90c8d7133e761733125d1b5fedc5aa8280a0ec3ab687e560c51f02'
+Started service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+<llm-deployment> â ï¸  WARNING: create-project.js not found in expected locations
+<llm-deployment>    The deployment feature will not work until the configurator is available.
+<llm-deployment>    Expected locations:
+<llm-deployment>      - /configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment>      - /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> 
+<llm-deployment>    If deploying standalone, copy the configurator directory to the container.
+<llm-deployment>    If deploying via balena with the full enform repo, ensure directory structure is correct.
+<llm-deployment> 
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+<llm-deployment> [2026-04-22T17:00:00.829Z] Starting hourly log analysis...
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+Downloading delta for image 'registry2.balena-cloud.com/v2/1127ba4017fa11ea5696c11846781919@sha256:e51a4d78fbe5ee7ef84afae21532c4e10051587dd2fc7f2278a75ab8cd7b22a3'
+Taking update locks
+Killing service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+<llm-deployment> SIGTERM received, shutting down gracefully
+Downloaded image 'registry2.balena-cloud.com/v2/1127ba4017fa11ea5696c11846781919@sha256:e51a4d78fbe5ee7ef84afae21532c4e10051587dd2fc7f2278a75ab8cd7b22a3'
+Killed service 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+Deleting image 'registry2.balena-cloud.com/v2/a825adf568ca6f4c5acc0114ac6193b1@sha256:fe94aa7653484c8eb4f4363e7a9d02d5adcb24bdefed8bd4127ed83278283610'
+Deleted image 'registry2.balena-cloud.com/v2/a825adf568ca6f4c5acc0114ac6193b1@sha256:fe94aa7653484c8eb4f4363e7a9d02d5adcb24bdefed8bd4127ed83278283610'
+Installing service 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+Installed service 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+Starting service 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+Service exited 'llm-deployment sha256:1f3b1beba6268f34308b1d624872ef44e05ac97a0c99501077a4131713a9b2d9'
+Started service 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+<llm-deployment> â Found configurator at: /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> [2026-04-22T18:00:00.969Z] Starting hourly log analysis...
+<llm-deployment> Analyzing logs for deployment deploy_1776877458430_ordgckjdw...
+<llm-deployment> Error analyzing logs for deployment deploy_1776877458430_ordgckjdw: Error: connect ENOENT /var/run/docker.sock
+<llm-deployment>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<llm-deployment>   errno: -2,
+<llm-deployment>   code: 'ENOENT',
+<llm-deployment>   syscall: 'connect',
+<llm-deployment>   address: '/var/run/docker.sock'
+<llm-deployment> }
+<llm-deployment> Analyzing logs for deployment deploy_1776877810275_a10sopee0...
+<llm-deployment> Error analyzing logs for deployment deploy_1776877810275_a10sopee0: Error: connect ENOENT /var/run/docker.sock
+<llm-deployment>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<llm-deployment>   errno: -2,
+<llm-deployment>   code: 'ENOENT',
+<llm-deployment>   syscall: 'connect',
+<llm-deployment>   address: '/var/run/docker.sock'
+<llm-deployment> }
+<llm-deployment> Analyzing logs for deployment deploy_1776878701770_wbscr7q9f...
+<llm-deployment> Error analyzing logs for deployment deploy_1776878701770_wbscr7q9f: Error: connect ENOENT /var/run/docker.sock
+<llm-deployment>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<llm-deployment>   errno: -2,
+<llm-deployment>   code: 'ENOENT',
+<llm-deployment>   syscall: 'connect',
+<llm-deployment>   address: '/var/run/docker.sock'
+<llm-deployment> }
+<llm-deployment> Analyzing logs for deployment deploy_1776880300208_6k4yziqm5...
+<llm-deployment> Error analyzing logs for deployment deploy_1776880300208_6k4yziqm5: Error: connect ENOENT /var/run/docker.sock
+<llm-deployment>     at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+<llm-deployment>   errno: -2,
+<llm-deployment>   code: 'ENOENT',
+<llm-deployment>   syscall: 'connect',
+<llm-deployment>   address: '/var/run/docker.sock'
+<llm-deployment> }
+Downloading delta for image 'registry2.balena-cloud.com/v2/4e25048fd4ce487124dab0a7f002b641@sha256:6527aedec9a1ca1d22b66970ce1d6462f82a6a77660dc0072c505ca09d820fc6'
+Killed service 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+Deleting image 'registry2.balena-cloud.com/v2/1127ba4017fa11ea5696c11846781919@sha256:e51a4d78fbe5ee7ef84afae21532c4e10051587dd2fc7f2278a75ab8cd7b22a3'
+Deleted image 'registry2.balena-cloud.com/v2/1127ba4017fa11ea5696c11846781919@sha256:e51a4d78fbe5ee7ef84afae21532c4e10051587dd2fc7f2278a75ab8cd7b22a3'
+Installing service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+Installed service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+Starting service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+Service exited 'llm-deployment sha256:ffda49e6d016aa45c2df35e2b9c135897c336ef82f24e71d8271e6870b2b6280'
+Started service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+<llm-deployment> â Found configurator at: /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+Downloading delta for image 'registry2.balena-cloud.com/v2/14b971389a072e08458b4e47ebb7534a@sha256:4db4ff742d5a7f406a46f2a389da3e5ade92377faa9051aa8b50de46acdd4feb'
+Taking update locks
+Killing service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+<llm-deployment> SIGTERM received, shutting down gracefully
+Downloaded image 'registry2.balena-cloud.com/v2/14b971389a072e08458b4e47ebb7534a@sha256:4db4ff742d5a7f406a46f2a389da3e5ade92377faa9051aa8b50de46acdd4feb'
+Killed service 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+Deleting image 'registry2.balena-cloud.com/v2/4e25048fd4ce487124dab0a7f002b641@sha256:6527aedec9a1ca1d22b66970ce1d6462f82a6a77660dc0072c505ca09d820fc6'
+Deleted image 'registry2.balena-cloud.com/v2/4e25048fd4ce487124dab0a7f002b641@sha256:6527aedec9a1ca1d22b66970ce1d6462f82a6a77660dc0072c505ca09d820fc6'
+Installing service 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+Installed service 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+Starting service 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+Service exited 'llm-deployment sha256:fd1a7972f7cddbc195d72b4c62fb33436f8dc8c8a8742847ed9aa38855fedd0c'
+Started service 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+<llm-deployment> â Found configurator at: /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+Downloading delta for image 'registry2.balena-cloud.com/v2/d27d277ab8baa19024384074b771492a@sha256:282287dee786e789c16f504d127fad47f3582468c57ab9f72483cdec3a67e283'
+Killed service 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+Deleting image 'registry2.balena-cloud.com/v2/14b971389a072e08458b4e47ebb7534a@sha256:4db4ff742d5a7f406a46f2a389da3e5ade92377faa9051aa8b50de46acdd4feb'
+Deleted image 'registry2.balena-cloud.com/v2/14b971389a072e08458b4e47ebb7534a@sha256:4db4ff742d5a7f406a46f2a389da3e5ade92377faa9051aa8b50de46acdd4feb'
+Installing service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+Installed service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+Starting service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+Service exited 'llm-deployment sha256:eccc1c71b08b7330fa4afa8d13ffa5cbfc33da03f7abc3c134b55454f15f1317'
+Started service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+<llm-deployment> â Found configurator at: /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+<llm-deployment> Using cloud-based deployment (EC2 + SSM)...
+<llm-deployment> Sending deployment request to cloud API...
+<llm-deployment> â Cloud deployment started: undefined
+Downloading delta for image 'registry2.balena-cloud.com/v2/f8ca78ca46ab6dc7fc0897ab1e711dbc@sha256:b58da13c94ad46ec300b13bbfa09e214962817b7826f43e17289f58708deda3a'
+Taking update locks
+Killing service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+<llm-deployment> SIGTERM received, shutting down gracefully
+Downloaded image 'registry2.balena-cloud.com/v2/f8ca78ca46ab6dc7fc0897ab1e711dbc@sha256:b58da13c94ad46ec300b13bbfa09e214962817b7826f43e17289f58708deda3a'
+Killed service 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+Deleting image 'registry2.balena-cloud.com/v2/d27d277ab8baa19024384074b771492a@sha256:282287dee786e789c16f504d127fad47f3582468c57ab9f72483cdec3a67e283'
+Deleted image 'registry2.balena-cloud.com/v2/d27d277ab8baa19024384074b771492a@sha256:282287dee786e789c16f504d127fad47f3582468c57ab9f72483cdec3a67e283'
+Installing service 'llm-deployment sha256:c2eb3d634e005450fb0b1b27832bbd6fdfcfe83956904de12420b852f105796e'
+Installed service 'llm-deployment sha256:c2eb3d634e005450fb0b1b27832bbd6fdfcfe83956904de12420b852f105796e'
+Starting service 'llm-deployment sha256:c2eb3d634e005450fb0b1b27832bbd6fdfcfe83956904de12420b852f105796e'
+Service exited 'llm-deployment sha256:e8b8b1230d54cc986e8c49f3ca9e1b58feda87ca97b2749ff4de69d3aa00063b'
+Started service 'llm-deployment sha256:c2eb3d634e005450fb0b1b27832bbd6fdfcfe83956904de12420b852f105796e'
+<llm-deployment> â Found configurator at: /app/configurator/NEW_configurator/create-project.js
+<llm-deployment> ð Starting LLM Deployment Manager...
+Releasing update locks
+<llm-deployment> Background schedulers started
+<llm-deployment> - Log analysis: every hour
+<llm-deployment> - Data validation: every 30 seconds (during 10-minute validation windows)
+<llm-deployment> LLM Deployment server listening on port 80
+<llm-deployment> State file: /collect_data/state.json

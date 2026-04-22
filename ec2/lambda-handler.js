@@ -86,19 +86,27 @@ async function enqueueToS3(params) {
 }
 
 async function handler(event, context) {
-  console.log('Lambda handler invoked with event:', JSON.stringify(event));
+  console.log('[LAMBDA HANDLER] Invoked with event:', JSON.stringify(event, null, 2));
+  console.log('[LAMBDA HANDLER] event.body type:', typeof event.body);
+  console.log('[LAMBDA HANDLER] event.body value:', event.body);
+  console.log('[LAMBDA HANDLER] event keys:', Object.keys(event));
   
   try {
     // Parse request body
     let body;
     if (typeof event.body === 'string') {
+      console.log('[LAMBDA HANDLER] Parsing string body');
       body = JSON.parse(event.body);
     } else if (typeof event.body === 'object' && event.body) {
+      console.log('[LAMBDA HANDLER] Using object body directly');
       body = event.body;
     } else {
       // If no body wrapper, use event directly (direct Lambda invocation)
+      console.log('[LAMBDA HANDLER] Using event as body (direct invocation)');
       body = event;
     }
+    
+    console.log('[LAMBDA HANDLER] Parsed body:', JSON.stringify(body, null, 2));
     
     // Validate input
     const params = await validateInput(body);
