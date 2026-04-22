@@ -25,10 +25,23 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-6 py-12">
-      <!-- Hero Section -->
-      <div class="mb-16">
-        <h2 class="text-5xl font-bold mb-3 tracking-tight">Deploy Services Instantly</h2>
-        <p class="text-gray-400 text-lg">Configure, validate, and monitor your service deployments from a unified dashboard</p>
+      <!-- Header Section with Status -->
+      <div class="flex items-start justify-between mb-16">
+        <div>
+          <h2 class="text-5xl font-bold mb-3 tracking-tight">Equinox: Intelligent Asset Deployment</h2>
+          <p class="text-gray-400 text-lg">Configure, validate, and monitor your service deployments from a unified dashboard</p>
+        </div>
+        <!-- Device Status Indicator (Top Right) -->
+        <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg w-64">
+          <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">EnFORM Device Status</p>
+          <div class="flex items-center gap-3">
+            <div id="serverStatus" class="text-4xl">🔄</div>
+            <div>
+              <p class="text-lg font-bold">Checking...</p>
+              <p class="text-sm text-gray-400" id="serverStatusText">Connected</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Main Grid -->
@@ -116,45 +129,23 @@
               Deploy Services
             </button>
             <div class="message mt-4" id="message"></div>
-
-            <!-- Deployment Progress -->
-            <div id="deploymentProgress" class="hidden mt-6 p-4 bg-gray-700/50 rounded-lg">
-              <h4 class="text-sm font-semibold text-gray-200 mb-3">Deployment Status</h4>
-              <div class="space-y-2 max-h-64 overflow-y-auto text-xs text-gray-300" id="progressLog">
-                <!-- Progress messages will appear here -->
-              </div>
-            </div>
           </form>
         </div>
 
-        <!-- Status Dashboard Card -->
+        <!-- Deployment Status (Full Width) -->
         <div class="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 shadow-xl">
-          <h3 class="text-2xl font-bold mb-6">Active Deployments</h3>
-          <div id="statusContainer" class="text-gray-400">
-            <p class="flex items-center gap-2">
-              <span class="animate-spin">⟳</span>
-              Loading deployments...
-            </p>
+          <h3 class="text-2xl font-bold mb-6">Deployment Status</h3>
+          <div class="space-y-2 max-h-96 overflow-y-auto text-xs text-gray-300 font-mono" id="progressLog">
+            <!-- Progress messages will appear here -->
+            <p class="text-gray-500">Deployments will appear here...</p>
           </div>
         </div>
       </div>
 
-      <!-- System Status Cards -->
+      <!-- Status Cards -->
       <div class="mb-16">
-        <h3 class="text-2xl font-bold mb-6">System Status</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Server Status -->
-          <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg">
-            <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Server Status</p>
-            <div class="flex items-center gap-3">
-              <div id="serverStatus" class="text-4xl">🔄</div>
-              <div>
-                <p class="text-lg font-bold">Checking...</p>
-                <p class="text-sm text-gray-400">Connected</p>
-              </div>
-            </div>
-          </div>
-
+        <h3 class="text-2xl font-bold mb-6">Deployment History</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- State File -->
           <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg">
             <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">State File</p>
@@ -162,19 +153,13 @@
             <p class="text-sm text-gray-500 mt-2">Persistent storage</p>
           </div>
 
-          <!-- Active Deployments Count -->
+          <!-- Total Deployments -->
           <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg">
             <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Total Deployments</p>
             <p class="text-4xl font-bold text-blue-400" id="deploymentCount">-</p>
             <p class="text-sm text-gray-500 mt-2">All time</p>
           </div>
         </div>
-      </div>
-
-      <!-- Info Section -->
-      <div class="bg-gray-800/30 border border-gray-700 rounded-xl p-8 text-center">
-        <h4 class="text-lg font-semibold mb-2">🚀 Ready to Deploy?</h4>
-        <p class="text-gray-400">Upload your service configuration and connect to your Balena device to get started</p>
       </div>
     </div>
   </div>
@@ -347,8 +332,7 @@
         return;
       }
 
-      // Show progress section
-      document.getElementById('deploymentProgress').classList.remove('hidden');
+      // Clear progress log and start
       document.getElementById('progressLog').innerHTML = '';
       logProgress('Starting deployment...', 'info');
       logProgress(`Device: ${deviceId}`, 'info');
@@ -448,15 +432,11 @@
         const response = await fetch(`${API_BASE.replace('/api', '')}/health`);
         if (response.ok) {
           document.getElementById('serverStatus').textContent = '🟢';
-          const elem = document.getElementById('serverStatus').parentElement;
-          elem.querySelector('p:first-child').textContent = 'Online';
-          elem.querySelector('p:last-child').textContent = 'Connected';
+          document.getElementById('serverStatusText').textContent = 'Connected';
         }
       } catch (err) {
         document.getElementById('serverStatus').textContent = '🔴';
-        const elem = document.getElementById('serverStatus').parentElement;
-        elem.querySelector('p:first-child').textContent = 'Offline';
-        elem.querySelector('p:last-child').textContent = 'Check connection';
+        document.getElementById('serverStatusText').textContent = 'Disconnected';
       }
     }
 
@@ -466,51 +446,6 @@
         const data = await response.json();
 
         document.getElementById('deploymentCount').textContent = data.count || '0';
-
-        if (data.deployments.length === 0) {
-          document.getElementById('statusContainer').innerHTML = '<p class="text-gray-500 text-center py-8">No deployments yet. Submit the form above to create one.</p>';
-          return;
-        }
-
-        let html = '<div class="space-y-3">';
-
-        for (const deployment of data.deployments) {
-          const timeSince = formatTime(Date.now() - deployment.timestamp);
-          const errorCount = deployment.errorLog?.length || 0;
-          const statusColor = errorCount > 0 ? 'border-red-600 bg-red-900/20' : 'border-green-600 bg-green-900/20';
-          const statusIcon = errorCount > 0 ? '⚠️' : '✓';
-
-          html += `
-            <div class="border ${statusColor} rounded-lg p-4 backdrop-blur-sm">
-              <div class="flex items-start justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-lg">${statusIcon}</span>
-                  <div>
-                    <p class="font-mono text-sm text-gray-300">${deployment.id}</p>
-                    <p class="text-xs text-gray-500">${timeSince} ago</p>
-                  </div>
-                </div>
-                ${deployment.inValidationWindow ? '<span class="text-xs bg-yellow-600/50 text-yellow-200 px-2 py-1 rounded">Validating</span>' : ''}
-              </div>
-              <div class="grid grid-cols-2 gap-4 text-sm text-gray-400">
-                <div><span class="text-gray-500">Device:</span> ${deployment.deviceId}</div>
-                <div><span class="text-gray-500">Services:</span> ${deployment.services?.length || 0}</div>
-              </div>
-              <div class="mt-3 pt-3 border-t border-gray-600 flex items-center justify-between text-sm">
-                <div>
-                  <span class="text-gray-500">Status:</span> 
-                  <span class="${deployment.validationStatus === 'valid' ? 'text-green-400' : deployment.validationStatus === 'invalid' ? 'text-red-400' : 'text-yellow-400'}">
-                    ${deployment.validationStatus === 'valid' ? '✓ Valid' : deployment.validationStatus === 'invalid' ? '✗ Invalid' : '⟳ Validating'}
-                  </span>
-                </div>
-                ${errorCount > 0 ? `<span class="text-red-400 font-semibold">${errorCount} error${errorCount > 1 ? 's' : ''}</span>` : ''}
-              </div>
-            </div>
-          `;
-        }
-
-        html += '</div>';
-        document.getElementById('statusContainer').innerHTML = html;
 
       } catch (err) {
         console.error('Error refreshing status:', err);
