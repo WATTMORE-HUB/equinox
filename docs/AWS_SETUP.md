@@ -251,6 +251,7 @@ After=network.target
 Type=simple
 User=ec2-user
 WorkingDirectory=/home/ec2-user/equinox
+Environment="PATH=/home/ec2-user/balena/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="S3_BUCKET=equinox-deployments-123456"
 Environment="REPO_PATH=/home/ec2-user/equinox"
 Environment="AWS_REGION=us-east-2"
