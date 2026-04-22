@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Update EC2 Code and Dependencies
-# This script pulls the latest code from GitHub and restarts the poller service
-# Run on EC2 instance: bash ~/equinox/ec2/update.sh
+# Equinox EC2 Update and Configuration Script
+# This script pulls the latest code from GitHub, sets up the systemd service,
+# and restarts the poller
+# Run on EC2 instance: bash ~/equinox/update.sh
 
 set -e
 
@@ -11,15 +12,15 @@ echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
 
-echo "Step 1: Cleaning up old code"
-cd ~/
-sudo rm -r ~/equinox
-git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
-echo "✓ New code updated"
+# Step 1: Pull latest code
+echo "Step 1: Pulling latest code..."
+cd ~/equinox
+git pull origin main
+echo "✓ Code updated"
 echo ""
 
+# Step 2: Install dependencies
 echo "Step 2: Installing main project dependencies..."
-cd ~/equinox
 npm install
 echo "✓ Main dependencies installed"
 echo ""
@@ -31,11 +32,56 @@ cd ~/equinox
 echo "✓ EC2 dependencies installed"
 echo ""
 
-echo "Step 4: Restarting poller service..."
-sudo systemctl restart equinox-poller
-echo "✓ Poller service restarted"
+# Step 4: Fix systemd service with proper PATH for balena CLI
+echo "Step 4: Setting up systemd service..."
+
+# Read environment variables or use defaults
+S3_BUCKET="${S3_BUCKET:-enform-deployment-archives-211125775433}"
+REPO_PATH="${REPO_PATH:-/home/ec2-user/equinox}"
+AWS_REGION="${AWS_REGION:-us-east-2}"
+
+echo "  S3_BUCKET: $S3_BUCKET"
+echo "  REPO_PATH: $REPO_PATH"
+echo "  AWS_REGION: $AWS_REGION"
 echo ""
 
+# Stop the service
+echo "  Stopping equinox-poller service..."
+sudo systemctl stop equinox-poller || true
+
+# Create the service file with PATH for balena CLI
+echo "  Creating systemd service with balena PATH..."
+sudo tee /etc/systemd/system/equinox-poller.service > /dev/null <<EOF
+[Unit]
+Description=Equinox Deployment Poller
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=$REPO_PATH
+Environment="PATH=/home/ec2-user/balena/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="S3_BUCKET=$S3_BUCKET"
+Environment="REPO_PATH=$REPO_PATH"
+Environment="AWS_REGION=$AWS_REGION"
+ExecStart=/usr/bin/node $REPO_PATH/ec2/poller.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and start service
+echo "  Reloading systemd configuration..."
+sudo systemctl daemon-reload
+
+echo "  Starting equinox-poller service..."
+sudo systemctl start equinox-poller
+echo "✓ Systemd service configured and started"
+echo ""
+
+# Step 5: Check status
 echo "Step 5: Checking poller status..."
 sudo systemctl status equinox-poller
 echo ""
