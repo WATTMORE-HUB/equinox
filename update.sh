@@ -11,10 +11,20 @@ echo "=========================================="
 echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
-
-echo "Step 1: Pulling latest code from repository..."
-cd ~/equinox
-git pull origin main
+echo "Step 1: Ensuring latest code is available..."
+if [ -d "$HOME/equinox/.git" ]; then
+  echo "  Repository exists, fetching latest code..."
+  cd "$HOME/equinox"
+  git fetch origin main
+  git reset --hard origin/main
+  echo "✓ Latest code fetched"
+else
+  echo "  Repository not found, cloning..."
+  rm -rf "$HOME/equinox"
+  git clone https://github.com/enform-lp/equinox.git "$HOME/equinox"
+  cd "$HOME/equinox"
+  echo "✓ Repository cloned"
+fi
 echo "✓ Latest code pulled"
 echo ""
 
