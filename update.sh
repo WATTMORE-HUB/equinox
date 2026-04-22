@@ -12,6 +12,11 @@ echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
 
+echo "Step 1: Pulling latest code from repository..."
+cd ~/equinox
+git pull origin main
+echo "✓ Latest code pulled"
+echo ""
 
 # Step 2: Install dependencies
 echo "Step 2: Installing main project dependencies..."
