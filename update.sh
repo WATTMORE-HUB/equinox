@@ -11,6 +11,12 @@ echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
 
+echo "Step 1: Cleaning up old code"
+cd ~/
+sudo rm -r ~/equinox
+git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
+echo "✓ New code updated"
+echo ""
 
 echo "Step 2: Installing main project dependencies..."
 cd ~/equinox
