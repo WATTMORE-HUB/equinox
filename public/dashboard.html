@@ -60,24 +60,59 @@
             </div>
 
             <div>
-              <label for="csvFile" class="block text-sm font-semibold text-gray-200 mb-2">Services CSV</label>
+              <label for="configCsvFile" class="block text-sm font-semibold text-gray-200 mb-2">Configuration CSV</label>
               <div class="relative">
-                <input type="file" id="csvFile" accept=".csv" required class="hidden">
-                <label for="csvFile" class="block px-4 py-6 bg-gray-700/30 border-2 border-dashed border-gray-600 rounded-lg text-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/50 transition">
+                <input type="file" id="configCsvFile" accept=".csv" required class="hidden">
+                <label for="configCsvFile" class="block px-4 py-6 bg-gray-700/30 border-2 border-dashed border-gray-600 rounded-lg text-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/50 transition">
                   <div class="text-gray-300">
-                    <span class="text-2xl">📁</span>
+                    <span class="text-2xl">📋</span>
                     <p class="mt-2 font-medium">Click to upload or drag</p>
-                    <p class="text-sm text-gray-400">CSV format</p>
+                    <p class="text-sm text-gray-400">Config CSV (environment variables)</p>
                   </div>
                 </label>
-                <div class="file-name mt-2 text-sm text-blue-400" id="fileName"></div>
+                <div class="file-name mt-2 text-sm text-blue-400" id="configFileName"></div>
               </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-200 mb-3">Select Services</label>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="checkbox" id="service-camera" class="service-checkbox w-4 h-4 rounded" value="camera">
+                  <label for="service-camera" class="ml-2 text-sm text-gray-300">📸 Camera Control</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="service-meter" class="service-checkbox w-4 h-4 rounded" value="meter">
+                  <label for="service-meter" class="ml-2 text-sm text-gray-300">⚡ Meter Collection</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="service-inverter" class="service-checkbox w-4 h-4 rounded" value="inverter">
+                  <label for="service-inverter" class="ml-2 text-sm text-gray-300">🔋 Inverter Collection</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="service-weather" class="service-checkbox w-4 h-4 rounded" value="weather">
+                  <label for="service-weather" class="ml-2 text-sm text-gray-300">🌤️ Weather Collection</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="service-windspeed" class="service-checkbox w-4 h-4 rounded" value="windspeed">
+                  <label for="service-windspeed" class="ml-2 text-sm text-gray-300">💨 Windspeed Collection</label>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Combine and Heartbeat services are always included</p>
             </div>
 
             <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg transition shadow-lg hover:shadow-xl mt-6">
               Deploy Services
             </button>
             <div class="message mt-4" id="message"></div>
+
+            <!-- Deployment Progress -->
+            <div id="deploymentProgress" class="hidden mt-6 p-4 bg-gray-700/50 rounded-lg">
+              <h4 class="text-sm font-semibold text-gray-200 mb-3">Deployment Status</h4>
+              <div class="space-y-2 max-h-64 overflow-y-auto text-xs text-gray-300" id="progressLog">
+                <!-- Progress messages will appear here -->
+              </div>
+            </div>
           </form>
         </div>
 
@@ -138,10 +173,40 @@
     const REFRESH_INTERVAL = 5000;
 
     // File input handling
-    document.getElementById('csvFile').addEventListener('change', (e) => {
+    document.getElementById('configCsvFile').addEventListener('change', (e) => {
       const fileName = e.target.files[0]?.name || '';
-      document.getElementById('fileName').textContent = fileName ? `✓ ${fileName}` : '';
+      document.getElementById('configFileName').textContent = fileName ? `✓ ${fileName}` : '';
     });
+
+    // Log progress messages
+    function logProgress(message, level = 'info') {
+      const progressLog = document.getElementById('progressLog');
+      const timestamp = new Date().toLocaleTimeString();
+      const levelColor = level === 'success' ? 'text-green-400' : level === 'error' ? 'text-red-400' : 'text-gray-300';
+      const entry = document.createElement('div');
+      entry.className = `${levelColor} font-mono`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      progressLog.appendChild(entry);
+      progressLog.scrollTop = progressLog.scrollHeight;
+    }
+
+    // Get selected services
+    function getSelectedServices() {
+      const selected = [];
+      document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
+        selected.push(checkbox.value);
+      });
+      return selected;
+    }
+
+    // Generate service selection CSV
+    function generateServiceCSV(services) {
+      if (services.length === 0) {
+        return 'name,service\n'; // Empty header
+      }
+      const rows = services.map(s => `${s},${s}`).join('\n');
+      return `name,service\n${rows}`;
+    }
 
     // Form submission
     document.getElementById('deploymentForm').addEventListener('submit', async (e) => {
@@ -149,19 +214,43 @@
 
       const balenaToken = document.getElementById('balenaToken').value;
       const deviceId = document.getElementById('deviceId').value;
-      const csvFile = document.getElementById('csvFile').files[0];
+      const configCsvFile = document.getElementById('configCsvFile').files[0];
 
-      if (!balenaToken || !deviceId || !csvFile) {
-        showMessage('All fields are required', 'error');
+      if (!balenaToken || !deviceId || !configCsvFile) {
+        showMessage('Balena token, device ID, and configuration CSV are required', 'error');
         return;
       }
+
+      const selectedServices = getSelectedServices();
+      if (selectedServices.length === 0) {
+        showMessage('Please select at least one service', 'error');
+        return;
+      }
+
+      // Show progress section
+      document.getElementById('deploymentProgress').classList.remove('hidden');
+      document.getElementById('progressLog').innerHTML = '';
+      logProgress('Starting deployment...', 'info');
+      logProgress(`Device: ${deviceId}`, 'info');
+      logProgress(`Selected services: ${selectedServices.join(', ')}`, 'info');
+
+      // Generate service selection CSV
+      const servicesCsvContent = generateServiceCSV(selectedServices);
+      logProgress(`Generated service CSV: ${servicesCsvContent.split('\n').length - 1} services`, 'info');
+      
+      const servicesCsvFile = new File(
+        [servicesCsvContent],
+        'services.csv',
+        { type: 'text/csv' }
+      );
 
       const formData = new FormData();
       formData.append('balenaToken', balenaToken);
       formData.append('deviceId', deviceId);
-      formData.append('csvFile', csvFile);
+      formData.append('csvFile', servicesCsvFile);
 
       try {
+        logProgress('Sending deployment request to API...', 'info');
         const response = await fetch(`${API_BASE}/deployment/deploy`, {
           method: 'POST',
           body: formData
@@ -170,14 +259,22 @@
         const data = await response.json();
 
         if (response.ok) {
+          logProgress(`✓ Deployment initiated successfully!`, 'success');
+          logProgress(`Deployment ID: ${data.deploymentId}`, 'success');
+          logProgress(`Services: ${data.services} services queued for deployment`, 'success');
           showMessage(`✓ Deployment initiated! ID: ${data.deploymentId}`, 'success');
-          document.getElementById('deploymentForm').reset();
-          document.getElementById('fileName').textContent = '';
-          setTimeout(refreshStatus, 1000);
+          
+          setTimeout(() => {
+            document.getElementById('deploymentForm').reset();
+            document.getElementById('configFileName').textContent = '';
+            refreshStatus();
+          }, 1000);
         } else {
+          logProgress(`✗ Error: ${data.error}`, 'error');
           showMessage(`Error: ${data.error}`, 'error');
         }
       } catch (err) {
+        logProgress(`✗ Network error: ${err.message}`, 'error');
         showMessage(`Network error: ${err.message}`, 'error');
       }
     });
