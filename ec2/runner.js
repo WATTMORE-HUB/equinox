@@ -26,6 +26,7 @@ const execFileAsync = promisify(execFile);
 const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID;
 const BALENA_TOKEN = process.env.BALENA_TOKEN;
 const DEVICE_ID = process.env.DEVICE_ID;
+const FLEET_NAME = process.env.FLEET_NAME;
 const CSV_DATA = process.env.CSV_DATA; // Base64 encoded
 const STATUS_CALLBACK_URL = process.env.STATUS_CALLBACK_URL;
 const ENFORM_REPO_PATH = process.env.ENFORM_REPO_PATH || path.join(
@@ -81,6 +82,7 @@ async function validateInputs() {
   if (!DEPLOYMENT_ID) errors.push('DEPLOYMENT_ID not set');
   if (!BALENA_TOKEN) errors.push('BALENA_TOKEN not set');
   if (!DEVICE_ID) errors.push('DEVICE_ID not set');
+  if (!FLEET_NAME) errors.push('FLEET_NAME not set');
   if (!CSV_DATA) errors.push('CSV_DATA not set');
   
   if (errors.length > 0) {
@@ -179,65 +181,6 @@ async function createProject(services) {
   }
 }
 
-async function getDeviceName() {
-  try {
-    await log(`Resolving device name for UUID: ${DEVICE_ID}`);
-    
-    // Use balena SDK to get device info
-    const balena = require('balena-sdk');
-    const auth = balena.auth;
-    
-    // Login with token
-    await auth.loginWithToken(BALENA_TOKEN);
-    await log('Authenticated with Balena API');
-    
-    // Get device
-    const models = balena.models;
-    const devices = await models.device.getAllByApplication(DEVICE_ID);
-    
-    if (!devices || devices.length === 0) {
-      throw new Error(`No devices found for UUID ${DEVICE_ID}`);
-    }
-    
-    const device = devices[0];
-    const deviceName = device.device_name;
-    
-    await log(`Device name resolved: ${deviceName}`);
-    return deviceName;
-  } catch (err) {
-    // Fallback: try using balena CLI instead
-    await log(`SDK lookup failed, trying balena CLI: ${err.message}`);
-    return await getDeviceNameViaCLI();
-  }
-}
-
-async function getDeviceNameViaCLI() {
-  try {
-    // First login
-    await log('Authenticating with Balena CLI...');
-    await execFileAsync('balena', ['login', '--token', BALENA_TOKEN]);
-    
-    // Get device info
-    const { stdout } = await execFileAsync('balena', ['device', DEVICE_ID]);
-    const lines = stdout.split('\n');
-    
-    // Parse output to find device name
-    for (const line of lines) {
-      if (line.includes('Device name')) {
-        const match = line.match(/Device name\s+(.+)/);
-        if (match) {
-          const deviceName = match[1].trim();
-          await log(`Device name resolved: ${deviceName}`);
-          return deviceName;
-        }
-      }
-    }
-    
-    throw new Error('Could not parse device name from balena CLI output');
-  } catch (err) {
-    throw new Error(`Failed to resolve device name: ${err.message}`);
-  }
-}
 
 async function archiveToS3(projectPath, projectName) {
   if (!s3 || !S3_BUCKET) {
@@ -279,13 +222,15 @@ async function archiveToS3(projectPath, projectName) {
   }
 }
 
-async function pushToBalena(projectPath, deviceName) {
+async function pushToBalena(projectPath, fleetName) {
   try {
-    await log(`Pushing to device: ${deviceName}`);
+    await log(`Authenticating with Balena CLI...`);
+    await execFileAsync('balena', ['login', '--token', BALENA_TOKEN]);
+    await log(`Pushing to fleet: ${fleetName}`);
     await log(`Project path: ${projectPath}`);
     
     // Run balena push from project directory
-    const { stdout, stderr } = await execFileAsync('balena', ['push', deviceName], {
+    const { stdout, stderr } = await execFileAsync('balena', ['push', fleetName], {
       cwd: projectPath,
       maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large builds
     });
@@ -296,7 +241,7 @@ async function pushToBalena(projectPath, deviceName) {
       await log(`Push warnings:\n${stderr}`, 'warn');
     }
     
-    await log(`Successfully pushed to device: ${deviceName}`);
+    await log(`Successfully pushed to fleet: ${fleetName}`);
     return true;
   } catch (err) {
     throw new Error(`Balena push failed: ${err.message}`);
@@ -324,13 +269,9 @@ async function run() {
     await log('Creating balena project...');
     const projectInfo = await createProject(services);
     
-    // Resolve device name
-    await log('Resolving device name...');
-    const deviceName = await getDeviceName();
-    
     // Push to balena
-    await log('Running balena push...');
-    await pushToBalena(projectInfo.projectPath, deviceName);
+    await log(`Running balena push ${FLEET_NAME}...`);
+    await pushToBalena(projectInfo.projectPath, FLEET_NAME);
     
     // Archive to S3 if configured
     await log('Archiving project...');
@@ -339,8 +280,8 @@ async function run() {
     // Success
     await log('Deployment completed successfully');
     const message = s3Location 
-      ? `Deployment successful. Device: ${deviceName}. Project archived to: ${s3Location}`
-      : `Deployment successful. Device: ${deviceName}`;
+      ? `Deployment successful. Fleet: ${FLEET_NAME}. Project archived to: ${s3Location}`
+      : `Deployment successful. Fleet: ${FLEET_NAME}`;
     await reportStatus('completed', message);
     
     process.exit(0);

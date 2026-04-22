@@ -20,7 +20,7 @@ const S3_BUCKET = process.env.S3_BUCKET;
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
 async function validateInput(body) {
-  const required = ['deploymentId', 'balenaToken', 'deviceId', 'csvData'];
+  const required = ['deploymentId', 'balenaToken', 'deviceId', 'fleetName', 'csvData'];
   const missing = required.filter(field => !body[field]);
   
   if (missing.length > 0) {
@@ -50,6 +50,7 @@ async function enqueueToS3(params) {
       deploymentId,
       balenaToken: params.balenaToken,
       deviceId: params.deviceId,
+      fleetName: params.fleetName,
       csvData: params.csvData,
       timestamp: new Date().toISOString(),
       status: 'pending'

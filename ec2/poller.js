@@ -70,7 +70,7 @@ async function getDeploymentRequest(s3Key) {
 }
 
 async function executeDeployment(deploymentRequest) {
-  const { deploymentId, balenaToken, deviceId, csvData } = deploymentRequest;
+  const { deploymentId, balenaToken, deviceId, fleetName, csvData } = deploymentRequest;
 
   try {
     await log(`Executing deployment ${deploymentId} for device ${deviceId}`);
@@ -81,6 +81,7 @@ async function executeDeployment(deploymentRequest) {
       DEPLOYMENT_ID: deploymentId,
       BALENA_TOKEN: balenaToken,
       DEVICE_ID: deviceId,
+      FLEET_NAME: fleetName,
       CSV_DATA: csvData,
       ENFORM_REPO_PATH: REPO_PATH
     };

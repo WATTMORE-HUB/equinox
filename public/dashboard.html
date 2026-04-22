@@ -49,11 +49,22 @@
             </div>
 
             <div>
-              <label for="deviceId" class="block text-sm font-semibold text-gray-200 mb-2">Device ID</label>
+              <label for="deviceId" class="block text-sm font-semibold text-gray-200 mb-2">Device ID (Internal Balena UUID)</label>
               <input 
                 type="text" 
                 id="deviceId" 
-                placeholder="Device UUID"
+                placeholder="e.g., 13380183"
+                required
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              >
+            </div>
+
+            <div>
+              <label for="fleetName" class="block text-sm font-semibold text-gray-200 mb-2">Fleet Name</label>
+              <input 
+                type="text" 
+                id="fleetName" 
+                placeholder="e.g., OfficeLab"
                 required
                 class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               >
@@ -288,10 +299,11 @@
 
       const balenaToken = document.getElementById('balenaToken').value;
       const deviceId = document.getElementById('deviceId').value;
+      const fleetName = document.getElementById('fleetName').value;
       const configCsvFile = document.getElementById('configCsvFile').files[0];
 
-      if (!balenaToken || !deviceId || !configCsvFile) {
-        showMessage('Balena token, device ID, and configuration CSV are required', 'error');
+      if (!balenaToken || !deviceId || !fleetName || !configCsvFile) {
+        showMessage('Balena token, device ID, fleet name, and configuration CSV are required', 'error');
         return;
       }
 
@@ -344,6 +356,7 @@
         const formData = new FormData();
         formData.append('balenaToken', balenaToken);
         formData.append('deviceId', deviceId);
+        formData.append('fleetName', fleetName);
         formData.append('csvFile', servicesCsvFile);
 
         logProgress('Sending deployment request to API...', 'info');

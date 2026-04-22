@@ -19,7 +19,7 @@ function getProjectCreator() {
  * Deploy via Cloud (EC2 + SSM via Lambda/API Gateway)
  */
 async function deployViaCloud(options) {
-  const { balenaToken, deviceId, services } = options;
+  const { balenaToken, deviceId, fleetName, services } = options;
   
   try {
     if (!CLOUD_API_URL) {
@@ -54,6 +54,7 @@ async function deployViaCloud(options) {
       deploymentId: `deploy_${deviceId.substring(0, 8)}_${Date.now()}`,
       balenaToken,
       deviceId,
+      fleetName,
       csvData: csvBase64,
       statusCallbackUrl
     });
@@ -83,7 +84,7 @@ async function deployViaCloud(options) {
  * @returns {Promise<{success: boolean, error?: string, projectPath?: string}>}
  */
 async function deployServices(options) {
-  const { balenaToken, deviceId, services } = options;
+  const { balenaToken, deviceId, fleetName, services } = options;
 
   try {
     // Validate inputs

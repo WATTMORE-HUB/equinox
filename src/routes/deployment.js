@@ -13,11 +13,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Body: { balenaToken, deviceId, csvData }
 router.post('/deploy', upload.single('csvFile'), async (req, res) => {
   try {
-    const { balenaToken, deviceId } = req.body;
+    const { balenaToken, deviceId, fleetName } = req.body;
     const csvFile = req.file;
 
-    if (!balenaToken || !deviceId) {
-      return res.status(400).json({ error: 'balenaToken and deviceId are required' });
+    if (!balenaToken || !deviceId || !fleetName) {
+      return res.status(400).json({ error: 'balenaToken, deviceId, and fleetName are required' });
     }
 
     if (!csvFile) {
@@ -44,6 +44,7 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
     const result = await deployServices({
       balenaToken,
       deviceId,
+      fleetName,
       services,
     });
 
