@@ -20,8 +20,14 @@ const S3_BUCKET = process.env.S3_BUCKET;
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
 async function validateInput(body) {
+  console.log('[LAMBDA VALIDATE] Checking required fields in body:', JSON.stringify(body, null, 2));
+  
   const required = ['deploymentId', 'balenaToken', 'deviceId', 'fleetName', 'csvData'];
   const missing = required.filter(field => !body[field]);
+  
+  console.log('[LAMBDA VALIDATE] Required fields:', required);
+  console.log('[LAMBDA VALIDATE] Missing fields:', missing);
+  console.log('[LAMBDA VALIDATE] body.fleetName value:', body.fleetName);
   
   if (missing.length > 0) {
     throw new Error(`Missing required fields: ${missing.join(', ')}`);
@@ -34,6 +40,7 @@ async function validateInput(body) {
     throw new Error('csvData must be valid base64');
   }
   
+  console.log('[LAMBDA VALIDATE] Validation passed, returning body');
   return body;
 }
 
