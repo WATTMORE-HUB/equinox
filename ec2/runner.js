@@ -200,6 +200,12 @@ async function archiveToS3(projectPath, projectName) {
   try {
     await log(`Archiving project to S3: s3://${S3_BUCKET}/deployments/${projectName}`);
     
+    // Ensure .deployments directory exists
+    if (!fs.existsSync(DEPLOYMENTS_DIR)) {
+      fs.mkdirSync(DEPLOYMENTS_DIR, { recursive: true });
+      await log(`Created deployments directory: ${DEPLOYMENTS_DIR}`);
+    }
+    
     // Create tar.gz of project directory
     const archivePath = path.join(DEPLOYMENTS_DIR, `${projectName}.tar.gz`);
     const cmd = `cd ${path.dirname(projectPath)} && tar -czf ${archivePath} ${path.basename(projectPath)}`;

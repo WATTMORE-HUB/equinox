@@ -1,23 +1,73 @@
 Event Time,Message,Log group,Log stream
-2026-04-22T17:04:17.626Z,"INIT_START Runtime Version: nodejs:24.v35	Runtime Version ARN: arn:aws:lambda:us-east-2::runtime:c2302199ed31b0efd546d792325846c2846e78ac566d3f1f711dfae134309d24
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
-2026-04-22T17:04:18.374Z,"START RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6 Version: $LATEST
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
-2026-04-22T17:04:18.375Z,"2026-04-22T17:04:18.375Z	95263d5d-691f-4203-8b8d-ad42f6e359b6	INFO	Lambda handler invoked with event: {""deploymentId"":""deploy_13380183_1776877456822"",""balenaToken"":""juZrel6Q8TdO4vifdwwJfKlNqlhNEnkP"",""deviceId"":""13380183"",""csvData"":""bmFtZSxzZXJ2aWNlCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZAp1bmRlZmluZWQsdW5kZWZpbmVkCnVuZGVmaW5lZCx1bmRlZmluZWQKdW5kZWZpbmVkLHVuZGVmaW5lZA=="",""statusCallbackUrl"":""https://0cbbcfdb2421d87b21fefe5de76d4745.balena-devices.com/api/status/callback""}
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
-2026-04-22T17:04:18.378Z,"2026-04-22T17:04:18.378Z	95263d5d-691f-4203-8b8d-ad42f6e359b6	ERROR	Error: TypeError: Cannot read properties of undefined (reading 'deploymentId')
-    at /var/task/lambda-handler.js:24:49
-    at Array.filter (<anonymous>)
-    at validateInput (/var/task/lambda-handler.js:24:28)
-    at BufferedInvokeProcessor.handler (/var/task/lambda-handler.js:96:26)
-    at BufferedInvokeProcessor.processInvoke (file:///var/runtime/index.mjs:1092:33)
-    at file:///var/runtime/index.mjs:1178:98
-    at InvokeStoreSingle.run (file:///var/runtime/index.mjs:83:12)
-    at _Runtime.runWithInvokeContext (file:///var/runtime/index.mjs:1191:24)
-    at async _Runtime.processSingleConcurrent (file:///var/runtime/index.mjs:1178:7)
-    at async _Runtime.start (file:///var/runtime/index.mjs:1165:7)
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
-2026-04-22T17:04:18.397Z,"END RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
-2026-04-22T17:04:18.398Z,"REPORT RequestId: 95263d5d-691f-4203-8b8d-ad42f6e359b6	Duration: 23.19 ms	Billed Duration: 767 ms	Memory Size: 256 MB	Max Memory Used: 103 MB	Init Duration: 743.65 ms	
-",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]84a20b3b01d648e3986ba3b77125e4ed
+2026-04-22T19:42:58.903Z,"START RequestId: 07cf1be5-665d-4cda-a9e0-f68282e60e12 Version: $LATEST
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:42:59.076Z,"2026-04-22T19:42:59.076Z	07cf1be5-665d-4cda-a9e0-f68282e60e12	INFO	Lambda handler invoked with event: {""deploymentId"":""deploy_13380183_1776886978754"",""balenaToken"":""juZrel6Q8TdO4vifdwwJfKlNqlhNEnkP"",""deviceId"":""13380183"",""fleetName"":""OfficeLab"",""csvData"":""bmFtZSxzZXJ2aWNlCm1ldGVyLG1ldGVy"",""statusCallbackUrl"":""https://0cbbcfdb2421d87b21fefe5de76d4745.balena-devices.com/api/status/callback""}
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:42:59.076Z,"2026-04-22T19:42:59.076Z	07cf1be5-665d-4cda-a9e0-f68282e60e12	INFO	Enqueueing deployment deploy_13380183_1776886978754 to S3 bucket enform-deployment-archives-211125775433
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:42:59.274Z,"2026-04-22T19:42:59.274Z	07cf1be5-665d-4cda-a9e0-f68282e60e12	INFO	Deployment enqueued at s3://enform-deployment-archives-211125775433/deployments/pending/deploy_13380183_1776886978754.json
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:42:59.276Z,"END RequestId: 07cf1be5-665d-4cda-a9e0-f68282e60e12
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:42:59.276Z,"REPORT RequestId: 07cf1be5-665d-4cda-a9e0-f68282e60e12	Duration: 372.74 ms	Billed Duration: 373 ms	Memory Size: 256 MB	Max Memory Used: 109 MB	
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]855dc6da7e8f4c9289bf827fc0a68791
+2026-04-22T19:47:14.238Z,"INIT_START Runtime Version: nodejs:24.v35	Runtime Version ARN: arn:aws:lambda:us-east-2::runtime:c2302199ed31b0efd546d792325846c2846e78ac566d3f1f711dfae134309d24
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.409Z,"2026-04-22T19:47:14.409Z	-	ERROR	Init Error 	{""errorType"":""Runtime.ImportModuleError"",""errorMessage"":""Error: Cannot find module 'aws-sdk'\nRequire stack:\n- /var/task/lambda-handler.js"",""name"":""Runtime.ImportModuleError"",""stack"":[""Runtime.ImportModuleError: Error: Cannot find module 'aws-sdk'"",""Require stack:"",""- /var/task/lambda-handler.js"",""    at loadModule (file:///var/runtime/index.mjs:573:13)"",""    at async UserFunctionLoader.load (file:///var/runtime/index.mjs:504:20)"",""    at async createRuntime (file:///var/runtime/index.mjs:1217:52)"",""    at async ignition (file:///var/runtime/index.mjs:1633:21)""]}
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"node:internal/process/promises:394
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"triggerUncaughtException(err, true /* fromPromise */);
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"^
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"ImportModuleError [Runtime.ImportModuleError]: Error: Cannot find module 'aws-sdk'
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"Require stack:
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"- /var/task/lambda-handler.js
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"at loadModule (file:///var/runtime/index.mjs:573:13)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"at async UserFunctionLoader.load (file:///var/runtime/index.mjs:504:20)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"at async createRuntime (file:///var/runtime/index.mjs:1217:52)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"at async ignition (file:///var/runtime/index.mjs:1633:21)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.446Z,"Node.js v24.14.1
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.455Z,"INIT_REPORT Init Duration: 217.68 ms	Phase: init	Status: error	Error Type: Runtime.ImportModuleError
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.556Z,"2026-04-22T19:47:14.556Z	-	ERROR	Init Error 	{""errorType"":""Runtime.ImportModuleError"",""errorMessage"":""Error: Cannot find module 'aws-sdk'\nRequire stack:\n- /var/task/lambda-handler.js"",""name"":""Runtime.ImportModuleError"",""stack"":[""Runtime.ImportModuleError: Error: Cannot find module 'aws-sdk'"",""Require stack:"",""- /var/task/lambda-handler.js"",""    at loadModule (file:///var/runtime/index.mjs:573:13)"",""    at async UserFunctionLoader.load (file:///var/runtime/index.mjs:504:20)"",""    at async createRuntime (file:///var/runtime/index.mjs:1217:52)"",""    at async ignition (file:///var/runtime/index.mjs:1633:21)""]}
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"node:internal/process/promises:394
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"triggerUncaughtException(err, true /* fromPromise */);
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"^
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"ImportModuleError [Runtime.ImportModuleError]: Error: Cannot find module 'aws-sdk'
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"Require stack:
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"- /var/task/lambda-handler.js
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"at loadModule (file:///var/runtime/index.mjs:573:13)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"at async UserFunctionLoader.load (file:///var/runtime/index.mjs:504:20)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"at async createRuntime (file:///var/runtime/index.mjs:1217:52)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"at async ignition (file:///var/runtime/index.mjs:1633:21)
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.574Z,"Node.js v24.14.1
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.579Z,"INIT_REPORT Init Duration: 109.86 ms	Phase: invoke	Status: error	Error Type: Runtime.ImportModuleError
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.579Z,"START RequestId: e07da5dc-63da-4ee3-8605-6916d9358463 Version: $LATEST
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.584Z,"END RequestId: e07da5dc-63da-4ee3-8605-6916d9358463
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
+2026-04-22T19:47:14.584Z,"REPORT RequestId: e07da5dc-63da-4ee3-8605-6916d9358463	Duration: 119.88 ms	Billed Duration: 120 ms	Memory Size: 256 MB	Max Memory Used: 77 MB	Status: error	Error Type: Runtime.ImportModuleError
+",211125775433:/aws/lambda/cloud-deployment-trigger,2026/04/22/[$LATEST]65584147f2c74c5ba2d1b42cfe1bc437
