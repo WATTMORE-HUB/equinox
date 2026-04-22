@@ -92,12 +92,26 @@ async function executeDeployment(deploymentRequest) {
     });
 
     await log(`Deployment ${deploymentId} completed successfully`);
-    await log(`Output: ${stdout}`);
+    if (stdout) {
+      await log(`Output: ${stdout}`);
+    }
+    if (stderr) {
+      await log(`Warnings: ${stderr}`, 'warn');
+    }
 
     return { success: true, output: stdout };
   } catch (err) {
     await log(`Deployment ${deploymentId} failed: ${err.message}`, 'error');
-    return { success: false, error: err.message };
+    
+    // Log stderr if available from the error
+    if (err.stderr) {
+      await log(`Stderr: ${err.stderr}`, 'error');
+    }
+    if (err.stdout) {
+      await log(`Stdout: ${err.stdout}`, 'error');
+    }
+    
+    return { success: false, error: err.message, stderr: err.stderr, stdout: err.stdout };
   }
 }
 
