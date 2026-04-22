@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnForm Configurator - Internal Configuration Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="wattmore_logo.png" alt="Wattmore Logo" class="logo">
+                <div class="header-text">
+                    <h1>EnForm Configurator</h1>
+                    <p class="subtitle">Internal Configuration Tool</p>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Step 1: Device ID Input -->
+            <section id="device-step" class="step active">
+                <h2>Step 1: Configuration Setup</h2>
+                
+                <div class="form-group">
+                    <label for="bearerToken">Balena Bearer Token:</label>
+                    <input type="password" id="bearerToken" placeholder="Enter your Balena Bearer Token" required>
+                    <small class="input-help">This token will be used for API calls to set environment variables</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceId">Balena Device ID:</label>
+                    <input type="text" id="deviceId" placeholder="Enter Balena Device ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="variablesFile">Variables File:</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="variablesFile" accept=".txt" required>
+                        <div class="file-upload-text">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-label">Choose a .txt file with variable names</div>
+                            <div class="upload-hint">One variable name per line</div>
+                        </div>
+                    </div>
+                    <div id="fileInfo" class="file-info hidden">
+                        <span id="fileName"></span> - <span id="variableCount"></span> variables loaded
+                    </div>
+                </div>
+                
+                <button id="loadVariablesBtn" class="btn-primary" disabled>Start Configuration</button>
+                <div id="loading" class="loading hidden">Processing variables...</div>
+            </section>
+
+            <!-- Step 2: Variables Configuration -->
+            <section id="variables-step" class="step hidden">
+                <h2>Step 2: Configure Variables</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <span class="progress-text" id="progressText">0 of 0 completed</span>
+                </div>
+                
+                <div class="keyboard-help">
+                    <small><strong>Tip:</strong> Press Enter to proceed to next variable, or leave fields blank to skip</small>
+                </div>
+                
+                <div id="variablesContainer">
+                    <!-- Variables will be dynamically loaded here -->
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button id="prevBtn" class="btn-secondary" disabled>Previous</button>
+                    <button id="nextBtn" class="btn-primary">Next</button>
+                    <button id="generateBtn" class="btn-success hidden">Generate Configuration</button>
+                </div>
+            </section>
+
+            <!-- Step 3: Results -->
+            <section id="results-step" class="step hidden">
+                <h2>Step 3: Configuration Complete</h2>
+                <div class="results-summary">
+                    <p>Configuration generated successfully!</p>
+                    <div class="summary-stats">
+                        <span id="totalVariables">0</span> variables configured for Balena Device ID <span id="deviceIdSummary"></span>
+                    </div>
+                </div>
+                
+                <div class="json-preview">
+                    <h3>Preview (first 5 entries):</h3>
+                    <pre id="jsonPreview"></pre>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="downloadBtn" class="btn-secondary">📁 Download JSON File</button>
+                    <button id="sendApiBtn" class="btn-primary">🚀 Send via Balena API</button>
+                </div>
+                
+                <div class="secondary-actions">
+                    <button id="startOverBtn" class="btn-secondary btn-small">Start Over</button>
+                </div>
+                
+                <!-- API Progress Section -->
+                <div id="apiProgress" class="api-progress hidden">
+                    <h3>Sending Variables via API</h3>
+                    <div class="api-progress-bar">
+                        <div class="api-progress-fill" id="apiProgressFill"></div>
+                        <span class="api-progress-text" id="apiProgressText">0 of 0 sent</span>
+                    </div>
+                    <div id="apiResults" class="api-results">
+                        <!-- API results will be populated here -->
+                    </div>
+                    <button id="apiCompleteBtn" class="btn-success hidden">✅ API Complete</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

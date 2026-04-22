@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INTELLECT EnFORM - AI-Powered Configuration Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="wattmore_logo.png" alt="Wattmore Logo" class="logo">
+                <div class="header-text">
+                    <h1>INTELLECT EnFORM</h1>
+                    <p class="subtitle">AI-Powered Configuration & Deployment Platform</p>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Step 1: Device ID Input -->
+            <section id="device-step" class="step active">
+                <h2>Step 1: Configuration Setup</h2>
+                
+                <div class="form-group">
+                    <label for="bearerToken">Balena Bearer Token:</label>
+                    <input type="password" id="bearerToken" placeholder="Enter your Balena Bearer Token" required>
+                    <small class="input-help">This token will be used for API calls to set environment variables</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceId">Balena Device ID:</label>
+                    <input type="text" id="deviceId" placeholder="Enter Balena Device ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="variablesFile">Variables CSV File:</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="variablesFile" accept=".csv" required>
+                        <div class="file-upload-text">
+                            <div class="upload-icon">📊</div>
+                            <div class="upload-label">Choose a .csv file with variable names and values</div>
+                            <div class="upload-hint">Format: variable_name,variable_value (one pair per line)</div>
+                        </div>
+                    </div>
+                    <div id="fileInfo" class="file-info hidden">
+                        <span id="fileName"></span> - <span id="variableCount"></span> variables loaded
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="processBtn" class="btn-primary" disabled>Process Configuration</button>
+                </div>
+                
+                <div class="skip-section">
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e1e8ed;">
+                    <p style="text-align: center; color: #666; margin-bottom: 15px; font-style: italic;">Or skip variable configuration if you don't need to set Balena environment variables:</p>
+                    <div style="text-align: center;">
+                        <button id="skipVariablesBtn" class="btn-secondary">Skip Variables - Go to Service Selection</button>
+                    </div>
+                </div>
+                <div id="loading" class="loading hidden">Processing CSV file...</div>
+            </section>
+
+            <!-- Step 2: Preview Variables -->
+            <section id="preview-step" class="step hidden">
+                <h2>Step 2: Review Configuration</h2>
+                
+                <div class="preview-summary">
+                    <p>Configuration loaded successfully from CSV!</p>
+                    <div class="summary-stats">
+                        <span id="totalVariablesPreview">0</span> variables ready to configure for Balena Device ID <span id="deviceIdPreview"></span>
+                    </div>
+                </div>
+                
+                <div class="csv-preview">
+                    <h3>Variables Preview (first 10 entries):</h3>
+                    <div id="csvPreviewContainer" class="csv-preview-container">
+                        <!-- CSV preview will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="editBtn" class="btn-secondary">← Back to Edit</button>
+                    <button id="sendApiBtn" class="btn-primary">🚀 Send via Balena API</button>
+                </div>
+                
+                <div class="secondary-actions">
+                    <button id="downloadBtn" class="btn-secondary btn-small">📁 Download JSON File</button>
+                </div>
+                
+                <!-- API Progress Section -->
+                <div id="apiProgress" class="api-progress hidden">
+                    <h3>Sending Variables via API</h3>
+                    <div class="api-progress-bar">
+                        <div class="api-progress-fill" id="apiProgressFill"></div>
+                        <span class="api-progress-text" id="apiProgressText">0 of 0 sent</span>
+                    </div>
+                    <div id="apiResults" class="api-results">
+                        <!-- API results will be populated here -->
+                    </div>
+                    <button id="apiCompleteBtn" class="btn-success hidden">✅ API Complete</button>
+                </div>
+            </section>
+
+            <!-- Step 3: Results -->
+            <section id="results-step" class="step hidden">
+                <h2>Step 3: Configuration Complete</h2>
+                <div class="results-summary">
+                    <p>Configuration sent successfully!</p>
+                    <div class="summary-stats">
+                        <span id="successCount">0</span> variables configured successfully for Balena Device ID <span id="deviceIdSummary"></span>
+                    </div>
+                </div>
+                
+                <div class="final-actions">
+                    <button id="continueToServicesBtn" class="btn-primary">Continue to Service Selection</button>
+                    <button id="downloadFinalBtn" class="btn-secondary">📁 Download Results JSON</button>
+                    <button id="startOverBtn" class="btn-secondary btn-small">Start Over</button>
+                </div>
+            </section>
+
+            <!-- Step 4: Service Selection -->
+            <section id="service-step" class="step hidden">
+                <h2 id="serviceStepHeader">Step 4: Select Services and Create Project</h2>
+                
+                <div class="service-selection">
+                    <div class="form-group">
+                        <label for="projectName">Project Name:</label>
+                        <input type="text" id="projectName" placeholder="Enter project name (e.g., my-solar-project)" required>
+                        <small class="input-help">This will be used as the directory name for your project</small>
+                    </div>
+                    
+                    <div class="services-container">
+                        <h3>Select Services to Include:</h3>
+                        <p class="services-help">Choose which services you want to include in your project. Combine and Heartbeat are always included.</p>
+                        
+                        <div class="service-grid">
+                            <div class="service-card" data-service="camera">
+                                <div class="service-icon">📸</div>
+                                <h4>Camera</h4>
+                                <p>Video server and camera control</p>
+                                <input type="checkbox" id="service-camera" class="service-checkbox">
+                            </div>
+                            
+                            <div class="service-card" data-service="meter">
+                                <div class="service-icon">⚡</div>
+                                <h4>Meter</h4>
+                                <p>Energy meter data collection</p>
+                                <input type="checkbox" id="service-meter" class="service-checkbox">
+                            </div>
+                            
+                            <div class="service-card" data-service="inverter">
+                                <div class="service-icon">🔋</div>
+                                <h4>Inverter</h4>
+                                <p>Solar inverter monitoring</p>
+                                <input type="checkbox" id="service-inverter" class="service-checkbox">
+                            </div>
+                            
+                            <div class="service-card" data-service="weather">
+                                <div class="service-icon">🌤️</div>
+                                <h4>Weather Station</h4>
+                                <p>Weather data collection</p>
+                                <input type="checkbox" id="service-weather" class="service-checkbox">
+                            </div>
+                            
+                            <div class="service-card" data-service="windspeed">
+                                <div class="service-icon">💨</div>
+                                <h4>Windspeed</h4>
+                                <p>Wind speed monitoring</p>
+                                <input type="checkbox" id="service-windspeed" class="service-checkbox">
+                            </div>
+                        </div>
+                        
+                        <div class="always-included">
+                            <h4>Always Included:</h4>
+                            <div class="included-services">
+                                <span class="included-service">📊 Combine</span>
+                                <span class="included-service">💓 Heartbeat</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="project-actions">
+                        <button id="backToResultsBtn" class="btn-secondary">← Back to Results</button>
+                        <button id="createProjectBtn" class="btn-primary" disabled>Create Project</button>
+                    </div>
+                    
+                    <div id="projectCreationProgress" class="project-progress hidden">
+                        <h3>Creating Project...</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="projectProgressFill"></div>
+                            <span class="progress-text" id="projectProgressText">Initializing...</span>
+                        </div>
+                        <div id="projectCreationLog" class="creation-log">
+                            <!-- Progress messages will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 5: Project Created -->
+            <section id="project-complete-step" class="step hidden">
+                <h2 id="projectCompleteHeader">Step 5: Project Created Successfully!</h2>
+                
+                <div class="success-summary">
+                    <div class="success-icon">🎉</div>
+                    <h3>Your project has been created!</h3>
+                    <p>Project <strong id="createdProjectName"></strong> is ready in the finished_projects directory.</p>
+                </div>
+                
+                <div class="project-details">
+                    <h4>Command to Execute:</h4>
+                    <div id="projectPath"></div>
+                    
+                    <h4>Services Included:</h4>
+                    <div id="includedServicesList" class="included-services-list">
+                        <!-- Services will be listed here -->
+                    </div>
+                    
+                    <h4>Next Steps:</h4>
+                    <ol class="next-steps">
+                        <li><strong>Run the command above in your terminal</strong></li>
+                        <li>Navigate to your project directory</li>
+                        <li>Review the docker-compose.yml file</li>
+                        <li>Deploy to your Balena fleet</li>
+                        <li>Configure your environment variables in Balena Dashboard</li>
+                    </ol>
+                </div>
+                
+                <div class="final-project-actions">
+                    <button id="deployToBalenaBtn" class="btn-primary">🚀 Deploy to Balena</button>
+                    <button id="createAnotherBtn" class="btn-secondary">Create Another Project</button>
+                    <button id="finishBtn" class="btn-secondary btn-small">Finish</button>
+                </div>
+            </section>
+
+            <!-- Step 6: Balena Deployment -->
+            <section id="deployment-step" class="step hidden">
+                <h2 id="deploymentStepHeader">Deploy to Balena</h2>
+                
+                <div class="deployment-setup">
+                    <div class="form-group">
+                        <label for="balenaAppName">Balena Application Name:</label>
+                        <input type="text" id="balenaAppName" placeholder="Enter your Balena application/fleet name" required>
+                        <small class="input-help">This should match your Balena application name (e.g., "my-solar-fleet")</small>
+                    </div>
+                    
+                    <div class="cli-requirements">
+                        <h3>Prerequisites:</h3>
+                        <div class="requirement-checklist">
+                            <div class="requirement-item">
+                                <input type="checkbox" id="req-balena-cli" class="requirement-checkbox">
+                                <label for="req-balena-cli">Balena CLI is installed</label>
+                                <small>Install with: <code>npm install -g balena-cli</code></small>
+                            </div>
+                            <div class="requirement-item">
+                                <input type="checkbox" id="req-balena-login" class="requirement-checkbox">
+                                <label for="req-balena-login">Logged into Balena CLI</label>
+                                <small>Run: <code>balena login</code></small>
+                            </div>
+                            <div class="requirement-item">
+                                <input type="checkbox" id="req-balena-app" class="requirement-checkbox">
+                                <label for="req-balena-app">Balena application exists</label>
+                                <small>Create in Balena Dashboard or CLI</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="deployment-actions">
+                        <button id="backToProjectBtn" class="btn-secondary">← Back to Project</button>
+                        <button id="startDeploymentBtn" class="btn-primary" disabled>Start Deployment</button>
+                    </div>
+                    
+                    <div id="deploymentProgress" class="deployment-progress hidden">
+                        <h3>Deploying to Balena...</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="deploymentProgressFill"></div>
+                            <span class="progress-text" id="deploymentProgressText">Initializing deployment...</span>
+                        </div>
+                        <div id="deploymentLog" class="deployment-log">
+                            <!-- Deployment messages will appear here -->
+                        </div>
+                        <div class="deployment-command">
+                            <h4>Manual Deployment Command:</h4>
+                            <div id="deploymentCommandDisplay" class="command-display">
+                                <!-- Command will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 7: Deployment Complete -->
+            <section id="deployment-complete-step" class="step hidden">
+                <h2 id="deploymentCompleteHeader">Deployment Complete!</h2>
+                
+                <div class="deployment-success">
+                    <div class="success-icon">🎉</div>
+                    <h3>Your project has been deployed to Balena!</h3>
+                    <p>Application <strong id="deployedAppName"></strong> is now building and will be available on your devices.</p>
+                </div>
+                
+                <div class="deployment-details">
+                    <h4>What happens next:</h4>
+                    <ol class="next-steps">
+                        <li>Balena will build your Docker containers</li>
+                        <li>The application will be pushed to your fleet</li>
+                        <li>Devices in the fleet will download and run the new release</li>
+                        <li>You can monitor progress in the Balena Dashboard</li>
+                    </ol>
+                    
+                    <h4>Useful Commands:</h4>
+                    <div class="useful-commands">
+                        <div class="command-item">
+                            <code>balena logs <span id="appNameInCommand"></span></code>
+                            <span>View application logs</span>
+                        </div>
+                        <div class="command-item">
+                            <code>balena devices</code>
+                            <span>List your devices</span>
+                        </div>
+                        <div class="command-item">
+                            <code>balena releases <span id="appNameInCommand2"></span></code>
+                            <span>View release history</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="final-deployment-actions">
+                    <button id="openDashboardBtn" class="btn-primary">📊 Open Balena Dashboard</button>
+                    <button id="deployAnotherBtn" class="btn-secondary">Deploy Another Project</button>
+                    <button id="finishAllBtn" class="btn-secondary btn-small">Finish</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

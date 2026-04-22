@@ -1,0 +1,35 @@
+{
+  "name": "enform-configurator-csv",
+  "version": "1.0.0",
+  "description": "CSV-based configurator for EnForm Balena projects with service selection",
+  "main": "create-project.js",
+  "scripts": {
+    "start": "node server.js",
+    "create-project": "node create-project.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "create-project": "./create-project.js"
+  },
+  "keywords": [
+    "balena",
+    "configurator",
+    "csv",
+    "docker",
+    "enform"
+  ],
+  "author": "EnForm Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/enform-configurator"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.1"
+  }
+}

@@ -1,0 +1,10 @@
+API_KEY,your_api_key_here
+DATABASE_URL,postgresql://user:password@localhost:5432/mydb
+DEBUG_MODE,true
+MAX_CONNECTIONS,100
+TIMEOUT_SECONDS,30
+ENVIRONMENT,production
+LOG_LEVEL,info
+CACHE_TTL,3600
+SMTP_HOST,smtp.example.com
+SMTP_PORT,587

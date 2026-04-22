@@ -1,0 +1,115 @@
+version: "2"
+
+services:
+#  video-server:
+#    build:
+#      dockerfile: app.Dockerfile
+#      context: .
+#    ports:
+#      - "80:80"
+#    restart: unless-stopped
+#    environment:
+#      - FLASK_ENV=production
+#    volumes:
+#        - "collect_data:/collect_data"
+#  operate-register-test:
+#    build:
+#      dockerfile: register_test.Dockerfile
+#      context: .
+#    devices:
+#      - "/dev/ttyUSB0:/dev/ttyUSB0"
+#    volumes:
+#      - "collect_data:/collect_data"
+#    privileged: true
+#    restart: no
+#  operate-config:
+#    build:
+#      dockerfile: config.Dockerfile
+#      context: .
+#    devices:
+#      - "/dev/ttyUSB0:/dev/ttyUSB0"
+#    volumes:
+#      - "collect_data:/collect_data"
+#    privileged: true
+#    restart: no
+  operate-heartbeat:
+    build:
+      dockerfile: heartbeat.Dockerfile
+      context: .
+    volumes:
+      - "collect_data:/collect_data"
+    privileged: true
+  operate-meter-collect:
+    build:
+      dockerfile: meter_collect.Dockerfile
+      context: .
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    volumes:
+      - "collect_data:/collect_data"
+    privileged: true
+#  operate-inverter-collect:
+#    build:
+#      dockerfile: inverter_collect.Dockerfile
+#      context: .
+#    devices:
+#      - "/dev/ttyUSB1:/dev/ttyUSB1"
+#    volumes:
+#      - "collect_data:/collect_data"
+#    privileged: true
+#  operate-weather-collect:
+#    build:
+#      dockerfile: weather_collect.Dockerfile
+#      context: .
+#    devices:
+#      - "/dev/ttyUSB0:/dev/ttyUSB0"
+#      - "/dev/ttyUSB1:/dev/ttyUSB1"
+#    volumes:
+#      - "collect_data:/collect_data"
+#    privileged: true
+#  operate-windspeed-collect:
+#    build:
+#      dockerfile: windspeed_collect.Dockerfile
+#      context: .
+#    devices:
+#      - "/dev/ttyUSB0:/dev/ttyUSB0"
+#    volumes:
+#      - "collect_data:/collect_data"
+#    privileged: true
+  operate-combine:
+    build:
+      dockerfile: combine.Dockerfile
+      context: .
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    volumes:
+      - "collect_data:/collect_data"
+    privileged: true
+    environment:
+        DB_HOST: postgres
+        DB_NAME: jsondata
+        DB_USER: dbuser
+        DB_PASSWORD: dbpass
+        DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_started
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: jsondata
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d jsondata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  postgres_data:
+  collect_data:
