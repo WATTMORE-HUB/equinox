@@ -273,6 +273,33 @@ Check logs with:
 sudo journalctl -u equinox-poller -f
 ```
 
+## Step 7.5: Updating EC2 Code and Dependencies
+
+Whenever you push updates to GitHub, the EC2 instance needs to pull them and reinstall dependencies:
+
+```bash
+# SSH into EC2
+ssh -i /path/to/key.pem ec2-user@<ec2-public-ip>
+
+# Pull latest code
+cd ~/equinox
+git pull origin main
+
+# Reinstall project dependencies
+npm install
+
+# Reinstall ec2 script dependencies
+cd ec2
+npm install
+cd ..
+
+# Restart the poller service to pick up changes
+sudo systemctl restart equinox-poller
+sudo systemctl status equinox-poller
+```
+
+Always verify the poller is running after pulling new code.
+
 ## Step 8: Update CM4 Configuration
 
 Add these environment variables to your CM4 deployment (in docker-compose.yml):

@@ -11,16 +11,9 @@ echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
 
-# Check if running on EC2
-if [ ! -d ~/equinox ]; then
-  echo "Error: ~/equinox directory not found"
-  echo "Please clone the repository first: git clone <repo-url> ~/equinox"
-  exit 1
-fi
-
 echo "Step 1: Pulling latest code from GitHub..."
-cd ~/equinox
-git pull origin main
+rm -r ~/equinox
+git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
 echo "✓ Code updated"
 echo ""
 
