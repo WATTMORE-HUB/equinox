@@ -65,6 +65,9 @@ async function deployViaCloud(options) {
     
     const response = await axios.post(CLOUD_API_URL, requestBody);
     
+    console.log('[DEPLOYER] Lambda response status:', response.status);
+    console.log('[DEPLOYER] Lambda response data:', JSON.stringify(response.data, null, 2));
+    
     const commandId = response.data.commandId || response.data.taskId;
     console.log(`✓ Cloud deployment started: ${commandId}`);
     
@@ -76,7 +79,12 @@ async function deployViaCloud(options) {
       status: 'running'
     };
   } catch (err) {
-    console.error('Cloud deployment error:', err.message);
+    console.error('[DEPLOYER] Cloud deployment error:', err.message);
+    if (err.response) {
+      console.error('[DEPLOYER] API response status:', err.response.status);
+      console.error('[DEPLOYER] API response data:', JSON.stringify(err.response.data, null, 2));
+    }
+    console.error('[DEPLOYER] Full error:', err);
     return {
       success: false,
       error: err.message
