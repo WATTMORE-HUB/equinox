@@ -217,21 +217,30 @@
         reader.onload = (e) => {
           try {
             const csv = e.target.result;
+            console.log('[DEBUG] Raw CSV content:', csv);
             const lines = csv.trim().split('\n');
+            console.log('[DEBUG] CSV lines:', lines);
             const variables = [];
             
             // Parse CSV format: index|key,value
             for (const line of lines) {
               if (!line.trim()) continue;
+              console.log('[DEBUG] Parsing line:', line);
               const match = line.match(/^\d+\|(.+),(.+)$/);
               if (match) {
-                variables.push({
+                const variable = {
                   name: match[1].trim(),
                   value: match[2].trim()
-                });
+                };
+                console.log('[DEBUG] Matched variable:', variable);
+                variables.push(variable);
+              } else {
+                console.log('[DEBUG] Line did not match pattern:', line);
               }
             }
             
+            console.log('[DEBUG] Total variables parsed:', variables.length);
+            console.log('[DEBUG] Variables:', JSON.stringify(variables));
             resolve(variables);
           } catch (err) {
             reject(new Error(`Failed to parse CSV: ${err.message}`));
