@@ -46,6 +46,9 @@ async function enqueueToS3(params) {
     const deploymentId = params.deploymentId;
     const key = `deployments/pending/${deploymentId}.json`;
     
+    console.log(`[LAMBDA] Received params:`, JSON.stringify(params, null, 2));
+    console.log(`[LAMBDA] fleetName value: ${params.fleetName}`);
+    
     const deploymentRequest = {
       deploymentId,
       balenaToken: params.balenaToken,
@@ -57,6 +60,7 @@ async function enqueueToS3(params) {
     };
     
     console.log(`Enqueueing deployment ${deploymentId} to S3 bucket ${S3_BUCKET}`);
+    console.log(`[LAMBDA] S3 deploymentRequest fleetName: ${deploymentRequest.fleetName}`);
     
     const s3Params = {
       Bucket: S3_BUCKET,

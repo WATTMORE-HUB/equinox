@@ -12,12 +12,6 @@ echo "Equinox EC2 Update Script"
 echo "=========================================="
 echo ""
 
-# Step 1: Pull latest code
-echo "Step 1: Pulling latest code..."
-sudo rm -r ~/equinox
-git clone https://github.com/WATTMORE-HUB/equinox.git ~/equinox
-echo "✓ Code updated"
-echo ""
 
 # Step 2: Install dependencies
 echo "Step 2: Installing main project dependencies..."

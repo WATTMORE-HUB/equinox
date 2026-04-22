@@ -70,10 +70,12 @@ async function getDeploymentRequest(s3Key) {
 }
 
 async function executeDeployment(deploymentRequest) {
+  await log(`[POLLER] Full deploymentRequest: ${JSON.stringify(deploymentRequest)}`);
   const { deploymentId, balenaToken, deviceId, fleetName, csvData } = deploymentRequest;
 
   try {
     await log(`Executing deployment ${deploymentId} for device ${deviceId}`);
+    await log(`[POLLER] fleetName extracted from request: ${fleetName}`);
     await log(`Fleet Name: ${fleetName}`);
 
     // Run the runner script with environment variables
