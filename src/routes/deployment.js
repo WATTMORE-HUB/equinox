@@ -145,9 +145,9 @@ router.get('/device-info', async (req, res) => {
 
     console.log(`[DEVICE-INFO] Looking up device with hostname: ${deviceHostname}`);
 
-    // Query Balena API for devices
+    // Query Balena API for devices with expanded app info
     const axios = require('axios');
-    const balenaApiUrl = 'https://api.balena-cloud.com/v7/device';
+    const balenaApiUrl = 'https://api.balena-cloud.com/v7/device?$expand=app';
     const response = await axios.get(balenaApiUrl, {
       headers: {
         'Content-Type': 'application/json',
@@ -167,13 +167,16 @@ router.get('/device-info', async (req, res) => {
       return res.status(404).json({ error: `Device not found in Balena API (hostname: ${deviceHostname})` });
     }
 
-    console.log(`[DEVICE-INFO] Found device: ${device.uuid} (${device.device_name})`);
+    // Extract fleet name from app relationship
+    const appName = device.app?.[0]?.app_name || device.belongs_to__application?.[0]?.app_name || '';
+    
+    console.log(`[DEVICE-INFO] Found device: ${device.uuid} (${device.device_name}) in fleet: ${appName}`);
 
     res.json({
       deviceId: device.id,  // Internal Balena device ID
       deviceUuid: device.uuid,  // Full UUID
       deviceName: device.device_name,
-      fleetName,
+      fleetName: appName,  // Fleet name from Balena API
       environment: process.env.NODE_ENV || 'unknown'
     });
   } catch (err) {

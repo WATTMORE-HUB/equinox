@@ -341,14 +341,21 @@
         const deviceId = deviceInfo.deviceId;  // Internal Balena device ID for API calls
         const deviceUuid = deviceInfo.deviceUuid;  // Full UUID
         const deviceName = deviceInfo.deviceName;
+        const discoveredFleetName = deviceInfo.fleetName;
         
         if (!deviceId || !deviceUuid) {
           throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
         }
         
-        console.log(`Device identified: ${deviceName} (${deviceUuid})`);
-        deploySummaryEl.textContent = `Device identified: ${deviceName}`;
+        console.log(`Device identified: ${deviceName} in fleet: ${discoveredFleetName}`);
+        deploySummaryEl.textContent = `Device identified: ${deviceName} in ${discoveredFleetName}`;
         await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Use discovered fleet name if available, otherwise fall back to detected fleet name
+        const finalFleetName = discoveredFleetName || fleetName;
+        if (!finalFleetName) {
+          throw new Error('Unable to determine fleet name from Balena API');
+        }
 
         // Generate service CSV from deployment services
         const serviceCsvContent = services.map(s => `${s},${s}`).join('\n');
@@ -369,7 +376,7 @@
         // Prepare deployment request (token is handled securely on server)
         const formData = new FormData();
         formData.append('deviceId', deviceId);
-        formData.append('fleetName', fleetName);
+        formData.append('fleetName', finalFleetName);
         formData.append('csvFile', servicesCsv, 'services.csv');
         // Note: balenaToken is NOT sent from browser - it's retrieved securely on server via balenaTokenManager
 
