@@ -1,5 +1,4 @@
 const axios = require('axios');
-const cheerio = require('cheerio');
 
 class WattmoreClient {
   constructor() {
@@ -107,27 +106,21 @@ class WattmoreClient {
   }
 
   /**
-   * Parse project data from Wattmore response
-   * Handles both JSON API responses and HTML page parsing
+   * Parse project data from Wattmore response (JSON API format)
    */
   parseProjectPage(data) {
-    // If data is already JSON (from API)
+    // Data should already be a parsed object from axios
     if (typeof data === 'object' && data !== null) {
       return this.parseJSONResponse(data);
     }
 
-    // If data is HTML string, parse it
-    if (typeof data === 'string' && data.includes('<!DOCTYPE') || data.includes('<html')) {
-      return this.parseHTMLResponse(data);
-    }
-
-    // Assume it's JSON string
+    // If it's a string, try to parse as JSON
     try {
       const parsed = typeof data === 'string' ? JSON.parse(data) : data;
       return this.parseJSONResponse(parsed);
     } catch (e) {
-      console.warn('[WattmoreClient] Failed to parse as JSON, attempting HTML parsing');
-      return this.parseHTMLResponse(data);
+      console.error('[WattmoreClient] Failed to parse project data:', e.message);
+      return null;
     }
   }
 
@@ -205,65 +198,6 @@ class WattmoreClient {
     }
   }
 
-  /**
-   * Parse HTML response from Wattmore configure page
-   * Uses cheerio for DOM parsing
-   */
-  parseHTMLResponse(htmlData) {
-    try {
-      const $ = cheerio.load(htmlData);
-      
-      // Extract project data from HTML
-      // This assumes a specific HTML structure - adjust selectors based on actual Wattmore page
-      const project = {
-        name: $('[data-project-name]')?.text() || $('h1')?.text() || '',
-        fleetName: $('[data-fleet-name]')?.text() || $('[data-project-name]')?.text() || '',
-        hardware: {
-          meters: this.parseHardwareList($, '[data-hardware-meters]'),
-          inverters: this.parseHardwareList($, '[data-hardware-inverters]'),
-          trackers: this.parseHardwareList($, '[data-hardware-trackers]'),
-          weatherStations: this.parseHardwareList($, '[data-hardware-weather]'),
-          cameras: this.parseHardwareList($, '[data-hardware-cameras]'),
-          reclosers: this.parseHardwareList($, '[data-hardware-reclosers]')
-        },
-        configuration: {
-          timezone: $('[data-timezone]')?.attr('data-timezone') || 'UTC',
-          voltage: parseInt($('[data-voltage]')?.attr('data-voltage')) || 480,
-          ctCount: parseInt($('[data-ct-count]')?.attr('data-ct-count')) || 0,
-          siteId: $('[data-site-id]')?.attr('data-site-id') || '',
-          edgeId: $('[data-edge-id]')?.attr('data-edge-id') || ''
-        },
-        uuids: {
-          meterUuid: $('[data-meter-uuid]')?.attr('data-meter-uuid') || '',
-          inverterUuid: $('[data-inverter-uuid]')?.attr('data-inverter-uuid') || '',
-          siteUuid: $('[data-site-uuid]')?.attr('data-site-uuid') || ''
-        }
-      };
-
-      return project;
-    } catch (error) {
-      console.error('[WattmoreClient] Error parsing HTML response:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Parse hardware list from HTML using cheerio
-   */
-  parseHardwareList($, selector) {
-    const hardware = [];
-    $(selector + ' [data-hardware-item]').each((i, elem) => {
-      const item = {
-        model: $(elem).attr('data-model') || $(elem).text(),
-        uuid: $(elem).attr('data-uuid') || '',
-        serialNumber: $(elem).attr('data-serial') || ''
-      };
-      if (item.model) {
-        hardware.push(item);
-      }
-    });
-    return hardware;
-  }
 
   /**
    * Get all available projects
