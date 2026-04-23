@@ -330,17 +330,25 @@
         
         deploySummaryEl.textContent = `Initializing deployment for ${fleetName}...`;
 
-        // Get device ID from server
+        // Get device ID from server (queries Balena API)
+        deploySummaryEl.textContent = `Identifying this device...`;
         const deviceInfoResponse = await fetch(`${API_BASE}/deployment/device-info`);
         if (!deviceInfoResponse.ok) {
-          throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
+          const errData = await deviceInfoResponse.json();
+          throw new Error(errData.error || 'Unable to determine device ID. This dashboard must run on a Balena device.');
         }
         const deviceInfo = await deviceInfoResponse.json();
-        const deviceId = deviceInfo.deviceId;
+        const deviceId = deviceInfo.deviceId;  // Internal Balena device ID for API calls
+        const deviceUuid = deviceInfo.deviceUuid;  // Full UUID
+        const deviceName = deviceInfo.deviceName;
         
-        if (!deviceId) {
+        if (!deviceId || !deviceUuid) {
           throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
         }
+        
+        console.log(`Device identified: ${deviceName} (${deviceUuid})`);
+        deploySummaryEl.textContent = `Device identified: ${deviceName}`;
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         // Generate service CSV from deployment services
         const serviceCsvContent = services.map(s => `${s},${s}`).join('\n');

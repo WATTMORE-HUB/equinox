@@ -125,24 +125,60 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
 });
 
 // GET /api/deployment/device-info
-// Get device information (device ID, etc.)
-router.get('/device-info', (req, res) => {
+// Get device information by querying Balena API
+// This finds the device UUID for the current device running this service
+router.get('/device-info', async (req, res) => {
   try {
-    const deviceId = process.env.BALENA_DEVICE_UUID || process.env.BALENA_DEVICE_NAME_AT_INIT || '';
-    const fleetName = process.env.BALENA_APP_NAME || '';
-    
-    if (!deviceId) {
-      return res.status(503).json({ error: 'Device not running on Balena or BALENA_DEVICE_UUID not set' });
+    // Get Balena token
+    const balenaToken = balenaTokenManager.getToken();
+    if (!balenaToken) {
+      return res.status(503).json({ error: 'Balena API token not configured' });
     }
 
+    // Get device hostname from environment (set by Balena)
+    const deviceHostname = process.env.BALENA_DEVICE_NAME_AT_INIT || process.env.HOSTNAME || '';
+    const fleetName = process.env.BALENA_APP_NAME || '';
+
+    if (!deviceHostname) {
+      return res.status(503).json({ error: 'Cannot determine device hostname. Must be running on Balena.' });
+    }
+
+    console.log(`[DEVICE-INFO] Looking up device with hostname: ${deviceHostname}`);
+
+    // Query Balena API for devices
+    const axios = require('axios');
+    const balenaApiUrl = 'https://api.balena-cloud.com/v7/device';
+    const response = await axios.get(balenaApiUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${balenaToken}`
+      }
+    });
+
+    const devices = response.data.d || [];
+    console.log(`[DEVICE-INFO] Found ${devices.length} devices in Balena API`);
+
+    // Find device by hostname
+    const device = devices.find(d => d.device_name === deviceHostname || d.uuid === deviceHostname);
+
+    if (!device) {
+      console.error(`[DEVICE-INFO] Device not found with hostname: ${deviceHostname}`);
+      console.log(`[DEVICE-INFO] Available devices: ${devices.map(d => d.device_name || d.uuid).join(', ')}`);
+      return res.status(404).json({ error: `Device not found in Balena API (hostname: ${deviceHostname})` });
+    }
+
+    console.log(`[DEVICE-INFO] Found device: ${device.uuid} (${device.device_name})`);
+
     res.json({
-      deviceId,
+      deviceId: device.id,  // Internal Balena device ID
+      deviceUuid: device.uuid,  // Full UUID
+      deviceName: device.device_name,
       fleetName,
       environment: process.env.NODE_ENV || 'unknown'
     });
   } catch (err) {
-    console.error('Error fetching device info:', err);
-    res.status(500).json({ error: err.message });
+    console.error('[DEVICE-INFO] Error fetching device info:', err.message);
+    res.status(500).json({ error: `Failed to fetch device info: ${err.message}` });
   }
 });
 
