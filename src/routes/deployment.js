@@ -5,9 +5,43 @@ const { Readable } = require('stream');
 
 const stateManager = require('../stateManager');
 const { deployServices } = require('../services/deployer');
+const hardwareConfigLoader = require('../services/hardwareConfigLoader');
+const wattmoreClient = require('../services/wattmoreClient');
+const configGenerator = require('../services/configGenerator');
+const configGenerator = require('../services/configGenerator');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// POST /api/deployment/lookup
+// Body: { projectName }
+router.post('/lookup', async (req, res) => {
+  try {
+    const { projectName } = req.body;
+
+    if (!projectName) {
+      return res.status(400).json({ error: 'projectName is required' });
+    }
+
+    await hardwareConfigLoader.load();
+    const projectData = await wattmoreClient.getProjectByName(projectName);
+    const deploymentConfig = await configGenerator.generateConfig(projectData);
+
+    res.json({
+      success: true,
+      project: {
+        name: projectData.name,
+        fleetName: projectData.fleetName,
+        systemType: projectData.systemType,
+      },
+      hardwareDetected: projectData.hardware,
+      deployment: deploymentConfig,
+    });
+  } catch (err) {
+    console.error('Lookup error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/deployment/deploy
 // Body: { balenaToken, deviceId, fleetName, csvFile }

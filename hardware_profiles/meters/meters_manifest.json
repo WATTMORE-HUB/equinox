@@ -1,0 +1,7 @@
+{
+  "elkor_wattson": {
+    "file": "elkor_wattson.csv",
+    "description": "Elkor Wattson meter family (covers Mk. 2, Mk II, and all variations)",
+    "models": ["Elkor Wattson Mk. 2", "Elkor Wattson Mk II", "Elkor Wattson"]
+  }
+}
