@@ -322,10 +322,73 @@
         return;
       }
 
-      const services = detectedDeployment.deployment?.services || [];
-      const fleetName = detectedDeployment.deployment?.fleetName || detectedDeployment.project?.name || 'Unknown';
-      deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}.`;
-      setView('deployingView');
+      try {
+        setView('deployingView');
+        const services = detectedDeployment.deployment?.services || [];
+        const fleetName = detectedDeployment.deployment?.fleetName || detectedDeployment.project?.name || 'Unknown';
+        const environmentVariables = detectedDeployment.deployment?.environmentVariables || {};
+        
+        deploySummaryEl.textContent = `Initializing deployment for ${fleetName}...`;
+
+        // Get device ID from server
+        const deviceInfoResponse = await fetch(`${API_BASE}/deployment/device-info`);
+        if (!deviceInfoResponse.ok) {
+          throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
+        }
+        const deviceInfo = await deviceInfoResponse.json();
+        const deviceId = deviceInfo.deviceId;
+        
+        if (!deviceId) {
+          throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
+        }
+
+        // Generate service CSV from deployment services
+        const serviceCsvContent = services.map(s => `${s},${s}`).join('\n');
+        const servicesCsv = new Blob(
+          [`name,service\n${serviceCsvContent}`],
+          { type: 'text/csv' }
+        );
+
+        // Generate environment variables CSV
+        const envCsvLines = Object.entries(environmentVariables)
+          .map(([key, value]) => `${key},${value}`)
+          .join('\n');
+        const envCsv = new Blob(
+          [`name,value\n${envCsvLines}`],
+          { type: 'text/csv' }
+        );
+
+        // Prepare deployment request
+        const formData = new FormData();
+        formData.append('deviceId', deviceId);
+        formData.append('fleetName', fleetName);
+        formData.append('csvFile', servicesCsv, 'services.csv');
+
+        deploySummaryEl.textContent = `Sending deployment to cloud infrastructure...`;
+
+        const deployResponse = await fetch(`${API_BASE}/deployment/deploy`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const deployText = await deployResponse.text();
+        let deployData = {};
+
+        try {
+          deployData = JSON.parse(deployText);
+        } catch (e) {
+          throw new Error(`Invalid response from deployment API: ${deployText}`);
+        }
+
+        if (!deployResponse.ok) {
+          throw new Error(deployData.error || `Deployment failed (${deployResponse.status})`);
+        }
+
+        deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}. Deployment ID: ${deployData.deploymentId}`;
+      } catch (error) {
+        errorTextEl.textContent = `Deployment failed: ${error.message}`;
+        setView('errorView');
+      }
     }
 
     async function checkServerStatus() {

@@ -114,6 +114,28 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
   }
 });
 
+// GET /api/deployment/device-info
+// Get device information (device ID, etc.)
+router.get('/device-info', (req, res) => {
+  try {
+    const deviceId = process.env.BALENA_DEVICE_UUID || process.env.BALENA_DEVICE_NAME_AT_INIT || '';
+    const fleetName = process.env.BALENA_APP_NAME || '';
+    
+    if (!deviceId) {
+      return res.status(503).json({ error: 'Device not running on Balena or BALENA_DEVICE_UUID not set' });
+    }
+
+    res.json({
+      deviceId,
+      fleetName,
+      environment: process.env.NODE_ENV || 'unknown'
+    });
+  } catch (err) {
+    console.error('Error fetching device info:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/deployment/:deploymentId
 // Get deployment details
 router.get('/:deploymentId', (req, res) => {
