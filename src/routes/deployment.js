@@ -8,6 +8,7 @@ const { deployServices } = require('../services/deployer');
 const hardwareConfigLoader = require('../services/hardwareConfigLoader');
 const wattmoreClient = require('../services/wattmoreClient');
 const configGenerator = require('../services/configGenerator');
+const balenaTokenManager = require('../services/balenaTokenManager');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -43,22 +44,31 @@ router.post('/lookup', async (req, res) => {
 });
 
 // POST /api/deployment/deploy
-// Body: { balenaToken, deviceId, fleetName, csvFile }
+// Body: { deviceId, fleetName, csvFile }
+// Uses server-side Balena token from balenaTokenManager for security
 router.post('/deploy', upload.single('csvFile'), async (req, res) => {
   try {
     console.log('[DEPLOYMENT ROUTE] req.body:', JSON.stringify(req.body, null, 2));
     console.log('[DEPLOYMENT ROUTE] Extracted fleetName:', req.body.fleetName);
     
-    const { balenaToken, deviceId, fleetName } = req.body;
+    const { deviceId, fleetName } = req.body;
     const csvFile = req.file;
 
     console.log('[DEPLOYMENT ROUTE] After destructuring - fleetName:', fleetName);
 
-    if (!balenaToken || !deviceId || !fleetName) {
-      return res.status(400).json({ error: 'balenaToken, deviceId, and fleetName are required' });
+    if (!deviceId || !fleetName) {
+      return res.status(400).json({ error: 'deviceId and fleetName are required' });
+    }
+
+    // Get Balena token from secure server-side storage
+    const balenaToken = balenaTokenManager.getToken();
+    if (!balenaToken) {
+      console.error('[DEPLOYMENT ROUTE] Balena token not available');
+      return res.status(503).json({ error: 'Balena token not configured on server. Set BALENA_API_TOKEN environment variable.' });
     }
 
     if (!csvFile) {
+      console.error('[DEPLOYMENT ROUTE] No CSV file provided');
       return res.status(400).json({ error: 'CSV file is required' });
     }
 

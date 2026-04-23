@@ -358,11 +358,12 @@
           { type: 'text/csv' }
         );
 
-        // Prepare deployment request
+        // Prepare deployment request (token is handled securely on server)
         const formData = new FormData();
         formData.append('deviceId', deviceId);
         formData.append('fleetName', fleetName);
         formData.append('csvFile', servicesCsv, 'services.csv');
+        // Note: balenaToken is NOT sent from browser - it's retrieved securely on server via balenaTokenManager
 
         deploySummaryEl.textContent = `Sending deployment to cloud infrastructure...`;
 
