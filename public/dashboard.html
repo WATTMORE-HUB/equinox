@@ -3,469 +3,346 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EnFORM Deployment Manager</title>
+  <title>Equinox Deployment</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+
+    body {
+      background:
+        radial-gradient(circle at 50% 18%, rgba(82, 140, 255, 0.18), transparent 24%),
+        radial-gradient(circle at 50% 28%, rgba(112, 178, 255, 0.08), transparent 34%),
+        linear-gradient(180deg, #050816 0%, #070b14 40%, #03050a 100%);
+      overflow: hidden;
+    }
+
+    @keyframes pulse-core {
+      0%, 100% {
+        transform: scale(0.92);
+        opacity: 0.72;
+        filter: blur(0px);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        filter: blur(1px);
+      }
+    }
+
+    @keyframes pulse-halo {
+      0%, 100% {
+        transform: scale(0.88);
+        opacity: 0.25;
+      }
+      50% {
+        transform: scale(1.18);
+        opacity: 0.55;
+      }
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fade-in 0.5s ease-out;
+    }
+
+    .light-shell {
+      position: relative;
+      width: min(44vw, 26rem);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: drift 4s ease-in-out infinite;
+    }
+
+    .light-halo {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(89, 161, 255, 0.36) 0%, rgba(89, 161, 255, 0.14) 32%, rgba(89, 161, 255, 0) 70%);
+      animation: pulse-halo 3s ease-in-out infinite;
+      filter: blur(10px);
+    }
+
+    .light-core {
+      width: 34%;
+      aspect-ratio: 1;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 30% 30%, #d7eeff 0%, #8fd1ff 18%, #499eff 48%, #155dfc 72%, rgba(21, 93, 252, 0.08) 100%);
+      box-shadow:
+        0 0 30px rgba(115, 184, 255, 0.85),
+        0 0 90px rgba(59, 130, 246, 0.45),
+        0 0 180px rgba(59, 130, 246, 0.2);
+      animation: pulse-core 2.2s ease-in-out infinite;
+    }
+
+    .light-grid {
+      position: absolute;
+      inset: 18%;
+      border-radius: 9999px;
+      border: 1px solid rgba(158, 198, 255, 0.08);
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.03);
+    }
+
+    .glass-panel {
+      background: rgba(7, 11, 20, 0.62);
+      border: 1px solid rgba(153, 183, 255, 0.12);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+    }
+
+    .ghost-button {
+      border: 1px solid rgba(125, 174, 255, 0.28);
+      background: linear-gradient(180deg, rgba(60, 130, 246, 0.28), rgba(37, 99, 235, 0.18));
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
+      transition: all 0.3s ease;
+    }
+
+    .ghost-button:hover {
+      background: linear-gradient(180deg, rgba(72, 145, 255, 0.38), rgba(37, 99, 235, 0.26));
+      border-color: rgba(125, 174, 255, 0.48);
+    }
+
+    .secondary-button {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .secondary-button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-  <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
-    <!-- Navigation Bar -->
-    <nav class="border-b border-gray-700 bg-gray-900/50 backdrop-blur-lg sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+<body class="text-white min-h-screen">
+  <main class="min-h-screen flex flex-col">
+    <section class="flex-1 flex flex-col justify-between px-6 py-8 md:px-10 md:py-10">
+      <div class="flex items-center justify-between text-sm text-slate-400">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">⚡</div>
-          <h1 class="text-xl font-bold tracking-tight">EnFORM</h1>
+          <div class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200">✦</div>
+          <div>
+            <p class="font-semibold tracking-[0.2em] uppercase text-slate-300">Equinox</p>
+            <p class="text-xs text-slate-500">Intelligent asset deployment</p>
+          </div>
         </div>
-        <div class="text-sm text-gray-400">Service Deployment Manager</div>
+        <div id="serverStatusText" class="text-xs uppercase tracking-[0.22em] text-slate-500">Connected</div>
       </div>
-    </nav>
 
-    <div class="max-w-7xl mx-auto px-6 py-12">
-      <!-- Header Section with Status -->
-      <div class="flex items-start justify-between mb-16">
-        <div>
-          <h2 class="text-5xl font-bold mb-3 tracking-tight">Equinox: Intelligent Asset Deployment</h2>
-          <p class="text-gray-400 text-lg">Configure, validate, and monitor your service deployments from a unified dashboard</p>
+      <div class="flex-1 flex items-center justify-center">
+        <div class="light-shell" aria-hidden="true">
+          <div class="light-halo"></div>
+          <div class="light-grid"></div>
+          <div id="lightCore" class="light-core"></div>
         </div>
-        <!-- Device Status Indicator (Top Right) -->
-        <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg w-64">
-          <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">EnFORM Device Status</p>
-          <div class="flex items-center gap-3">
-            <div id="serverStatus" class="text-4xl">🔄</div>
-            <div>
-              <p class="text-lg font-bold">Checking...</p>
-              <p class="text-sm text-gray-400" id="serverStatusText">Connected</p>
+      </div>
+
+      <div class="w-full flex justify-center pb-4 md:pb-8">
+        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl">
+          <div id="locatingView" class="fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Locating system</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Give me a second,<br>
+              I'm getting my bearings.
+            </h1>
+            <p id="subStatus" class="mt-5 text-base md:text-lg text-slate-400">
+              Reading device context and matching it to the right deployment.
+            </p>
+          </div>
+
+          <div id="confirmView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Candidate match</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Got it. Am I here?
+            </h1>
+            <div class="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-6">
+              <p class="text-sm uppercase tracking-[0.22em] text-slate-500 mb-3">Project</p>
+              <p id="projectName" class="text-3xl md:text-5xl font-semibold tracking-tight text-white">—</p>
+              <div id="hardwareSummary" class="mt-5 text-sm md:text-base text-slate-400"></div>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row gap-3">
+              <button id="confirmBtn" class="ghost-button rounded-2xl px-8 py-4 text-lg font-semibold transition">
+                Confirm
+              </button>
+              <button id="retryBtn" class="secondary-button rounded-2xl px-8 py-4 text-lg font-medium text-slate-300 transition">
+                Try again
+              </button>
+            </div>
+          </div>
+
+          <div id="deployingView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Deployment in progress</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Thanks. I'll handle the rest.
+            </h1>
+            <p class="mt-5 text-base md:text-lg text-slate-400">
+              Your deployment has been prepared and queued.
+            </p>
+            <div id="deploySummary" class="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-5 text-sm md:text-base text-slate-400"></div>
+          </div>
+
+          <div id="errorView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-rose-400/70 mb-5">Needs attention</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              I couldn't place this device yet.
+            </h1>
+            <p id="errorText" class="mt-5 text-base md:text-lg text-slate-400"></p>
+            <div class="mt-8">
+              <button id="errorRetryBtn" class="ghost-button rounded-2xl px-8 py-4 text-lg font-semibold transition">
+                Try again
+              </button>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Main Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        <!-- Deployment Form Card -->
-        <div class="lg:col-span-1 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 shadow-xl">
-          <h3 class="text-2xl font-bold mb-6">Deploy Services</h3>
-          <form id="deploymentForm" class="space-y-5">
-            <div>
-              <label for="balenaToken" class="block text-sm font-semibold text-gray-200 mb-2">Balena Auth Token</label>
-              <input 
-                type="text" 
-                id="balenaToken" 
-                placeholder="Paste your API token"
-                required
-                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              >
-            </div>
-
-            <div>
-              <label for="deviceId" class="block text-sm font-semibold text-gray-200 mb-2">Device ID (Internal Balena UUID)</label>
-              <input 
-                type="text" 
-                id="deviceId" 
-                placeholder="e.g., 13380183"
-                required
-                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              >
-            </div>
-
-            <div>
-              <label for="fleetName" class="block text-sm font-semibold text-gray-200 mb-2">Fleet Name</label>
-              <input 
-                type="text" 
-                id="fleetName" 
-                placeholder="e.g., OfficeLab"
-                required
-                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              >
-            </div>
-
-            <div>
-              <label for="configCsvFile" class="block text-sm font-semibold text-gray-200 mb-2">Configuration CSV</label>
-              <div class="relative">
-                <input type="file" id="configCsvFile" accept=".csv" required class="hidden">
-                <label for="configCsvFile" class="block px-4 py-6 bg-gray-700/30 border-2 border-dashed border-gray-600 rounded-lg text-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/50 transition">
-                  <div class="text-gray-300">
-                    <span class="text-2xl">📋</span>
-                    <p class="mt-2 font-medium">Click to upload or drag</p>
-                    <p class="text-sm text-gray-400">Config CSV (environment variables)</p>
-                  </div>
-                </label>
-                <div class="file-name mt-2 text-sm text-blue-400" id="configFileName"></div>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-gray-200 mb-3">Select Services</label>
-              <div class="space-y-2">
-                <div class="flex items-center">
-                  <input type="checkbox" id="service-camera" class="service-checkbox w-4 h-4 rounded" value="camera">
-                  <label for="service-camera" class="ml-2 text-sm text-gray-300">📸 Camera Control</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" id="service-meter" class="service-checkbox w-4 h-4 rounded" value="meter">
-                  <label for="service-meter" class="ml-2 text-sm text-gray-300">⚡ Meter Collection</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" id="service-inverter" class="service-checkbox w-4 h-4 rounded" value="inverter">
-                  <label for="service-inverter" class="ml-2 text-sm text-gray-300">🔋 Inverter Collection</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" id="service-weather" class="service-checkbox w-4 h-4 rounded" value="weather">
-                  <label for="service-weather" class="ml-2 text-sm text-gray-300">🌤️ Weather Collection</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" id="service-windspeed" class="service-checkbox w-4 h-4 rounded" value="windspeed">
-                  <label for="service-windspeed" class="ml-2 text-sm text-gray-300">💨 Windspeed Collection</label>
-                </div>
-              </div>
-              <p class="text-xs text-gray-500 mt-2">Combine and Heartbeat services are always included</p>
-            </div>
-
-            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg transition shadow-lg hover:shadow-xl mt-6">
-              Deploy Services
-            </button>
-            <div class="message mt-4" id="message"></div>
-          </form>
-        </div>
-
-        <!-- Deployment Status (Full Width) -->
-        <div class="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 shadow-xl">
-          <h3 class="text-2xl font-bold mb-6">Deployment Status</h3>
-          <div class="space-y-2 max-h-96 overflow-y-auto text-xs text-gray-300 font-mono" id="progressLog">
-            <!-- Progress messages will appear here -->
-            <p class="text-gray-500">Deployments will appear here...</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Status Cards -->
-      <div class="mb-16">
-        <h3 class="text-2xl font-bold mb-6">Deployment History</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- State File -->
-          <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg">
-            <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">State File</p>
-            <p id="statePath" class="text-sm text-gray-300 font-mono">/collect_data/state.json</p>
-            <p class="text-sm text-gray-500 mt-2">Persistent storage</p>
-          </div>
-
-          <!-- Total Deployments -->
-          <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg">
-            <p class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Total Deployments</p>
-            <p class="text-4xl font-bold text-blue-400" id="deploymentCount">-</p>
-            <p class="text-sm text-gray-500 mt-2">All time</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script>
     const API_BASE = '/api';
-    const REFRESH_INTERVAL = 5000;
+    const GEOLOOKUP_FALLBACK_PROJECT = 'OfficeLab';
 
-    // File input handling
-    document.getElementById('configCsvFile').addEventListener('change', (e) => {
-      const fileName = e.target.files[0]?.name || '';
-      document.getElementById('configFileName').textContent = fileName ? `✓ ${fileName}` : '';
-    });
+    const locatingView = document.getElementById('locatingView');
+    const confirmView = document.getElementById('confirmView');
+    const deployingView = document.getElementById('deployingView');
+    const errorView = document.getElementById('errorView');
+    const projectNameEl = document.getElementById('projectName');
+    const hardwareSummaryEl = document.getElementById('hardwareSummary');
+    const deploySummaryEl = document.getElementById('deploySummary');
+    const subStatusEl = document.getElementById('subStatus');
+    const errorTextEl = document.getElementById('errorText');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const errorRetryBtn = document.getElementById('errorRetryBtn');
+    const serverStatusText = document.getElementById('serverStatusText');
 
-    // Log progress messages
-    function logProgress(message, level = 'info') {
-      const progressLog = document.getElementById('progressLog');
-      const timestamp = new Date().toLocaleTimeString();
-      const levelColor = level === 'success' ? 'text-green-400' : level === 'error' ? 'text-red-400' : 'text-gray-300';
-      const entry = document.createElement('div');
-      entry.className = `${levelColor} font-mono`;
-      entry.textContent = `[${timestamp}] ${message}`;
-      progressLog.appendChild(entry);
-      progressLog.scrollTop = progressLog.scrollHeight;
-    }
+    let detectedDeployment = null;
 
-    // Get selected services
-    function getSelectedServices() {
-      const selected = [];
-      document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
-        selected.push(checkbox.value);
-      });
-      return selected;
-    }
-
-    // Parse configuration CSV and extract environment variables
-    async function parseConfigCSV(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const csv = e.target.result;
-            console.log('[DEBUG] Raw CSV content:', csv);
-            const lines = csv.trim().split('\n');
-            console.log('[DEBUG] CSV lines:', lines);
-            const variables = [];
-            
-            // Parse CSV format:
-            // - index|key,value
-            // - key,value
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              console.log('[DEBUG] Parsing line:', line);
-              const normalizedLine = line.includes('|')
-                ? line.substring(line.indexOf('|') + 1)
-                : line;
-              const firstCommaIndex = normalizedLine.indexOf(',');
-              if (firstCommaIndex === -1) {
-                console.log('[DEBUG] Line did not contain comma:', line);
-                continue;
-              }
-              const variable = {
-                name: normalizedLine.substring(0, firstCommaIndex).trim(),
-                value: normalizedLine.substring(firstCommaIndex + 1).trim()
-              };
-              if (!variable.name) {
-                console.log('[DEBUG] Parsed empty variable name, skipping line:', line);
-                continue;
-              }
-              console.log('[DEBUG] Matched variable:', variable);
-              variables.push(variable);
-            }
-            
-            console.log('[DEBUG] Total variables parsed:', variables.length);
-            console.log('[DEBUG] Variables:', JSON.stringify(variables));
-            resolve(variables);
-          } catch (err) {
-            reject(new Error(`Failed to parse CSV: ${err.message}`));
-          }
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(file);
-      });
-    }
-
-    // Set environment variables on Balena device
-    async function setDeviceEnvironmentVariables(balenaToken, deviceId, variables) {
-      const results = { success: 0, failed: 0, errors: [] };
-      const balenaApiUrl = 'https://api.balena-cloud.com/v7/device_environment_variable';
-      
-      for (const variable of variables) {
-        try {
-          logProgress(`Setting environment variable: ${variable.name} = ${variable.value}`, 'info');
-          
-          const requestBody = {
-            device: deviceId,
-            name: variable.name,
-            value: variable.value
-          };
-          logProgress(`  Request: POST ${balenaApiUrl}`, 'info');
-          logProgress(`  Body: ${JSON.stringify(requestBody)}`, 'info');
-          
-          const response = await fetch(balenaApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${balenaToken}`
-            },
-            body: JSON.stringify(requestBody)
-          });
-          
-          const responseText = await response.text();
-          logProgress(`  Response Status: ${response.status}`, 'info');
-          
-          if (!response.ok) {
-            logProgress(`  Response Body: ${responseText}`, 'error');
-            throw new Error(`HTTP ${response.status}: ${responseText}`);
-          }
-          
-          // Parse response if it's JSON
-          let responseData = null;
-          try {
-            responseData = JSON.parse(responseText);
-            logProgress(`  Response Body: ${JSON.stringify(responseData)}`, 'success');
-          } catch (e) {
-            logProgress(`  Response Body: ${responseText}`, 'success');
-          }
-          
-          logProgress(`✓ ${variable.name} set successfully`, 'success');
-          results.success++;
-        } catch (err) {
-          logProgress(`✗ Failed to set ${variable.name}: ${err.message}`, 'error');
-          results.failed++;
-          results.errors.push(`${variable.name}: ${err.message}`);
+    function setView(viewName) {
+      const views = { locatingView, confirmView, deployingView, errorView };
+      Object.entries(views).forEach(([key, node]) => {
+        if (!node) return;
+        if (key === viewName) {
+          node.classList.remove('hidden');
+          node.classList.add('fade-in');
+        } else {
+          node.classList.add('hidden');
+          node.classList.remove('fade-in');
         }
-        
-        // Small delay between API calls
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      return results;
+      });
     }
 
-    // Generate service selection CSV
-    function generateServiceCSV(services) {
-      if (services.length === 0) {
-        return 'name,service\n'; // Empty header
+    function formatHardwareSummary(hardware) {
+      const parts = [];
+
+      if (hardware.meters?.length) {
+        parts.push(`Meter: ${hardware.meters.map(item => item.model).join(', ')}`);
       }
-      const rows = services.map(s => `${s},${s}`).join('\n');
-      return `name,service\n${rows}`;
+      if (hardware.inverters?.length) {
+        parts.push(`Inverter${hardware.inverters.length > 1 ? 's' : ''}: ${hardware.inverters.map(item => item.model).join(', ')}`);
+      }
+      if (hardware.weatherStations?.length) {
+        parts.push(`Weather: ${hardware.weatherStations.map(item => item.type).join(', ')}`);
+      }
+      if (hardware.trackers?.length) {
+        parts.push(`Tracker${hardware.trackers.length > 1 ? 's' : ''}: ${hardware.trackers.map(item => item.model).join(', ')}`);
+      }
+
+      return parts.length ? parts.join(' • ') : 'No hardware details available yet.';
     }
 
-    // Form submission
-    document.getElementById('deploymentForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function lookupProject(projectName) {
+      const response = await fetch(`${API_BASE}/deployment/lookup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ projectName })
+      });
 
-      const balenaToken = document.getElementById('balenaToken').value;
-      const deviceId = document.getElementById('deviceId').value;
-      const fleetName = document.getElementById('fleetName').value;
-      const configCsvFile = document.getElementById('configCsvFile').files[0];
-
-      if (!balenaToken || !deviceId || !fleetName || !configCsvFile) {
-        showMessage('Balena token, device ID, fleet name, and configuration CSV are required', 'error');
-        return;
-      }
-
-      const selectedServices = getSelectedServices();
-      if (selectedServices.length === 0) {
-        showMessage('Please select at least one service', 'error');
-        return;
-      }
-
-      // Clear progress log and start
-      document.getElementById('progressLog').innerHTML = '';
-      logProgress('Starting deployment...', 'info');
-      logProgress(`Device: ${deviceId}`, 'info');
-      logProgress(`Selected services: ${selectedServices.join(', ')}`, 'info');
+      const text = await response.text();
+      let data = {};
 
       try {
-        // Step 1: Parse and set environment variables from config CSV
-        logProgress('', 'info');
-        logProgress('=== Step 1: Setting Environment Variables ===', 'info');
-        const configVariables = await parseConfigCSV(configCsvFile);
-        logProgress(`Parsed ${configVariables.length} environment variables from config CSV`, 'info');
-        
-        if (configVariables.length > 0) {
-          logProgress('Setting variables on Balena device...', 'info');
-          const varResults = await setDeviceEnvironmentVariables(balenaToken, deviceId, configVariables);
-          logProgress(``, 'info');
-          logProgress(`Environment variables: ${varResults.success} success, ${varResults.failed} failed`, varResults.failed === 0 ? 'success' : 'error');
-          
-          if (varResults.failed > 0) {
-            logProgress('Some variables failed to set. Continuing with service deployment...', 'error');
-          }
-        } else {
-          logProgress('No environment variables found in config CSV', 'info');
-        }
-
-        // Step 2: Generate and send service deployment
-        logProgress('', 'info');
-        logProgress('=== Step 2: Deploying Services ===', 'info');
-        
-        const servicesCsvContent = generateServiceCSV(selectedServices);
-        logProgress(`Generated service CSV: ${servicesCsvContent.split('\n').length - 1} services`, 'info');
-        
-        const servicesCsvFile = new File(
-          [servicesCsvContent],
-          'services.csv',
-          { type: 'text/csv' }
-        );
-
-        const formData = new FormData();
-        formData.append('balenaToken', balenaToken);
-        formData.append('deviceId', deviceId);
-        formData.append('fleetName', fleetName);
-        formData.append('csvFile', servicesCsvFile);
-
-        logProgress('Sending deployment request to API...', 'info');
-        const response = await fetch(`${API_BASE}/deployment/deploy`, {
-          method: 'POST',
-          body: formData
-        });
-
-        logProgress(`API response status: ${response.status}`, 'info');
-        const responseText = await response.text();
-        logProgress(`Raw API response: ${responseText.substring(0, 500)}`, 'info');
-        
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (err) {
-          logProgress(`Failed to parse API response as JSON: ${err.message}`, 'error');
-          logProgress(`Raw response: ${responseText}`, 'error');
-          throw err;
-        }
-
-        if (response.ok) {
-          logProgress('', 'info');
-          logProgress('=== Deployment Complete ===', 'success');
-          logProgress(`✓ Services deployed successfully!`, 'success');
-          logProgress(`Deployment ID: ${data.deploymentId}`, 'success');
-          logProgress(`Services: ${data.services} services queued for deployment`, 'success');
-          logProgress('Environment variables and services will be applied to the device shortly.', 'info');
-          showMessage(`✓ Deployment initiated! ID: ${data.deploymentId}`, 'success');
-          
-          setTimeout(() => {
-            document.getElementById('deploymentForm').reset();
-            document.getElementById('configFileName').textContent = '';
-            refreshStatus();
-          }, 1000);
-        } else {
-          logProgress(`✗ Error: ${data.error}`, 'error');
-          showMessage(`Error: ${data.error}`, 'error');
-        }
-      } catch (err) {
-        logProgress(`✗ Network error: ${err.message}`, 'error');
-        showMessage(`Network error: ${err.message}`, 'error');
+        data = JSON.parse(text);
+      } catch (error) {
+        throw new Error(`Unexpected response: ${text}`);
       }
-    });
 
-    function showMessage(text, type) {
-      const msg = document.getElementById('message');
-      msg.textContent = text;
-      msg.className = `message px-4 py-3 rounded-lg ${type === 'success' ? 'bg-green-900/50 text-green-200 border border-green-700' : 'bg-red-900/50 text-red-200 border border-red-700'}`;
-      setTimeout(() => msg.textContent = '', 5000);
+      if (!response.ok) {
+        throw new Error(data.error || 'Lookup failed');
+      }
+
+      return data;
+    }
+
+    async function getCandidateProjectName() {
+      return GEOLOOKUP_FALLBACK_PROJECT;
+    }
+
+    async function runDetection() {
+      setView('locatingView');
+      subStatusEl.textContent = 'Reading device context and matching it to the right deployment.';
+
+      try {
+        const candidateProject = await getCandidateProjectName();
+        subStatusEl.textContent = 'Cross-checking nearby site data.';
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        const result = await lookupProject(candidateProject);
+        detectedDeployment = result;
+
+        projectNameEl.textContent = result.project?.name || candidateProject;
+        hardwareSummaryEl.textContent = formatHardwareSummary(result.hardwareDetected || {});
+        setView('confirmView');
+      } catch (error) {
+        errorTextEl.textContent = error.message;
+        setView('errorView');
+      }
+    }
+
+    async function handleConfirm() {
+      if (!detectedDeployment) {
+        errorTextEl.textContent = 'No deployment candidate was loaded.';
+        setView('errorView');
+        return;
+      }
+
+      const services = detectedDeployment.deployment?.services || [];
+      const fleetName = detectedDeployment.deployment?.fleetName || detectedDeployment.project?.name || 'Unknown';
+      deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}.`;
+      setView('deployingView');
     }
 
     async function checkServerStatus() {
       try {
-        const response = await fetch(`${API_BASE.replace('/api', '')}/health`);
-        if (response.ok) {
-          document.getElementById('serverStatus').textContent = '🟢';
-          document.getElementById('serverStatusText').textContent = 'Connected';
-        }
-      } catch (err) {
-        document.getElementById('serverStatus').textContent = '🔴';
-        document.getElementById('serverStatusText').textContent = 'Disconnected';
+        const response = await fetch('/health');
+        serverStatusText.textContent = response.ok ? 'Connected' : 'Unavailable';
+      } catch (error) {
+        serverStatusText.textContent = 'Unavailable';
       }
     }
 
-    async function refreshStatus() {
-      try {
-        const response = await fetch(`${API_BASE}/status/deployments`);
-        const data = await response.json();
+    confirmBtn.addEventListener('click', handleConfirm);
+    retryBtn.addEventListener('click', runDetection);
+    errorRetryBtn.addEventListener('click', runDetection);
 
-        document.getElementById('deploymentCount').textContent = data.count || '0';
-
-      } catch (err) {
-        console.error('Error refreshing status:', err);
-      }
-    }
-
-    function formatTime(ms) {
-      const seconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-
-      if (hours > 0) return `${hours}h ${minutes % 60}m`;
-      if (minutes > 0) return `${minutes}m`;
-      return `${seconds}s`;
-    }
-
-    // Initialize
     checkServerStatus();
-    refreshStatus();
-    setInterval(refreshStatus, REFRESH_INTERVAL);
+    runDetection();
     setInterval(checkServerStatus, 30000);
   </script>
 </body>
