@@ -212,6 +212,34 @@
               </button>
             </div>
           </div>
+
+          <div id="chatView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">System monitoring</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              What's on your mind?
+            </h1>
+            <p class="mt-5 text-base md:text-lg text-slate-400">Ask about container health, memory usage, or any recent errors.</p>
+            
+            <div class="mt-8 max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
+              <div id="chatMessages" class="space-y-4 flex flex-col">
+                <div class="text-sm text-slate-500">
+                  <p>Chat interface ready. Ask your first question!</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex gap-2">
+              <input
+                id="chatInput"
+                type="text"
+                placeholder="Ask about system health..."
+                class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-400 transition"
+              />
+              <button id="chatSendBtn" class="ghost-button rounded-xl px-6 py-3 text-lg font-semibold transition">
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -225,10 +253,19 @@
     const API_BASE = '/api';
     const GEOLOOKUP_FALLBACK_PROJECT = 'OfficeLab';
 
+    // Configuration mode views
     const locatingView = document.getElementById('locatingView');
     const confirmView = document.getElementById('confirmView');
     const deployingView = document.getElementById('deployingView');
     const errorView = document.getElementById('errorView');
+    
+    // Chat mode view
+    const chatView = document.getElementById('chatView');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    
+    // Configuration elements
     const projectNameEl = document.getElementById('projectName');
     const hardwareSummaryEl = document.getElementById('hardwareSummary');
     const deploySummaryEl = document.getElementById('deploySummary');
@@ -244,9 +281,12 @@
     let detectedDeployment = null;
     let autoDetectedProject = null;
     let showingSiteSelect = false;
+    let isMonitorMode = false;
+    let chatHistorySession = [];
+    let chatLoading = false;
 
     function setView(viewName) {
-      const views = { locatingView, confirmView, deployingView, errorView };
+      const views = { locatingView, confirmView, deployingView, errorView, chatView };
       Object.entries(views).forEach(([key, node]) => {
         if (!node) return;
         if (key === viewName) {
@@ -257,6 +297,102 @@
           node.classList.remove('fade-in');
         }
       });
+    }
+
+    function addChatMessage(text, isUser) {
+      const messageEl = document.createElement('div');
+      messageEl.className = isUser ? 'text-right' : 'text-left';
+      
+      const bubbleEl = document.createElement('div');
+      bubbleEl.className = isUser
+        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-xs text-sm'
+        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-xs text-sm';
+      bubbleEl.textContent = text;
+      
+      messageEl.appendChild(bubbleEl);
+      chatMessages.appendChild(messageEl);
+      
+      // Auto-scroll to bottom
+      chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const question = chatInput.value.trim();
+      if (!question || chatLoading) return;
+      
+      chatInput.value = '';
+      addChatMessage(question, true);
+      
+      chatLoading = true;
+      chatSendBtn.disabled = true;
+      
+      // Show loading indicator
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'text-center text-slate-500 text-sm';
+      loadingEl.id = 'chatLoading';
+      loadingEl.textContent = 'Analyzing...';
+      chatMessages.appendChild(loadingEl);
+      
+      try {
+        const response = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        
+        const loadingEl = document.getElementById('chatLoading');
+        if (loadingEl) loadingEl.remove();
+        
+        if (!response.ok) {
+          throw new Error('Failed to get response');
+        }
+        
+        const data = await response.json();
+        addChatMessage(data.answer || 'Unable to process question', false);
+        chatHistorySession.push({ question, answer: data.answer });
+      } catch (error) {
+        console.error('Chat error:', error);
+        const loadingEl = document.getElementById('chatLoading');
+        if (loadingEl) loadingEl.remove();
+        addChatMessage('⚠ Unable to process question. Try again.', false);
+      } finally {
+        chatLoading = false;
+        chatSendBtn.disabled = false;
+        chatInput.focus();
+      }
+    }
+
+    function detectAndInitializeMode() {
+      // Check if device has been configured (by looking for deployment state)
+      // For now, check if /api/status/mode returns 'monitor'
+      fetch('/health')
+        .then(res => res.ok ? checkDeploymentStatus() : runDetection())
+        .catch(() => runDetection());
+    }
+
+    async function checkDeploymentStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/deployment/status`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.state === 'completed') {
+            // Device is configured, show chat mode
+            isMonitorMode = true;
+            setView('chatView');
+            initializeChatMode();
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not check deployment status');
+      }
+      // Fall back to configuration mode
+      runDetection();
+    }
+
+    function initializeChatMode() {
+      addChatMessage('System monitoring active. How can I help?', false);
+      chatInput.focus();
     }
 
     function formatHardwareSummary(hardware) {
@@ -495,9 +631,17 @@
     confirmBtn.addEventListener('click', handleConfirm);
     retryBtn.addEventListener('click', handleRetry);
     errorRetryBtn.addEventListener('click', runDetection);
+    
+    // Chat mode listeners
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !chatLoading) {
+        sendChatMessage();
+      }
+    });
 
     checkServerStatus();
-    runDetection();
+    detectAndInitializeMode();
     setInterval(checkServerStatus, 30000);
   </script>
 </body>

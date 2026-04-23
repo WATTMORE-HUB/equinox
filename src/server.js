@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const stateManager = require('./stateManager');
 const deploymentRouter = require('./routes/deployment');
 const statusRouter = require('./routes/status');
+const chatRouter = require('./routes/chat');
 const { startSchedulers } = require('./services/scheduler');
 const balenaTokenManager = require('./services/balenaTokenManager');
 
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Routes
 app.use('/api/deployment', deploymentRouter);
 app.use('/api/status', statusRouter);
+app.use('/api/chat', chatRouter);
 
 // Health check
 app.get('/health', (req, res) => {
