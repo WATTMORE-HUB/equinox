@@ -125,78 +125,32 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
 });
 
 // GET /api/deployment/device-info
-// Get device information by querying Balena API
-// This finds the device UUID for the current device running this service
-router.get('/device-info', async (req, res) => {
+// Get device information from Balena environment variables
+// Returns device UUID and fleet name for the current device
+router.get('/device-info', (req, res) => {
   try {
-    // Get Balena token
-    const balenaToken = balenaTokenManager.getToken();
-    if (!balenaToken) {
-      return res.status(503).json({ error: 'Balena API token not configured' });
-    }
-
-    // Get device hostname from environment (set by Balena)
-    const deviceHostname = process.env.BALENA_DEVICE_NAME_AT_INIT || process.env.HOSTNAME || '';
+    // Get device info from Balena environment (set automatically by Balena)
+    const deviceUuid = process.env.BALENA_DEVICE_UUID || '';
+    const deviceId = process.env.BALENA_DEVICE_ID || '';
+    const deviceName = process.env.BALENA_DEVICE_NAME_AT_INIT || process.env.HOSTNAME || '';
     const fleetName = process.env.BALENA_APP_NAME || '';
 
-    if (!deviceHostname) {
-      return res.status(503).json({ error: 'Cannot determine device hostname. Must be running on Balena.' });
+    if (!deviceUuid && !deviceId) {
+      return res.status(503).json({ error: 'Device not running on Balena or device identification not available' });
     }
 
-    console.log(`[DEVICE-INFO] Looking up device with hostname: ${deviceHostname}`);
-
-    // Query Balena API for devices with expanded app info
-    const axios = require('axios');
-    const balenaApiUrl = 'https://api.balena-cloud.com/v7/device?$expand=app';
-    console.log(`[DEVICE-INFO] Token available: ${balenaToken ? 'yes' : 'no'} (length: ${balenaToken?.length || 0})`);
-    
-    let response;
-    try {
-      response = await axios.get(balenaApiUrl, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${balenaToken}`
-        }
-      });
-    } catch (axiosErr) {
-      console.error('[DEVICE-INFO] Axios error details:');
-      console.error(`  Status: ${axiosErr.response?.status}`);
-      console.error(`  Status text: ${axiosErr.response?.statusText}`);
-      console.error(`  Data: ${JSON.stringify(axiosErr.response?.data)}`);
-      console.error(`  Message: ${axiosErr.message}`);
-      throw axiosErr;
-    }
-
-    const devices = response.data.d || [];
-    console.log(`[DEVICE-INFO] Found ${devices.length} devices in Balena API`);
-
-    // Find device by hostname
-    const device = devices.find(d => d.device_name === deviceHostname || d.uuid === deviceHostname);
-
-    if (!device) {
-      console.error(`[DEVICE-INFO] Device not found with hostname: ${deviceHostname}`);
-      console.log(`[DEVICE-INFO] Available devices: ${devices.map(d => d.device_name || d.uuid).join(', ')}`);
-      return res.status(404).json({ error: `Device not found in Balena API (hostname: ${deviceHostname})` });
-    }
-
-    // Extract fleet name from app relationship
-    const appName = device.app?.[0]?.app_name || device.belongs_to__application?.[0]?.app_name || '';
-    
-    console.log(`[DEVICE-INFO] Found device: ${device.uuid} (${device.device_name}) in fleet: ${appName}`);
+    console.log(`[DEVICE-INFO] Device: ${deviceName} (${deviceUuid || deviceId}) in fleet: ${fleetName}`);
 
     res.json({
-      deviceId: device.id,  // Internal Balena device ID
-      deviceUuid: device.uuid,  // Full UUID
-      deviceName: device.device_name,
-      fleetName: appName,  // Fleet name from Balena API
+      deviceId: deviceId || deviceUuid,
+      deviceUuid: deviceUuid,
+      deviceName: deviceName,
+      fleetName: fleetName,
       environment: process.env.NODE_ENV || 'unknown'
     });
   } catch (err) {
-    console.error('[DEVICE-INFO] Error fetching device info:', err.message);
-    if (err.response?.status) {
-      console.error(`[DEVICE-INFO] HTTP status: ${err.response.status} ${err.response.statusText}`);
-    }
-    res.status(500).json({ error: `Failed to fetch device info: ${err.message}` });
+    console.error('[DEVICE-INFO] Error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
