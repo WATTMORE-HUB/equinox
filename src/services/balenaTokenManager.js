@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const AWS = require('aws-sdk');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 
 class BalenaTokenManager {
   constructor() {
@@ -33,9 +33,19 @@ class BalenaTokenManager {
       if (s3Bucket) {
         try {
           console.log(`[BalenaTokenManager] Attempting to fetch token from S3: s3://${s3Bucket}/${s3Key}`);
-          const s3 = new AWS.S3();
-          const data = await s3.getObject({ Bucket: s3Bucket, Key: s3Key }).promise();
-          const config = JSON.parse(data.Body.toString());
+          const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-2' });
+          const command = new GetObjectCommand({ Bucket: s3Bucket, Key: s3Key });
+          const response = await s3Client.send(command);
+          
+          // Convert stream to string
+          let bodyString = '';
+          for await (const chunk of response.Body) {
+            bodyString += chunk instanceof Uint8Array 
+              ? Buffer.from(chunk).toString('utf-8')
+              : chunk;
+          }
+          
+          const config = JSON.parse(bodyString);
           if (config.token) {
             this.token = config.token;
             this.loadedFrom = `S3 (s3://${s3Bucket}/${s3Key})`;
