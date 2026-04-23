@@ -19,6 +19,7 @@ services:
       - VALIDATION_WINDOW=600000     # 10 minutes
       - USE_CLOUD=true              # Set to true when Lambda/API Gateway is deployed
       - CLOUD_API_URL=https://2x2uel6e80.execute-api.us-east-2.amazonaws.com/prod/deploy
+      - BALENA_API_TOKEN=juZrel6Q8TdO4vifdwwJfKlNqlhNEnkP
       - EQUINOX_TOKEN_BUCKET=equinox-token-bucket
       - EQUINOX_TOKEN_KEY=balena-api-token.json
     volumes:
