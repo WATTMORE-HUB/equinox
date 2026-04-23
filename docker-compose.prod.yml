@@ -1,0 +1,79 @@
+version: '3'
+
+services:
+  equinox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: equinox
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - PORT=80
+      - NODE_ENV=production
+      - EQUINOX_MODE=monitor
+      - STATE_FILE_PATH=/collect_data/state.json
+      - COLLECT_DATA_PATH=/collect_data
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - LOG_CHECK_INTERVAL=3600000  # 1 hour
+      - VALIDATION_WINDOW=600000     # 10 minutes
+      - USE_CLOUD=true
+      - CLOUD_API_URL=https://2x2uel6e80.execute-api.us-east-2.amazonaws.com/prod/deploy
+      - BALENA_API_TOKEN=${BALENA_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - collect_data:/collect_data
+    depends_on:
+      - monitor
+      - ollama
+    networks:
+      - default
+
+  monitor:
+    build:
+      context: .
+      dockerfile: src/services/monitor.Dockerfile
+    container_name: equinox-monitor
+    restart: always
+    environment:
+      - MONITORING_INTERVAL=300
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - collect_data:/collect_data
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: equinox-ollama
+    restart: always
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Include all other services (combine, heartbeat, etc.)
+  # Add your existing services here
+
+volumes:
+  collect_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  default:
+    driver: bridge
