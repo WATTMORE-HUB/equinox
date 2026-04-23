@@ -13,6 +13,33 @@ const balenaTokenManager = require('../services/balenaTokenManager');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+// GET /api/deployment/projects
+// List all available projects from Wattmore
+router.get('/projects', async (req, res) => {
+  try {
+    // Fetch all installed systems from Wattmore
+    const apiUrl = 'https://solar-configurator-lime.vercel.app/api/installed-systems';
+    const axios = require('axios');
+    
+    const response = await axios.get(apiUrl, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const systems = Array.isArray(response.data) ? response.data : response.data.systems || [];
+    const projectNames = systems.map(s => s.projectName).filter(Boolean);
+    
+    res.json({
+      success: true,
+      projects: projectNames
+    });
+  } catch (err) {
+    console.error('[Projects] Error fetching projects list:', err.message);
+    res.status(500).json({ error: `Failed to fetch projects list: ${err.message}` });
+  }
+});
+
 // POST /api/deployment/lookup
 // Body: { projectName }
 router.post('/lookup', async (req, res) => {

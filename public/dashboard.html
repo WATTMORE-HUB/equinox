@@ -173,6 +173,12 @@
               <p id="projectName" class="text-3xl md:text-5xl font-semibold tracking-tight text-white">—</p>
               <div id="hardwareSummary" class="mt-5 text-sm md:text-base text-slate-400"></div>
             </div>
+            <div id="siteSelectView" class="hidden mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-6">
+              <p class="text-sm uppercase tracking-[0.22em] text-slate-500 mb-3">Select a site</p>
+              <select id="siteDropdown" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-blue-400 transition">
+                <option value="">Choose a site...</option>
+              </select>
+            </div>
             <div class="mt-8 flex flex-col sm:flex-row gap-3">
               <button id="confirmBtn" class="ghost-button rounded-2xl px-8 py-4 text-lg font-semibold transition">
                 Confirm
@@ -228,8 +234,12 @@
     const retryBtn = document.getElementById('retryBtn');
     const errorRetryBtn = document.getElementById('errorRetryBtn');
     const serverStatusText = document.getElementById('serverStatusText');
+    const siteSelectView = document.getElementById('siteSelectView');
+    const siteDropdown = document.getElementById('siteDropdown');
 
     let detectedDeployment = null;
+    let autoDetectedProject = null;
+    let showingSiteSelect = false;
 
     function setView(viewName) {
       const views = { locatingView, confirmView, deployingView, errorView };
@@ -299,6 +309,7 @@
 
       try {
         const candidateProject = await getCandidateProjectName();
+        autoDetectedProject = candidateProject;
         subStatusEl.textContent = 'Cross-checking nearby site data.';
 
         await new Promise(resolve => setTimeout(resolve, 2200));
@@ -308,10 +319,71 @@
 
         projectNameEl.textContent = result.project?.name || candidateProject;
         hardwareSummaryEl.textContent = formatHardwareSummary(result.hardwareDetected || {});
+        siteSelectView.classList.add('hidden');
+        showingSiteSelect = false;
         setView('confirmView');
       } catch (error) {
         errorTextEl.textContent = error.message;
         setView('errorView');
+      }
+    }
+
+    async function handleRetry() {
+      if (!showingSiteSelect) {
+        // First click on Try Again - show the dropdown
+        showingSiteSelect = true;
+        siteSelectView.classList.remove('hidden');
+        siteDropdown.innerHTML = '<option value="">Loading available sites...</option>';
+        
+        try {
+          // Fetch available projects from server
+          const response = await fetch(`${API_BASE}/deployment/projects`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch projects list');
+          }
+          const data = await response.json();
+          const projects = data.projects || [];
+          
+          // Populate dropdown
+          siteDropdown.innerHTML = '<option value="">Choose a site...</option>';
+          projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project;
+            option.textContent = project;
+            siteDropdown.appendChild(option);
+          });
+          
+          // Auto-select the auto-detected one if available
+          if (autoDetectedProject) {
+            siteDropdown.value = autoDetectedProject;
+          }
+        } catch (err) {
+          console.error('Error loading projects:', err);
+          siteDropdown.innerHTML = '<option value="">Error loading sites</option>';
+        }
+      } else {
+        // Second interaction - user selected a site from dropdown
+        const selectedSite = siteDropdown.value;
+        if (!selectedSite) {
+          alert('Please select a site');
+          return;
+        }
+        // Load the selected site
+        setView('locatingView');
+        subStatusEl.textContent = 'Loading selected site data...';
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          const result = await lookupProject(selectedSite);
+          detectedDeployment = result;
+          projectNameEl.textContent = result.project?.name || selectedSite;
+          hardwareSummaryEl.textContent = formatHardwareSummary(result.hardwareDetected || {});
+          siteSelectView.classList.add('hidden');
+          showingSiteSelect = false;
+          setView('confirmView');
+        } catch (error) {
+          errorTextEl.textContent = `Failed to load site: ${error.message}`;
+          setView('errorView');
+        }
       }
     }
 
