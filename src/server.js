@@ -22,16 +22,6 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize state file
 stateManager.initializeStateFile();
 
-// Initialize Balena token manager on startup
-(async () => {
-  try {
-    await balenaTokenManager.loadToken();
-    console.log(`[Server] Balena token loaded from: ${balenaTokenManager.getSourceInfo()}`);
-  } catch (error) {
-    console.warn(`[Server] Failed to load Balena token on startup: ${error.message}`);
-  }
-})();
-
 // Static files
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -55,19 +45,33 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`LLM Deployment server listening on port ${PORT}`);
-  console.log(`State file: ${stateManager.STATE_FILE_PATH}`);
-});
+// Start server with proper initialization
+(async () => {
+  try {
+    // Initialize Balena token manager before starting server
+    await balenaTokenManager.loadToken();
+    console.log(`[Server] Balena token loaded from: ${balenaTokenManager.getSourceInfo()}`);
+  } catch (error) {
+    console.warn(`[Server] Failed to load Balena token on startup: ${error.message}`);
+  }
 
-// Start background schedulers (log analysis, data validation)
-startSchedulers();
+  const server = app.listen(PORT, () => {
+    console.log(`LLM Deployment server listening on port ${PORT}`);
+    console.log(`State file: ${stateManager.STATE_FILE_PATH}`);
+    console.log(`[Server] Ready to accept requests`);
+  });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close();
+  // Start background schedulers (log analysis, data validation)
+  startSchedulers();
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close();
+  });
+})().catch(err => {
+  console.error('[Server] Fatal error during initialization:', err);
+  process.exit(1);
 });
 
 module.exports = app;
