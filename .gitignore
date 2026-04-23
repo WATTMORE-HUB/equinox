@@ -7,3 +7,4 @@ collect_data/
 state.json
 state.json.tmp
 npm-debug.log*
+docker-compose.yml
