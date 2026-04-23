@@ -8,7 +8,6 @@ const { deployServices } = require('../services/deployer');
 const hardwareConfigLoader = require('../services/hardwareConfigLoader');
 const wattmoreClient = require('../services/wattmoreClient');
 const configGenerator = require('../services/configGenerator');
-const configGenerator = require('../services/configGenerator');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
