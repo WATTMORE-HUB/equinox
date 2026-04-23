@@ -17,21 +17,26 @@ const upload = multer({ storage: multer.memoryStorage() });
 // List all available projects from Wattmore
 router.get('/projects', async (req, res) => {
   try {
-    // Fetch all installed systems from Wattmore
-    const apiUrl = 'https://solar-configurator-lime.vercel.app/api/installed-systems';
-    const axios = require('axios');
+    console.log('[Projects] Fetching available projects');
     
-    console.log('[Projects] Fetching projects from:', apiUrl);
-    const response = await axios.get(apiUrl, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    // Ensure wattmore client is authenticated
+    if (!wattmoreClient.authToken) {
+      console.log('[Projects] No auth token, logging in to Wattmore');
+      await wattmoreClient.login();
+    }
+    
+    // Fetch all installed systems from Wattmore (uses authenticated client)
+    const axios = require('axios');
+    const apiUrl = 'https://solar-configurator-lime.vercel.app/api/installed-systems';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${wattmoreClient.authToken}`
+    };
+    
+    console.log('[Projects] Making authenticated request to:', apiUrl);
+    const response = await axios.get(apiUrl, { headers });
     
     console.log('[Projects] Response status:', response.status);
-    console.log('[Projects] Response data type:', typeof response.data);
-    console.log('[Projects] Response data:', JSON.stringify(response.data).substring(0, 500));
-    
     const systems = Array.isArray(response.data) ? response.data : response.data.systems || [];
     const projectNames = systems.map(s => s.projectName).filter(Boolean);
     
@@ -43,7 +48,10 @@ router.get('/projects', async (req, res) => {
     });
   } catch (err) {
     console.error('[Projects] Error fetching projects list:', err.message);
-    console.error('[Projects] Error details:', err.response?.status, err.response?.data);
+    if (err.response) {
+      console.error('[Projects] HTTP error status:', err.response.status);
+      console.error('[Projects] HTTP error data:', JSON.stringify(err.response.data).substring(0, 200));
+    }
     res.status(500).json({ error: `Failed to fetch projects list: ${err.message}` });
   }
 });
