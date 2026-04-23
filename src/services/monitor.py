@@ -128,18 +128,24 @@ class MonitoringService:
             return False
         
         try:
+            # 15s timeout for connection
             connect_future = self.mqtt_connection.connect()
-            connect_future.result()
+            connect_future.result(timeout=15)
+            
             message = self._build_iot_message(summary, severity)
             topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
+            
+            # Publish with 15s timeout
             self.mqtt_connection.publish(
                 topic=topic,
                 payload=json.dumps(message),
                 qos=mqtt.QoS.AT_LEAST_ONCE
             )
-            logger.info(f"Published: '{json.dumps(message)}' to the topic: '{topic}'")
+            logger.info(f"Published to '{topic}': {len(message)} bytes")
+            
+            # Disconnect gracefully
             disconnect_future = self.mqtt_connection.disconnect()
-            disconnect_future.result()
+            disconnect_future.result(timeout=5)
             return True
         except Exception as e:
             logger.error(f"Failed to publish to AWS IoT Core: {e}")
@@ -215,10 +221,16 @@ class MonitoringService:
             
             if result.returncode != 0:
                 logger.error(f"Docker ps failed: {result.stderr}")
+                # Keep previous state if Docker call fails
                 return False
             
             containers_data = {}
-            for line in result.stdout.strip().split('\n'):
+            lines = result.stdout.strip().split('\n') if result.stdout.strip() else []
+            
+            if not lines:
+                logger.warning("No running containers found")
+            
+            for line in lines:
                 if not line:
                     continue
                 parts = line.split('\t')
@@ -235,10 +247,13 @@ class MonitoringService:
                         "timestamp": datetime.now(timezone.utc).isoformat()
                     }
                     
-                    # Get container stats
-                    stats = self._get_container_stats(container_id)
-                    if stats:
-                        containers_data[name].update(stats)
+                    # Get container stats (non-blocking)
+                    try:
+                        stats = self._get_container_stats(container_id)
+                        if stats:
+                            containers_data[name].update(stats)
+                    except Exception as stat_err:
+                        logger.debug(f"Could not get stats for {name}: {stat_err}")
             
             # Update cache
             self.cache["containers"] = containers_data
@@ -247,6 +262,9 @@ class MonitoringService:
             logger.info(f"Polled {len(containers_data)} containers")
             return True
             
+        except subprocess.TimeoutExpired:
+            logger.error("Docker ps timed out (>10s)")
+            return False
         except Exception as e:
             logger.error(f"Error polling Docker: {e}")
             return False
