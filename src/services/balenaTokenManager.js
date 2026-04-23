@@ -8,6 +8,17 @@ class BalenaTokenManager {
     this.loadedFrom = null;
   }
 
+  hasAwsCredentials() {
+    return Boolean(
+      (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+      process.env.AWS_SESSION_TOKEN ||
+      process.env.AWS_WEB_IDENTITY_TOKEN_FILE ||
+      process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI ||
+      process.env.AWS_CONTAINER_CREDENTIALS_FULL_URI ||
+      process.env.AWS_PROFILE
+    );
+  }
+
   /**
    * Load Balena token from secure storage
    * Tries (in order): BALENA_API_TOKEN env var, S3 bucket, secure config file, .env file
@@ -30,7 +41,7 @@ class BalenaTokenManager {
       // Try S3 bucket
       const s3Bucket = process.env.EQUINOX_TOKEN_BUCKET;
       const s3Key = process.env.EQUINOX_TOKEN_KEY || 'balena-api-token.json';
-      if (s3Bucket) {
+      if (s3Bucket && this.hasAwsCredentials()) {
         try {
           console.log(`[BalenaTokenManager] Attempting to fetch token from S3: s3://${s3Bucket}/${s3Key}`);
           const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-2' });
@@ -55,6 +66,8 @@ class BalenaTokenManager {
         } catch (s3Error) {
           console.warn(`[BalenaTokenManager] Failed to fetch token from S3: ${s3Error.message}`);
         }
+      } else if (s3Bucket) {
+        console.warn('[BalenaTokenManager] Skipping S3 token lookup because AWS credentials are not configured in the container');
       }
 
       // Fallback: try secure config file
@@ -84,7 +97,7 @@ class BalenaTokenManager {
         }
       }
 
-      console.warn('[BalenaTokenManager] No Balena API token found. Configure via: BALENA_API_TOKEN env var, S3 bucket (EQUINOX_TOKEN_BUCKET), or /etc/equinox/balena-token.json');
+      console.warn('[BalenaTokenManager] No Balena API token found. Configure via: BALENA_API_TOKEN env var, S3 bucket with AWS credentials, or /etc/equinox/balena-token.json');
       return null;
     } catch (error) {
       console.error('[BalenaTokenManager] Error loading token:', error.message);
