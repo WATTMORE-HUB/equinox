@@ -5,6 +5,8 @@ import logging
 import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from awscrt import io, mqtt, auth, http
+from awsiot import mqtt_connection_builder
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -18,8 +20,50 @@ MONITORING_CONFIG_PATH = "/collect_data/monitoring_config.json"
 POLLING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "300"))  # 5 minutes default
 LOG_RETENTION_DAYS = 7
 
+# AWS IoT Core configuration (mirrors combine/heartbeat pattern)
+AWSENDPOINT = os.getenv("AWSENDPOINT")
+THINGNAME = os.getenv("THINGNAME")
+CERT_NAME = os.getenv("CERT_NAME")
+CERT = os.getenv("CERT")
+KEY_NAME = os.getenv("KEY_NAME")
+KEY = os.getenv("KEY")
+CA_1_NAME = os.getenv("CA_1_NAME")
+CA_1 = os.getenv("CA_1")
+IOT_PUBLISH_ENABLED = os.getenv("IOT_PUBLISH_ENABLED", "false").lower() == "true"
+IOT_TOPIC = os.getenv("IOT_TOPIC", "operate/device_reports")
+
 # Ensure collect_data directory exists
 Path("/collect_data").mkdir(parents=True, exist_ok=True)
+
+
+def make_certs():
+    """Create AWS IoT certificate files (same pattern as combine/heartbeat)"""
+    if not AWSENDPOINT or not CERT or not KEY or not CA_1:
+        logger.debug("AWS IoT credentials not configured, skipping cert creation")
+        return False
+    
+    try:
+        with open(f"/collect_data/{CERT_NAME}", "x") as f:
+            f.write(CERT)
+        logger.info("Cert file created")
+    except FileExistsError:
+        logger.debug("Cert file already exists")
+    
+    try:
+        with open(f"/collect_data/{KEY_NAME}", "x") as f:
+            f.write(KEY)
+        logger.info("Key file created")
+    except FileExistsError:
+        logger.debug("Key file already exists")
+    
+    try:
+        with open(f"/collect_data/{CA_1_NAME}", "x") as f:
+            f.write(CA_1)
+        logger.info("CA_1 file created")
+    except FileExistsError:
+        logger.debug("CA_1 file already exists")
+    
+    return True
 
 
 class MonitoringService:
@@ -27,6 +71,79 @@ class MonitoringService:
         self.cache = self._load_cache()
         self.config = self._load_config()
         self.polling_interval = POLLING_INTERVAL
+        self.mqtt_connection = None
+        self._initialize_iot_connection()
+    
+    def _initialize_iot_connection(self):
+        """Initialize AWS IoT MQTT connection using the same structure as combine/heartbeat"""
+        if not IOT_PUBLISH_ENABLED:
+            logger.debug("IoT Core publishing disabled")
+            return
+        
+        if not AWSENDPOINT or not THINGNAME or not CERT_NAME or not KEY_NAME or not CA_1_NAME:
+            logger.warning("IoT Core publishing enabled but AWS IoT env vars are incomplete")
+            return
+        
+        try:
+            make_certs()
+            event_loop_group = io.EventLoopGroup(1)
+            host_resolver = io.DefaultHostResolver(event_loop_group)
+            client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
+            self.mqtt_connection = mqtt_connection_builder.mtls_from_path(
+                endpoint=AWSENDPOINT,
+                cert_filepath=f"/collect_data/{CERT_NAME}",
+                pri_key_filepath=f"/collect_data/{KEY_NAME}",
+                client_bootstrap=client_bootstrap,
+                ca_filepath=f"/collect_data/{CA_1_NAME}",
+                client_id=THINGNAME,
+                clean_session=False,
+                keep_alive_secs=6
+            )
+            logger.info("AWS IoT MQTT connection initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize AWS IoT MQTT connection: {e}")
+            self.mqtt_connection = None
+    
+    def _build_iot_message(self, summary, severity):
+        """Build AWS IoT message payload for monitoring reports"""
+        return {
+            "siteId": os.getenv("SITE"),
+            "deviceId": os.getenv("EDGE_ID"),
+            "edgeId": os.getenv("BALENA_DEVICE_UUID"),
+            "alertOccurredAt": int(datetime.now().timestamp() * 1000),
+            "severity": severity,
+            "summary": {
+                "containerCount": summary["container_count"],
+                "errorCount": len(summary["errors_recent"]),
+                "warningCount": len(summary["warnings_recent"]),
+                "containers": summary["containers"],
+                "errorsRecent": summary["errors_recent"],
+                "warningsRecent": summary["warnings_recent"]
+            }
+        }
+    
+    def _publish_to_iot(self, summary, severity):
+        """Publish monitoring report to AWS IoT Core using the same pattern as combine/heartbeat"""
+        if not IOT_PUBLISH_ENABLED or not self.mqtt_connection:
+            return False
+        
+        try:
+            connect_future = self.mqtt_connection.connect()
+            connect_future.result()
+            message = self._build_iot_message(summary, severity)
+            topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
+            self.mqtt_connection.publish(
+                topic=topic,
+                payload=json.dumps(message),
+                qos=mqtt.QoS.AT_LEAST_ONCE
+            )
+            logger.info(f"Published: '{json.dumps(message)}' to the topic: '{topic}'")
+            disconnect_future = self.mqtt_connection.disconnect()
+            disconnect_future.result()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to publish to AWS IoT Core: {e}")
+            return False
         
     def _load_cache(self):
         """Load monitoring cache from JSON file"""
@@ -244,6 +361,11 @@ class MonitoringService:
         logger.info(f"Generated summary: {summary['container_count']} containers, "
                    f"{len(summary['errors_recent'])} errors, {len(summary['warnings_recent'])} warnings")
         
+        # Publish to AWS IoT Core if critical findings
+        if IOT_PUBLISH_ENABLED and (summary['errors_recent'] or summary['container_count'] == 0):
+            severity = "critical" if summary['errors_recent'] or summary['container_count'] == 0 else "warning"
+            self._publish_to_iot(summary, severity)
+        
         return summary
     
     def run(self):
@@ -260,5 +382,6 @@ class MonitoringService:
 
 
 if __name__ == "__main__":
+    make_certs()
     monitor = MonitoringService()
     monitor.run()
