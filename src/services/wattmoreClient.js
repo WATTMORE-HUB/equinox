@@ -42,6 +42,10 @@ class WattmoreClient {
       throw new Error('No token received from login endpoint');
     } catch (error) {
       console.error('[WattmoreClient] Login failed:', error.message);
+      if (error.response) {
+        console.error('[WattmoreClient] Login error status:', error.response.status);
+        console.error('[WattmoreClient] Login error data:', JSON.stringify(error.response.data));
+      }
       throw error;
     }
   }

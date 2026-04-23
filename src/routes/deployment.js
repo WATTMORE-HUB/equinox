@@ -33,8 +33,24 @@ router.get('/projects', async (req, res) => {
       'Authorization': `Bearer ${wattmoreClient.authToken}`
     };
     
-    console.log('[Projects] Making authenticated request to:', apiUrl);
-    const response = await axios.get(apiUrl, { headers });
+    console.log('[Projects] Making authenticated request with token');
+    let response;
+    try {
+      response = await axios.get(apiUrl, { headers });
+    } catch (err) {
+      // If we get a 401, try logging in again (token may have expired)
+      if (err.response?.status === 401) {
+        console.log('[Projects] Got 401, retrying login');
+        await wattmoreClient.login();
+        const newHeaders = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${wattmoreClient.authToken}`
+        };
+        response = await axios.get(apiUrl, { headers: newHeaders });
+      } else {
+        throw err;
+      }
+    }
     
     console.log('[Projects] Response status:', response.status);
     const systems = Array.isArray(response.data) ? response.data : response.data.systems || [];
