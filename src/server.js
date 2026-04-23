@@ -7,6 +7,7 @@ const stateManager = require('./stateManager');
 const deploymentRouter = require('./routes/deployment');
 const statusRouter = require('./routes/status');
 const { startSchedulers } = require('./services/scheduler');
+const balenaTokenManager = require('./services/balenaTokenManager');
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize state file
 stateManager.initializeStateFile();
+
+// Initialize Balena token manager on startup
+(async () => {
+  try {
+    await balenaTokenManager.loadToken();
+    console.log(`[Server] Balena token loaded from: ${balenaTokenManager.getSourceInfo()}`);
+  } catch (error) {
+    console.warn(`[Server] Failed to load Balena token on startup: ${error.message}`);
+  }
+})();
 
 // Static files
 app.use(express.static(path.join(__dirname, '../public')));

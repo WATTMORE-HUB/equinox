@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const AWS = require('aws-sdk');
 
 class BalenaTokenManager {
   constructor() {
@@ -9,9 +10,9 @@ class BalenaTokenManager {
 
   /**
    * Load Balena token from secure storage
-   * Tries (in order): BALENA_API_TOKEN env var, secure config file
+   * Tries (in order): BALENA_API_TOKEN env var, S3 bucket, secure config file, .env file
    */
-  loadToken() {
+  async loadToken() {
     if (this.token) {
       console.log('[BalenaTokenManager] Token already loaded');
       return this.token;
@@ -24,6 +25,26 @@ class BalenaTokenManager {
         this.loadedFrom = 'environment variable';
         console.log('[BalenaTokenManager] Loaded token from BALENA_API_TOKEN env var');
         return this.token;
+      }
+
+      // Try S3 bucket
+      const s3Bucket = process.env.EQUINOX_TOKEN_BUCKET;
+      const s3Key = process.env.EQUINOX_TOKEN_KEY || 'balena-api-token.json';
+      if (s3Bucket) {
+        try {
+          console.log(`[BalenaTokenManager] Attempting to fetch token from S3: s3://${s3Bucket}/${s3Key}`);
+          const s3 = new AWS.S3();
+          const data = await s3.getObject({ Bucket: s3Bucket, Key: s3Key }).promise();
+          const config = JSON.parse(data.Body.toString());
+          if (config.token) {
+            this.token = config.token;
+            this.loadedFrom = `S3 (s3://${s3Bucket}/${s3Key})`;
+            console.log('[BalenaTokenManager] Loaded token from S3 bucket');
+            return this.token;
+          }
+        } catch (s3Error) {
+          console.warn(`[BalenaTokenManager] Failed to fetch token from S3: ${s3Error.message}`);
+        }
       }
 
       // Fallback: try secure config file
@@ -53,7 +74,7 @@ class BalenaTokenManager {
         }
       }
 
-      console.warn('[BalenaTokenManager] No Balena API token found. Set BALENA_API_TOKEN env var or create /etc/equinox/balena-token.json');
+      console.warn('[BalenaTokenManager] No Balena API token found. Configure via: BALENA_API_TOKEN env var, S3 bucket (EQUINOX_TOKEN_BUCKET), or /etc/equinox/balena-token.json');
       return null;
     } catch (error) {
       console.error('[BalenaTokenManager] Error loading token:', error.message);
@@ -63,10 +84,22 @@ class BalenaTokenManager {
 
   /**
    * Get the loaded token
+   * Synchronously returns cached token or null
+   * Call loadToken() first to fetch from S3/files
    */
   getToken() {
     if (!this.token) {
-      this.loadToken();
+      console.warn('[BalenaTokenManager] Token not yet loaded. Call loadToken() first.');
+    }
+    return this.token;
+  }
+
+  /**
+   * Async method to ensure token is loaded from S3/files
+   */
+  async ensureToken() {
+    if (!this.token) {
+      await this.loadToken();
     }
     return this.token;
   }
