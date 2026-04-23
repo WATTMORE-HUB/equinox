@@ -21,14 +21,21 @@ router.get('/projects', async (req, res) => {
     const apiUrl = 'https://solar-configurator-lime.vercel.app/api/installed-systems';
     const axios = require('axios');
     
+    console.log('[Projects] Fetching projects from:', apiUrl);
     const response = await axios.get(apiUrl, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
     
+    console.log('[Projects] Response status:', response.status);
+    console.log('[Projects] Response data type:', typeof response.data);
+    console.log('[Projects] Response data:', JSON.stringify(response.data).substring(0, 500));
+    
     const systems = Array.isArray(response.data) ? response.data : response.data.systems || [];
     const projectNames = systems.map(s => s.projectName).filter(Boolean);
+    
+    console.log('[Projects] Found projects:', projectNames);
     
     res.json({
       success: true,
@@ -36,6 +43,7 @@ router.get('/projects', async (req, res) => {
     });
   } catch (err) {
     console.error('[Projects] Error fetching projects list:', err.message);
+    console.error('[Projects] Error details:', err.response?.status, err.response?.data);
     res.status(500).json({ error: `Failed to fetch projects list: ${err.message}` });
   }
 });
