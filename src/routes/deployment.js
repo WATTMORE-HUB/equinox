@@ -148,12 +148,24 @@ router.get('/device-info', async (req, res) => {
     // Query Balena API for devices with expanded app info
     const axios = require('axios');
     const balenaApiUrl = 'https://api.balena-cloud.com/v7/device?$expand=app';
-    const response = await axios.get(balenaApiUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${balenaToken}`
-      }
-    });
+    console.log(`[DEVICE-INFO] Token available: ${balenaToken ? 'yes' : 'no'} (length: ${balenaToken?.length || 0})`);
+    
+    let response;
+    try {
+      response = await axios.get(balenaApiUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${balenaToken}`
+        }
+      });
+    } catch (axiosErr) {
+      console.error('[DEVICE-INFO] Axios error details:');
+      console.error(`  Status: ${axiosErr.response?.status}`);
+      console.error(`  Status text: ${axiosErr.response?.statusText}`);
+      console.error(`  Data: ${JSON.stringify(axiosErr.response?.data)}`);
+      console.error(`  Message: ${axiosErr.message}`);
+      throw axiosErr;
+    }
 
     const devices = response.data.d || [];
     console.log(`[DEVICE-INFO] Found ${devices.length} devices in Balena API`);
@@ -181,6 +193,9 @@ router.get('/device-info', async (req, res) => {
     });
   } catch (err) {
     console.error('[DEVICE-INFO] Error fetching device info:', err.message);
+    if (err.response?.status) {
+      console.error(`[DEVICE-INFO] HTTP status: ${err.response.status} ${err.response.statusText}`);
+    }
     res.status(500).json({ error: `Failed to fetch device info: ${err.message}` });
   }
 });
