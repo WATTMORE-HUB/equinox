@@ -1,11 +1,11 @@
 version: '2'
 
 services:
-  llm-deployment:
+  equinox:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: llm-deployment
+    container_name: equinox
     restart: always
     ports:
       - "80:80"
