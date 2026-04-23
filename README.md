@@ -1,6 +1,6 @@
-# Equinox: Cloud-Based balena Deployment Automation
+# Equinox: Location-Aware Device Deployment System
 
-Automated cloud deployment system for balena devices, eliminating manual `balena push` commands.
+Intelligent deployment dashboard for Balena devices with automatic geolocation detection, hardware discovery, and one-click deployment. Powered by Wattmore.
 
 ## 📚 Documentation
 
@@ -18,18 +18,36 @@ All documentation is in the [`docs/`](docs/) directory:
 | [`docs/TESTING.md`](docs/TESTING.md) | Test procedures and validation |
 | [`docs/PROJECT_SUMMARY.md`](docs/PROJECT_SUMMARY.md) | Original project summary |
 
+## 📸 Dashboard Screenshots
+
+**Auto-detection in progress**
+![Equinox Dashboard - Locating](equinox1.png)
+
+**Confirmation with hardware details and site selection fallback**
+![Equinox Dashboard - Confirm](equinox2.png)
+
 ## 🚀 Quick Start
 
-1. **Read**: [`docs/AWS_SETUP.md`](docs/AWS_SETUP.md) (8 steps, ~30 minutes)
-2. **Provision**: AWS infrastructure (EC2, Lambda, API Gateway, IAM roles)
-3. **Configure**: Set environment variables on CM4
-4. **Deploy**: Submit deployments from CM4 dashboard
+1. Deploy to Balena device: `balena push YourFleet`
+2. Open device dashboard in browser
+3. System auto-detects your location and hardware
+4. Confirm the detected site (or select different site from dropdown)
+5. Click Confirm to deploy
 
 ## 🎯 What This System Does
 
-Automates deployment of services to balena devices from the cloud:
-- **Local mode** (default): Generate project, user runs `balena push` manually
-- **Cloud mode**: Lambda + EC2 + Systems Manager → automatic `balena push` and S3 archival
+**Phase 2: Location-Aware Deployment Dashboard**
+- 🌍 Auto-detects device location and matches to nearest site
+- 📋 Auto-discovers hardware from Wattmore configurator
+- 🔧 One-click deployment with fallback site selection
+- 🎨 Beautiful cinematic dashboard with smooth UX
+- 📊 Powered by Balena API and Wattmore integration
+
+**Phase 1: Cloud Deployment Infrastructure** (completed)
+- Hardware profile database with CSV caching
+- Wattmore API scraper for project discovery
+- Secure Balena token storage (env vars or S3)
+- Config generator merging hardware + site data
 
 ## 💾 Project Structure
 
