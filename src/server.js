@@ -41,18 +41,34 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
+// Get current Equinox mode
+app.get('/api/status/mode', (req, res) => {
+  res.json({
+    mode: EQUINOX_MODE,
+    isMonitor: EQUINOX_MODE === 'monitor'
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: err.message });
 });
 
+// Check if device is in monitor mode (already configured)
+const EQUINOX_MODE = process.env.EQUINOX_MODE || 'config';
+console.log(`[Server] EQUINOX_MODE=${EQUINOX_MODE}`);
+
 // Auto-configuration disabled - environment variables should only be set when user clicks Confirm
 // This ensures variables are set for the correct project, not just whatever fleet the device is in
 async function autoConfigureEnvironment() {
   // Placeholder - actual configuration happens via /api/deployment/deploy endpoint
   // when user clicks the Confirm button on the dashboard
-  console.log('[Server] Environment auto-configuration is disabled. Variables will be set when user clicks Confirm.');
+  if (EQUINOX_MODE === 'monitor') {
+    console.log('[Server] Device is in monitor mode. Chat/monitoring features active.');
+  } else {
+    console.log('[Server] Device is in config mode. Configuration dashboard active.');
+  }
 }
 
 // Start server with proper initialization

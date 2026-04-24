@@ -363,10 +363,20 @@
     }
 
     function detectAndInitializeMode() {
-      // Check if device has been configured (by looking for deployment state)
-      // For now, check if /api/status/mode returns 'monitor'
-      fetch('/health')
-        .then(res => res.ok ? checkDeploymentStatus() : runDetection())
+      // Check if device is in monitor mode by querying the server
+      fetch('/api/status/mode')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.isMonitor) {
+            // Device is in monitor mode, show chat interface
+            isMonitorMode = true;
+            setView('chatView');
+            initializeChatMode();
+          } else {
+            // Device is in config mode, run location detection
+            runDetection();
+          }
+        })
         .catch(() => runDetection());
     }
 
