@@ -20,11 +20,26 @@ function getProjectCreator() {
  * Deploy via Cloud (EC2 + SSM via Lambda/API Gateway)
  */
 async function deployViaCloud(options) {
-  const { balenaToken, deviceId, fleetName, services } = options;
+  const { balenaToken, deviceId, fleetName, services, environmentVariables } = options;
   
   try {
+    // First, set environment variables on the device via Balena API
+    // This must happen BEFORE EC2 runs balena push
+    if (environmentVariables && Object.keys(environmentVariables).length > 0) {
+      console.log('[DEPLOYER] Setting environment variables on device before cloud deployment...');
+      const balenaHelper = new BalenaApiHelper(balenaToken);
+      const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
+      console.log(`[DEPLOYER] ✓ Set ${envResult.length} environment variables on device`);
+    }
     if (!CLOUD_API_URL) {
       throw new Error('CLOUD_API_URL not configured');
+    }
+
+    if (environmentVariables && Object.keys(environmentVariables).length > 0) {
+      console.log('[DEPLOYER] Setting environment variables on device before cloud deployment...');
+      const balenaHelper = new BalenaApiHelper(balenaToken);
+      const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
+      console.log(`[DEPLOYER] ✓ Set ${envResult.length} environment variables on device`);
     }
 
     // Convert services to CSV format
