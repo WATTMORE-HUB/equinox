@@ -1,5 +1,6 @@
 const axios = require('axios');
 const path = require('path');
+const BalenaApiHelper = require('./balenaApiHelper');
 
 // Configuration for deployment method
 const USE_CLOUD = process.env.USE_CLOUD === 'true';
@@ -94,11 +95,11 @@ async function deployViaCloud(options) {
 
 /**
  * Deploy services to a device via Balena
- * @param {Object} options - { balenaToken, deviceId, services }
+ * @param {Object} options - { balenaToken, deviceId, services, environmentVariables }
  * @returns {Promise<{success: boolean, error?: string, projectPath?: string}>}
  */
 async function deployServices(options) {
-  const { balenaToken, deviceId, fleetName, services } = options;
+  const { balenaToken, deviceId, fleetName, services, environmentVariables } = options;
 
   try {
     // Validate inputs
@@ -117,6 +118,20 @@ async function deployServices(options) {
 
     // Otherwise, use local deployment
     console.log('Using local deployment...');
+    
+    // First, set environment variables on the device via Balena API
+    if (environmentVariables && Object.keys(environmentVariables).length > 0) {
+      try {
+        console.log('Setting environment variables on device...');
+        const balenaHelper = new BalenaApiHelper(balenaToken);
+        const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
+        console.log(`✓ Set ${envResult.length} environment variables on device`);
+      } catch (envErr) {
+        console.warn(`[WARNING] Failed to set environment variables: ${envErr.message}`);
+        console.warn('Proceeding with deployment, but environment variables may not be set');
+        // Don't fail the entire deployment if env vars fail to set
+      }
+    }
     
     // Verify device exists
     console.log(`Verifying device ${deviceId}...`);
@@ -184,5 +199,6 @@ async function deployServices(options) {
 }
 
 module.exports = {
-  deployServices
+  deployServices,
+  BalenaApiHelper
 };

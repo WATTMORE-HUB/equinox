@@ -147,12 +147,16 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
       return res.status(400).json({ error: 'CSV file is empty' });
     }
 
-    // Call deployer service
+    // First, get the deployment config with environment variables
+    const deployment = await configGenerator.generateConfig({ name: fleetName, fleetName });
+    
+    // Call deployer service to set environment variables on device
     const result = await deployServices({
       balenaToken,
       deviceId,
       fleetName,
       services,
+      environmentVariables: deployment.environmentVariables
     });
 
     if (!result.success) {
