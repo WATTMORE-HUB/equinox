@@ -56,8 +56,16 @@ app.use((err, req, res, next) => {
 });
 
 // Check if device is in monitor mode (already configured)
+// EQUINOX_MODE is set by Balena device environment when configured
 const EQUINOX_MODE = process.env.EQUINOX_MODE || 'config';
 console.log(`[Server] EQUINOX_MODE=${EQUINOX_MODE}`);
+
+// Log all environment variables for debugging mode detection
+if (process.env.EQUINOX_MODE) {
+  console.log(`[Server] EQUINOX_MODE explicitly set to: ${process.env.EQUINOX_MODE}`);
+} else {
+  console.log('[Server] EQUINOX_MODE not set, defaulting to config mode');
+}
 
 // Auto-configuration disabled - environment variables should only be set when user clicks Confirm
 // This ensures variables are set for the correct project, not just whatever fleet the device is in
