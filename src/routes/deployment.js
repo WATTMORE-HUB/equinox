@@ -147,8 +147,31 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
       return res.status(400).json({ error: 'CSV file is empty' });
     }
 
-    // First, get the deployment config with environment variables
-    const deploymentConfig = await configGenerator.generateConfig({ name: fleetName, fleetName });
+    // First, fetch project data from Wattmore to get hardware info
+    await hardwareConfigLoader.load();
+    let projectData;
+    try {
+      projectData = await wattmoreClient.getProjectByName(fleetName);
+    } catch (err) {
+      console.warn(`[DEPLOYMENT] Warning: Could not fetch project data from Wattmore: ${err.message}`);
+      // Use minimal project data if Wattmore lookup fails
+      projectData = {
+        name: fleetName,
+        fleetName: fleetName,
+        hardware: {
+          meters: [],
+          inverters: [],
+          weatherStations: [],
+          trackers: [],
+          cameras: [],
+          reclosers: []
+        },
+        uuids: {}
+      };
+    }
+    
+    // Generate deployment config with environment variables
+    const deploymentConfig = await configGenerator.generateConfig(projectData);
     
     // Call deployer service to set environment variables on device
     const result = await deployServices({
