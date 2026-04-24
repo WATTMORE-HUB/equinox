@@ -47,53 +47,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
-// Auto-set environment variables on startup if EQUINOX_MODE not set
+// Auto-configuration disabled - environment variables should only be set when user clicks Confirm
+// This ensures variables are set for the correct project, not just whatever fleet the device is in
 async function autoConfigureEnvironment() {
-  try {
-    // Only auto-configure if running on Balena and EQUINOX_MODE not already set
-    if (!process.env.EQUINOX_MODE && process.env.BALENA_DEVICE_UUID) {
-      console.log('[Server] EQUINOX_MODE not set. Attempting to auto-configure from Wattmore...');
-      
-      const balenaToken = balenaTokenManager.getToken();
-      if (!balenaToken) {
-        console.log('[Server] Balena token not available, skipping auto-configuration');
-        return;
-      }
-      
-      const fleetName = process.env.BALENA_APP_NAME;
-      const deviceUuid = process.env.BALENA_DEVICE_UUID;
-      
-      if (!fleetName || !deviceUuid) {
-        console.log('[Server] Fleet name or device UUID missing, skipping auto-configuration');
-        return;
-      }
-      
-      // Import required modules
-      const BalenaApiHelper = require('./services/balenaApiHelper');
-      const hardwareConfigLoader = require('./services/hardwareConfigLoader');
-      const wattmoreClient = require('./services/wattmoreClient');
-      const configGenerator = require('./services/configGenerator');
-      
-      try {
-        console.log(`[Server] Fetching project data for fleet: ${fleetName}`);
-        await hardwareConfigLoader.load();
-        const projectData = await wattmoreClient.getProjectByName(fleetName);
-        const deploymentConfig = await configGenerator.generateConfig(projectData);
-        
-        console.log(`[Server] Setting ${Object.keys(deploymentConfig.environmentVariables).length} environment variables...`);
-        const balenaHelper = new BalenaApiHelper(balenaToken);
-        const result = await balenaHelper.setDeviceEnvVars(deviceUuid, deploymentConfig.environmentVariables);
-        
-        console.log(`[Server] ✓ Auto-configured ${result.length} environment variables on device`);
-      } catch (err) {
-        console.warn(`[Server] Auto-configuration failed (non-fatal): ${err.message}`);
-        console.log('[Server] You can manually set environment variables via:');
-        console.log(`        node src/utils/balena-env-setter.js set-monitor ${deviceUuid}`);
-      }
-    }
-  } catch (error) {
-    console.warn(`[Server] Error during auto-configuration: ${error.message}`);
-  }
+  // Placeholder - actual configuration happens via /api/deployment/deploy endpoint
+  // when user clicks the Confirm button on the dashboard
+  console.log('[Server] Environment auto-configuration is disabled. Variables will be set when user clicks Confirm.');
 }
 
 // Start server with proper initialization
