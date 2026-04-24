@@ -174,6 +174,17 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
     // Generate deployment config with environment variables
     const deploymentConfig = await configGenerator.generateConfig(projectData);
     
+    // Set EQUINOX_MODE to monitor mode BEFORE deployment (so container picks it up on restart)
+    try {
+      console.log('[DEPLOYMENT ROUTE] Setting EQUINOX_MODE=monitor on device...');
+      const balenaHelper = new BalenaApiHelper(balenaToken);
+      await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
+      console.log('[DEPLOYMENT ROUTE] ✓ EQUINOX_MODE set to monitor');
+    } catch (modeErr) {
+      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set EQUINOX_MODE: ${modeErr.message}`);
+      // Don't fail the deployment if mode setting fails - it's a fallback mechanism
+    }
+    
     // Call deployer service to set environment variables on device
     const result = await deployServices({
       balenaToken,
@@ -185,17 +196,6 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
 
     if (!result.success) {
       return res.status(500).json({ error: result.error });
-    }
-
-    // Set EQUINOX_MODE to monitor mode for chat/monitoring dashboard
-    try {
-      console.log('[DEPLOYMENT ROUTE] Setting EQUINOX_MODE=monitor on device...');
-      const balenaHelper = new BalenaApiHelper(balenaToken);
-      await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
-      console.log('[DEPLOYMENT ROUTE] ✓ EQUINOX_MODE set to monitor');
-    } catch (modeErr) {
-      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set EQUINOX_MODE: ${modeErr.message}`);
-      // Don't fail the deployment if mode setting fails - it's a fallback mechanism
     }
 
     // Record deployment in state
