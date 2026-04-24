@@ -59,7 +59,7 @@ class BalenaApiHelper {
     try {
       // First check if var exists
       const envVars = await this.getDeviceEnvVars(deviceId);
-      const existing = envVars.find(v => v.env_var_name === name);
+      const existing = envVars.find(v => v.name === name);
 
       if (existing) {
         // Update existing
@@ -73,7 +73,7 @@ class BalenaApiHelper {
         console.log(`[BalenaApiHelper] Creating env var ${name}...`);
         await this.client.post('/v7/device_environment_variable', {
           device: deviceId,
-          env_var_name: name,
+          name: name,
           value
         });
       }
