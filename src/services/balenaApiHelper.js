@@ -54,9 +54,18 @@ class BalenaApiHelper {
   /**
    * Set environment variable on device
    * Creates new or updates existing
+   * deviceIdOrUuid can be either numeric ID or UUID string
    */
-  async setDeviceEnvVar(deviceId, name, value) {
+  async setDeviceEnvVar(deviceIdOrUuid, name, value) {
     try {
+      // Convert UUID to numeric ID if needed
+      let deviceId = deviceIdOrUuid;
+      if (isNaN(deviceIdOrUuid)) {
+        // It's likely a UUID, need to get the internal ID
+        const device = await this.getDevice(deviceIdOrUuid);
+        deviceId = device.id;
+      }
+      
       // First check if var exists
       const envVars = await this.getDeviceEnvVars(deviceId);
       const existing = envVars.find(v => v.name === name);
