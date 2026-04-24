@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equinox Deployment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 50% 18%, rgba(82, 140, 255, 0.18), transparent 24%),
+        radial-gradient(circle at 50% 28%, rgba(112, 178, 255, 0.08), transparent 34%),
+        linear-gradient(180deg, #050816 0%, #070b14 40%, #03050a 100%);
+      overflow: hidden;
+    }
+
+    @keyframes pulse-core {
+      0%, 100% {
+        transform: scale(0.92);
+        opacity: 0.72;
+        filter: blur(0px);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        filter: blur(1px);
+      }
+    }
+
+    @keyframes pulse-halo {
+      0%, 100% {
+        transform: scale(0.88);
+        opacity: 0.25;
+      }
+      50% {
+        transform: scale(1.18);
+        opacity: 0.55;
+      }
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fade-in 0.5s ease-out;
+    }
+
+    .light-shell {
+      position: relative;
+      width: min(44vw, 26rem);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: drift 4s ease-in-out infinite;
+    }
+
+    .light-halo {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(89, 161, 255, 0.36) 0%, rgba(89, 161, 255, 0.14) 32%, rgba(89, 161, 255, 0) 70%);
+      animation: pulse-halo 3s ease-in-out infinite;
+      filter: blur(10px);
+    }
+
+    .light-core {
+      width: 34%;
+      aspect-ratio: 1;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 30% 30%, #d7eeff 0%, #8fd1ff 18%, #499eff 48%, #155dfc 72%, rgba(21, 93, 252, 0.08) 100%);
+      box-shadow:
+        0 0 30px rgba(115, 184, 255, 0.85),
+        0 0 90px rgba(59, 130, 246, 0.45),
+        0 0 180px rgba(59, 130, 246, 0.2);
+      animation: pulse-core 2.2s ease-in-out infinite;
+    }
+
+    .light-grid {
+      position: absolute;
+      inset: 18%;
+      border-radius: 9999px;
+      border: 1px solid rgba(158, 198, 255, 0.08);
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.03);
+    }
+
+    .glass-panel {
+      background: rgba(7, 11, 20, 0.62);
+      border: 1px solid rgba(153, 183, 255, 0.12);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+    }
+
+    .ghost-button {
+      border: 1px solid rgba(125, 174, 255, 0.28);
+      background: linear-gradient(180deg, rgba(60, 130, 246, 0.28), rgba(37, 99, 235, 0.18));
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
+      transition: all 0.3s ease;
+    }
+
+    .ghost-button:hover {
+      background: linear-gradient(180deg, rgba(72, 145, 255, 0.38), rgba(37, 99, 235, 0.26));
+      border-color: rgba(125, 174, 255, 0.48);
+    }
+
+    .secondary-button {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .secondary-button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+  <main class="min-h-screen flex flex-col relative">
+    <section class="flex-1 flex flex-col justify-between px-6 py-8 md:px-10 md:py-10">
+      <div class="flex items-center justify-between text-sm text-slate-400">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200">✦</div>
+          <div>
+            <p class="font-semibold tracking-[0.2em] uppercase text-slate-300">Equinox</p>
+            <p class="text-xs text-slate-500">Intelligent asset deployment</p>
+          </div>
+        </div>
+        <div id="serverStatusText" class="text-xs uppercase tracking-[0.22em] text-slate-500">Connected</div>
+      </div>
+
+      <div class="flex-1 flex items-center justify-center">
+        <div class="light-shell" aria-hidden="true">
+          <div class="light-halo"></div>
+          <div class="light-grid"></div>
+          <div id="lightCore" class="light-core"></div>
+        </div>
+      </div>
+
+      <div class="w-full flex justify-center pb-4 md:pb-8">
+        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl">
+          <div id="locatingView" class="fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Locating system</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Give me a second,<br>
+              I'm getting my bearings.
+            </h1>
+            <p id="subStatus" class="mt-5 text-base md:text-lg text-slate-400">
+              Reading device context and matching it to the right deployment.
+            </p>
+          </div>
+
+          <div id="confirmView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Candidate match</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Got it. Am I here?
+            </h1>
+            <div class="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-6">
+              <p class="text-sm uppercase tracking-[0.22em] text-slate-500 mb-3">Project</p>
+              <p id="projectName" class="text-3xl md:text-5xl font-semibold tracking-tight text-white">—</p>
+              <div id="hardwareSummary" class="mt-5 text-sm md:text-base text-slate-400"></div>
+            </div>
+            <div id="siteSelectView" class="hidden mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-6">
+              <p class="text-sm uppercase tracking-[0.22em] text-slate-500 mb-3">Select a site</p>
+              <select id="siteDropdown" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-blue-400 transition">
+                <option value="">Choose a site...</option>
+              </select>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row gap-3">
+              <button id="confirmBtn" class="ghost-button rounded-2xl px-8 py-4 text-lg font-semibold transition">
+                Confirm
+              </button>
+              <button id="retryBtn" class="secondary-button rounded-2xl px-8 py-4 text-lg font-medium text-slate-300 transition">
+                Try again
+              </button>
+            </div>
+          </div>
+
+          <div id="deployingView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Deployment in progress</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              Thanks. I'll handle the rest.
+            </h1>
+            <p class="mt-5 text-base md:text-lg text-slate-400">
+              Your deployment has been prepared and queued.
+            </p>
+            <div id="deploySummary" class="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-5 text-sm md:text-base text-slate-400"></div>
+          </div>
+
+          <div id="errorView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-rose-400/70 mb-5">Needs attention</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              I couldn't place this device yet.
+            </h1>
+            <p id="errorText" class="mt-5 text-base md:text-lg text-slate-400"></p>
+            <div class="mt-8">
+              <button id="errorRetryBtn" class="ghost-button rounded-2xl px-8 py-4 text-lg font-semibold transition">
+                Try again
+              </button>
+            </div>
+          </div>
+
+          <div id="chatView" class="hidden fade-in">
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">System monitoring</p>
+            <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
+              What's on your mind?
+            </h1>
+            <p class="mt-5 text-base md:text-lg text-slate-400">Ask about container health, memory usage, or any recent errors.</p>
+            
+            <div class="mt-8 max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
+              <div id="chatMessages" class="space-y-4 flex flex-col">
+                <div class="text-sm text-slate-500">
+                  <p>Chat interface ready. Ask your first question!</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex gap-2">
+              <input
+                id="chatInput"
+                type="text"
+                placeholder="Ask about system health..."
+                class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-400 transition"
+              />
+              <button id="chatSendBtn" class="ghost-button rounded-xl px-6 py-3 text-lg font-semibold transition">
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 text-xs uppercase tracking-[0.22em] text-slate-500">
+    Powered by Wattmore
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const GEOLOOKUP_FALLBACK_PROJECT = 'OfficeLab';
+
+    // Configuration mode views
+    const locatingView = document.getElementById('locatingView');
+    const confirmView = document.getElementById('confirmView');
+    const deployingView = document.getElementById('deployingView');
+    const errorView = document.getElementById('errorView');
+    
+    // Chat mode view
+    const chatView = document.getElementById('chatView');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    
+    // Configuration elements
+    const projectNameEl = document.getElementById('projectName');
+    const hardwareSummaryEl = document.getElementById('hardwareSummary');
+    const deploySummaryEl = document.getElementById('deploySummary');
+    const subStatusEl = document.getElementById('subStatus');
+    const errorTextEl = document.getElementById('errorText');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const errorRetryBtn = document.getElementById('errorRetryBtn');
+    const serverStatusText = document.getElementById('serverStatusText');
+    const siteSelectView = document.getElementById('siteSelectView');
+    const siteDropdown = document.getElementById('siteDropdown');
+
+    let detectedDeployment = null;
+    let autoDetectedProject = null;
+    let showingSiteSelect = false;
+    let isMonitorMode = false;
+    let chatHistorySession = [];
+    let chatLoading = false;
+
+    function setView(viewName) {
+      const views = { locatingView, confirmView, deployingView, errorView, chatView };
+      Object.entries(views).forEach(([key, node]) => {
+        if (!node) return;
+        if (key === viewName) {
+          node.classList.remove('hidden');
+          node.classList.add('fade-in');
+        } else {
+          node.classList.add('hidden');
+          node.classList.remove('fade-in');
+        }
+      });
+    }
+
+    function addChatMessage(text, isUser) {
+      const messageEl = document.createElement('div');
+      messageEl.className = isUser ? 'text-right' : 'text-left';
+      
+      const bubbleEl = document.createElement('div');
+      bubbleEl.className = isUser
+        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-xs text-sm'
+        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-xs text-sm';
+      bubbleEl.textContent = text;
+      
+      messageEl.appendChild(bubbleEl);
+      chatMessages.appendChild(messageEl);
+      
+      // Auto-scroll to bottom
+      chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const question = chatInput.value.trim();
+      if (!question || chatLoading) return;
+      
+      chatInput.value = '';
+      addChatMessage(question, true);
+      
+      chatLoading = true;
+      chatSendBtn.disabled = true;
+      
+      // Show loading indicator
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'text-center text-slate-500 text-sm';
+      loadingEl.id = 'chatLoading';
+      loadingEl.textContent = 'Analyzing...';
+      chatMessages.appendChild(loadingEl);
+      
+      try {
+        const response = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        
+        const loadingEl = document.getElementById('chatLoading');
+        if (loadingEl) loadingEl.remove();
+        
+        if (!response.ok) {
+          throw new Error('Failed to get response');
+        }
+        
+        const data = await response.json();
+        addChatMessage(data.answer || 'Unable to process question', false);
+        chatHistorySession.push({ question, answer: data.answer });
+      } catch (error) {
+        console.error('Chat error:', error);
+        const loadingEl = document.getElementById('chatLoading');
+        if (loadingEl) loadingEl.remove();
+        addChatMessage('⚠ Unable to process question. Try again.', false);
+      } finally {
+        chatLoading = false;
+        chatSendBtn.disabled = false;
+        chatInput.focus();
+      }
+    }
+
+    function detectAndInitializeMode() {
+      // Check if device has been configured (by looking for deployment state)
+      // For now, check if /api/status/mode returns 'monitor'
+      fetch('/health')
+        .then(res => res.ok ? checkDeploymentStatus() : runDetection())
+        .catch(() => runDetection());
+    }
+
+    async function checkDeploymentStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/deployment/status`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.state === 'completed') {
+            // Device is configured, show chat mode
+            isMonitorMode = true;
+            setView('chatView');
+            initializeChatMode();
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not check deployment status');
+      }
+      // Fall back to configuration mode
+      runDetection();
+    }
+
+    function initializeChatMode() {
+      addChatMessage('System monitoring active. How can I help?', false);
+      chatInput.focus();
+    }
+
+    function formatHardwareSummary(hardware) {
+      const parts = [];
+
+      if (hardware.meters?.length) {
+        parts.push(`Meter: ${hardware.meters.map(item => item.model).join(', ')}`);
+      }
+      if (hardware.inverters?.length) {
+        parts.push(`Inverter${hardware.inverters.length > 1 ? 's' : ''}: ${hardware.inverters.map(item => item.model).join(', ')}`);
+      }
+      if (hardware.weatherStations?.length) {
+        parts.push(`Weather: ${hardware.weatherStations.map(item => item.type).join(', ')}`);
+      }
+      if (hardware.trackers?.length) {
+        parts.push(`Tracker${hardware.trackers.length > 1 ? 's' : ''}: ${hardware.trackers.map(item => item.model).join(', ')}`);
+      }
+
+      return parts.length ? parts.join(' • ') : 'No hardware details available yet.';
+    }
+
+    async function lookupProject(projectName) {
+      const response = await fetch(`${API_BASE}/deployment/lookup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ projectName })
+      });
+
+      const text = await response.text();
+      let data = {};
+
+      try {
+        data = JSON.parse(text);
+      } catch (error) {
+        throw new Error(`Unexpected response: ${text}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Lookup failed');
+      }
+
+      return data;
+    }
+
+    async function getCandidateProjectName() {
+      return GEOLOOKUP_FALLBACK_PROJECT;
+    }
+
+    async function runDetection() {
+      setView('locatingView');
+      subStatusEl.textContent = 'Reading device context and matching it to the right deployment.';
+
+      try {
+        const candidateProject = await getCandidateProjectName();
+        autoDetectedProject = candidateProject;
+        subStatusEl.textContent = 'Cross-checking nearby site data.';
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        const result = await lookupProject(candidateProject);
+        detectedDeployment = result;
+
+        projectNameEl.textContent = result.project?.name || candidateProject;
+        hardwareSummaryEl.textContent = formatHardwareSummary(result.hardwareDetected || {});
+        siteSelectView.classList.add('hidden');
+        showingSiteSelect = false;
+        setView('confirmView');
+      } catch (error) {
+        errorTextEl.textContent = error.message;
+        setView('errorView');
+      }
+    }
+
+    async function handleRetry() {
+      if (!showingSiteSelect) {
+        // First click on Try Again - show the dropdown
+        showingSiteSelect = true;
+        siteSelectView.classList.remove('hidden');
+        siteDropdown.innerHTML = '<option value="">Loading available sites...</option>';
+        
+        try {
+          // Fetch available projects from server
+          const response = await fetch(`${API_BASE}/deployment/projects`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch projects list');
+          }
+          const data = await response.json();
+          const projects = data.projects || [];
+          
+          // Populate dropdown
+          siteDropdown.innerHTML = '<option value="">Choose a site...</option>';
+          projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project;
+            option.textContent = project;
+            siteDropdown.appendChild(option);
+          });
+          
+          // Auto-select the auto-detected one if available
+          if (autoDetectedProject) {
+            siteDropdown.value = autoDetectedProject;
+          }
+        } catch (err) {
+          console.error('Error loading projects:', err);
+          siteDropdown.innerHTML = '<option value="">Error loading sites</option>';
+        }
+      } else {
+        // Second interaction - user selected a site from dropdown
+        const selectedSite = siteDropdown.value;
+        if (!selectedSite) {
+          alert('Please select a site');
+          return;
+        }
+        // Load the selected site
+        setView('locatingView');
+        subStatusEl.textContent = 'Loading selected site data...';
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          const result = await lookupProject(selectedSite);
+          detectedDeployment = result;
+          projectNameEl.textContent = result.project?.name || selectedSite;
+          hardwareSummaryEl.textContent = formatHardwareSummary(result.hardwareDetected || {});
+          siteSelectView.classList.add('hidden');
+          showingSiteSelect = false;
+          setView('confirmView');
+        } catch (error) {
+          errorTextEl.textContent = `Failed to load site: ${error.message}`;
+          setView('errorView');
+        }
+      }
+    }
+
+    async function handleConfirm() {
+      if (!detectedDeployment) {
+        errorTextEl.textContent = 'No deployment candidate was loaded.';
+        setView('errorView');
+        return;
+      }
+
+      try {
+        setView('deployingView');
+        const services = detectedDeployment.deployment?.services || [];
+        const fleetName = detectedDeployment.deployment?.fleetName || detectedDeployment.project?.name || 'Unknown';
+        const environmentVariables = detectedDeployment.deployment?.environmentVariables || {};
+        
+        deploySummaryEl.textContent = `Initializing deployment for ${fleetName}...`;
+
+        // Get device ID from server (queries Balena API)
+        deploySummaryEl.textContent = `Identifying this device...`;
+        const deviceInfoResponse = await fetch(`${API_BASE}/deployment/device-info`);
+        if (!deviceInfoResponse.ok) {
+          const errData = await deviceInfoResponse.json();
+          throw new Error(errData.error || 'Unable to determine device ID. This dashboard must run on a Balena device.');
+        }
+        const deviceInfo = await deviceInfoResponse.json();
+        const deviceId = deviceInfo.deviceId;  // Internal Balena device ID for API calls
+        const deviceUuid = deviceInfo.deviceUuid;  // Full UUID
+        const deviceName = deviceInfo.deviceName;
+        const discoveredFleetName = deviceInfo.fleetName;
+        
+        if (!deviceId || !deviceUuid) {
+          throw new Error('Unable to determine device ID. This dashboard must run on a Balena device.');
+        }
+        
+        console.log(`Device identified: ${deviceName} in fleet: ${discoveredFleetName}`);
+        deploySummaryEl.textContent = `Device identified: ${deviceName} in ${discoveredFleetName}`;
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Use discovered fleet name if available, otherwise fall back to detected fleet name
+        const finalFleetName = discoveredFleetName || fleetName;
+        if (!finalFleetName) {
+          throw new Error('Unable to determine fleet name from Balena API');
+        }
+
+        // Generate service CSV from deployment services
+        const serviceCsvContent = services.map(s => `${s},${s}`).join('\n');
+        const servicesCsv = new Blob(
+          [`name,service\n${serviceCsvContent}`],
+          { type: 'text/csv' }
+        );
+
+        // Generate environment variables CSV
+        const envCsvLines = Object.entries(environmentVariables)
+          .map(([key, value]) => `${key},${value}`)
+          .join('\n');
+        const envCsv = new Blob(
+          [`name,value\n${envCsvLines}`],
+          { type: 'text/csv' }
+        );
+
+        // Prepare deployment request (token is handled securely on server)
+        const formData = new FormData();
+        formData.append('deviceId', deviceId);
+        formData.append('fleetName', finalFleetName);
+        formData.append('csvFile', servicesCsv, 'services.csv');
+        // Note: balenaToken is NOT sent from browser - it's retrieved securely on server via balenaTokenManager
+
+        deploySummaryEl.textContent = `Sending deployment to cloud infrastructure...`;
+
+        const deployResponse = await fetch(`${API_BASE}/deployment/deploy`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const deployText = await deployResponse.text();
+        let deployData = {};
+
+        try {
+          deployData = JSON.parse(deployText);
+        } catch (e) {
+          throw new Error(`Invalid response from deployment API: ${deployText}`);
+        }
+
+        if (!deployResponse.ok) {
+          throw new Error(deployData.error || `Deployment failed (${deployResponse.status})`);
+        }
+
+        deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}. Deployment ID: ${deployData.deploymentId}`;
+      } catch (error) {
+        errorTextEl.textContent = `Deployment failed: ${error.message}`;
+        setView('errorView');
+      }
+    }
+
+    async function checkServerStatus() {
+      try {
+        const response = await fetch('/health');
+        serverStatusText.textContent = response.ok ? 'Connected' : 'Unavailable';
+      } catch (error) {
+        serverStatusText.textContent = 'Unavailable';
+      }
+    }
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    retryBtn.addEventListener('click', handleRetry);
+    errorRetryBtn.addEventListener('click', runDetection);
+    
+    // Chat mode listeners
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !chatLoading) {
+        sendChatMessage();
+      }
+    });
+
+    checkServerStatus();
+    detectAndInitializeMode();
+    setInterval(checkServerStatus, 30000);
+  </script>
+</body>
+</html>

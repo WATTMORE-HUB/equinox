@@ -65,6 +65,7 @@ class ProjectCreator {
     throw new Error('Could not find create-project.js in any of the expected locations');
   }
 
+
   /**
    * Create a project with selected services
    * Uses the existing create-project.js via child process to avoid path issues
