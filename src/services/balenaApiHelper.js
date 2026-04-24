@@ -23,7 +23,7 @@ class BalenaApiHelper {
   async getDevice(deviceUuid) {
     try {
       const response = await this.client.get(
-        `/v6/device?$filter=uuid%20eq%20'${deviceUuid}'`
+        `/v7/device?$filter=uuid%20eq%20'${deviceUuid}'`
       );
 
       if (response.data.d && response.data.d.length > 0) {
@@ -42,7 +42,7 @@ class BalenaApiHelper {
   async getDeviceEnvVars(deviceId) {
     try {
       const response = await this.client.get(
-        `/v6/device_environment_variable?$filter=device%20eq%20${deviceId}`
+        `/v7/device_environment_variable?$filter=device%20eq%20${deviceId}`
       );
       return response.data.d || [];
     } catch (err) {
@@ -65,13 +65,13 @@ class BalenaApiHelper {
         // Update existing
         console.log(`[BalenaApiHelper] Updating env var ${name}...`);
         await this.client.patch(
-          `/v6/device_environment_variable(${existing.id})`,
+          `/v7/device_environment_variable(${existing.id})`,
           { value }
         );
       } else {
         // Create new
         console.log(`[BalenaApiHelper] Creating env var ${name}...`);
-        await this.client.post('/v6/device_environment_variable', {
+        await this.client.post('/v7/device_environment_variable', {
           device: deviceId,
           env_var_name: name,
           value
@@ -88,9 +88,19 @@ class BalenaApiHelper {
 
   /**
    * Set multiple environment variables on device
+   * deviceId can be either UUID or internal ID
    */
-  async setDeviceEnvVars(deviceId, envVars) {
+  async setDeviceEnvVars(deviceIdOrUuid, envVars) {
     try {
+      // Check if this is a UUID (long string with dashes or alphanumeric)
+      // or an internal ID (numeric)
+      let deviceId = deviceIdOrUuid;
+      if (isNaN(deviceIdOrUuid)) {
+        // It's likely a UUID, need to get the internal ID
+        const device = await this.getDevice(deviceIdOrUuid);
+        deviceId = device.id;
+      }
+      
       const results = [];
       for (const [name, value] of Object.entries(envVars)) {
         if (value) {  // Skip empty values

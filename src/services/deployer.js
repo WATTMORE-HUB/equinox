@@ -23,18 +23,12 @@ async function deployViaCloud(options) {
   const { balenaToken, deviceId, fleetName, services, environmentVariables } = options;
   
   try {
-    // First, set environment variables on the device via Balena API
-    // This must happen BEFORE EC2 runs balena push
-    if (environmentVariables && Object.keys(environmentVariables).length > 0) {
-      console.log('[DEPLOYER] Setting environment variables on device before cloud deployment...');
-      const balenaHelper = new BalenaApiHelper(balenaToken);
-      const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
-      console.log(`[DEPLOYER] ✓ Set ${envResult.length} environment variables on device`);
-    }
     if (!CLOUD_API_URL) {
       throw new Error('CLOUD_API_URL not configured');
     }
 
+    // First, set environment variables on the device via Balena API
+    // This must happen BEFORE EC2 runs balena push
     if (environmentVariables && Object.keys(environmentVariables).length > 0) {
       console.log('[DEPLOYER] Setting environment variables on device before cloud deployment...');
       const balenaHelper = new BalenaApiHelper(balenaToken);
@@ -151,7 +145,7 @@ async function deployServices(options) {
     // Verify device exists
     console.log(`Verifying device ${deviceId}...`);
     const deviceCheckResponse = await axios.get(
-      `${BALENA_API_URL}/v6/device?$filter=uuid%20eq%20'${deviceId}'`,
+      `${BALENA_API_URL}/v7/device?$filter=uuid%20eq%20'${deviceId}'`,
       {
         headers: {
           'Authorization': `Bearer ${balenaToken}`
