@@ -110,6 +110,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  equinox:
+    build:
+      dockerfile: equinox.Dockerfile
+      context: .
+    container_name: equinox
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - PORT=80
+      - NODE_ENV=production
+      - STATE_FILE_PATH=/collect_data/state.json
+      - COLLECT_DATA_PATH=/collect_data
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - LOG_CHECK_INTERVAL=3600000
+      - VALIDATION_WINDOW=600000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - collect_data:/collect_data
 volumes:
   postgres_data:
   collect_data:
