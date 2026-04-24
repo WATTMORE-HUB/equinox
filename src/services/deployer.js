@@ -145,7 +145,7 @@ async function deployServices(options) {
     // Verify device exists
     console.log(`Verifying device ${deviceId}...`);
     const deviceCheckResponse = await axios.get(
-      `${BALENA_API_URL}/v6/device?$filter=uuid%20eq%20'${deviceId}'`,
+      `${BALENA_API_URL}/v7/device?$filter=uuid%20eq%20'${deviceId}'`,
       {
         headers: {
           'Authorization': `Bearer ${balenaToken}`
