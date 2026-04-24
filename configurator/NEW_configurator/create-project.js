@@ -43,6 +43,9 @@ class ProjectCreator {
                 await this.copyServiceFiles(serviceDir, projectPath, srcPath, serviceDir === 'camera_control');
             }
 
+            // Always copy Equinox service files (prefixed with equinox_)
+            await this.copyEquinoxFiles(projectPath, srcPath);
+
             // Modify docker-compose.yml to comment out unused services
             await this.modifyDockerCompose(projectPath, selectedServices);
 
@@ -143,6 +146,50 @@ class ProjectCreator {
         }
     }
 
+    async copyEquinoxFiles(projectPath, srcPath) {
+        console.log(`🔧 Processing service: equinox`);
+        
+        try {
+            // Copy equinox.Dockerfile
+            const dockerfileSrc = path.join(this.componentsPath, 'equinox.Dockerfile');
+            const dockerfileDest = path.join(projectPath, 'equinox.Dockerfile');
+            await fs.copyFile(dockerfileSrc, dockerfileDest);
+            console.log(`  ✓ Copied equinox.Dockerfile to project root`);
+            
+            // Copy equinox_package.json
+            const packageSrc = path.join(this.componentsPath, 'equinox_package.json');
+            const packageDest = path.join(projectPath, 'equinox_package.json');
+            await fs.copyFile(packageSrc, packageDest);
+            console.log(`  ✓ Copied equinox_package.json`);
+            
+            // Copy equinox_package-lock.json
+            const lockSrc = path.join(this.componentsPath, 'equinox_package-lock.json');
+            const lockDest = path.join(projectPath, 'equinox_package-lock.json');
+            await fs.copyFile(lockSrc, lockDest);
+            console.log(`  ✓ Copied equinox_package-lock.json`);
+            
+            // Copy equinox_src directory
+            const srcSourcePath = path.join(this.componentsPath, 'equinox_src');
+            const srcDestPath = path.join(projectPath, 'equinox_src');
+            await this.copyDirectory(srcSourcePath, srcDestPath);
+            console.log(`  ✓ Copied equinox_src/`);
+            
+            // Copy equinox_public directory
+            const publicSourcePath = path.join(this.componentsPath, 'equinox_public');
+            const publicDestPath = path.join(projectPath, 'equinox_public');
+            await this.copyDirectory(publicSourcePath, publicDestPath);
+            console.log(`  ✓ Copied equinox_public/`);
+            
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.warn(`  ⚠️ Equinox files not found, skipping`);
+            } else {
+                console.error(`  ❌ Error processing equinox: ${error.message}`);
+                throw error;
+            }
+        }
+    }
+
     async copyDirectory(source, destination) {
         await this.ensureDir(destination);
         
@@ -181,7 +228,8 @@ class ProjectCreator {
             const alwaysEnabled = [
                 'operate-combine',
                 'operate-heartbeat',
-                'postgres'
+                'postgres',
+                'equinox'
             ];
             
             // Get Docker services that should be enabled
@@ -201,7 +249,8 @@ class ProjectCreator {
                 'operate-weather-collect',
                 'operate-windspeed-collect',
                 'operate-combine',
-                'postgres'
+                'postgres',
+                'equinox'
             ];
             
             for (const service of allDockerServices) {
