@@ -46,6 +46,9 @@ class ProjectCreator {
             // Always copy Equinox service files (prefixed with equinox_)
             await this.copyEquinoxFiles(projectPath, srcPath);
 
+            // Copy hardware profiles for Equinox configuration
+            await this.copyHardwareProfiles(projectPath);
+
             // Modify docker-compose.yml to comment out unused services
             await this.modifyDockerCompose(projectPath, selectedServices);
 
@@ -203,6 +206,24 @@ class ProjectCreator {
                 await this.copyDirectory(sourcePath, destPath);
             } else {
                 await fs.copyFile(sourcePath, destPath);
+            }
+        }
+    }
+
+    async copyHardwareProfiles(projectPath) {
+        console.log(`🔧 Copying hardware profiles for Equinox...`);
+        
+        try {
+            const hardwareProfilesSrc = path.join(this.componentsPath, 'hardware_profiles');
+            const hardwareProfilesDest = path.join(projectPath, 'hardware_profiles');
+            await this.copyDirectory(hardwareProfilesSrc, hardwareProfilesDest);
+            console.log(`  ✓ Copied hardware_profiles/`);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.warn(`  ⚠️ hardware_profiles directory not found, skipping`);
+            } else {
+                console.error(`  ❌ Error copying hardware profiles: ${error.message}`);
+                throw error;
             }
         }
     }

@@ -1,0 +1,7 @@
+{
+  "weather_generic": {
+    "file": "weather_generic.csv",
+    "description": "Generic weather station configuration",
+    "models": ["Weather Station Generic"]
+  }
+}
