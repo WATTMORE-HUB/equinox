@@ -220,7 +220,9 @@ class MonitoringService:
             )
             
             if result.returncode != 0:
-                logger.error(f"Docker ps failed: {result.stderr}")
+                logger.error(f"Docker ps failed with return code {result.returncode}")
+                logger.error(f"stderr: {result.stderr}")
+                logger.error(f"stdout: {result.stdout}")
                 # Keep previous state if Docker call fails
                 return False
             
@@ -400,6 +402,10 @@ class MonitoringService:
 
 
 if __name__ == "__main__":
+    logger.info("Monitor service starting...")
+    logger.info(f"Cache path: {MONITORING_CACHE_PATH}")
+    logger.info(f"Polling interval: {POLLING_INTERVAL} seconds")
     make_certs()
     monitor = MonitoringService()
+    logger.info("Monitor service initialized, starting monitoring loop")
     monitor.run()
