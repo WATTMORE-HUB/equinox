@@ -252,6 +252,36 @@ router.get('/device-info', (req, res) => {
   }
 });
 
+// POST /api/deployment/finalize
+// Set EQUINOX_MODE to monitor after deployment completes
+// Call this after EC2 deployment finishes to switch to monitor/chat mode
+router.post('/finalize', async (req, res) => {
+  try {
+    const balenaToken = balenaTokenManager.getToken();
+    if (!balenaToken) {
+      return res.status(503).json({ error: 'Balena token not configured' });
+    }
+
+    const deviceId = process.env.BALENA_DEVICE_ID || process.env.BALENA_DEVICE_UUID;
+    if (!deviceId) {
+      return res.status(503).json({ error: 'Device ID not available' });
+    }
+
+    console.log('[FINALIZE] Setting EQUINOX_MODE=monitor after deployment...');
+    const balenaHelper = new BalenaApiHelper(balenaToken);
+    await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
+    console.log('[FINALIZE] ✓ EQUINOX_MODE set to monitor');
+
+    res.json({
+      success: true,
+      message: 'EQUINOX_MODE set to monitor mode'
+    });
+  } catch (err) {
+    console.error('[FINALIZE] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/deployment/:deploymentId
 // Get deployment details
 router.get('/:deploymentId', (req, res) => {

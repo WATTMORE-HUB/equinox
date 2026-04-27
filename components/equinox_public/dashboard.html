@@ -363,31 +363,27 @@
     }
 
     function detectAndInitializeMode() {
-      // Check if device has been configured (by looking for deployment state)
-      // For now, check if /api/status/mode returns 'monitor'
-      fetch('/health')
-        .then(res => res.ok ? checkDeploymentStatus() : runDetection())
-        .catch(() => runDetection());
-    }
-
-    async function checkDeploymentStatus() {
-      try {
-        const response = await fetch(`${API_BASE}/deployment/status`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.state === 'completed') {
-            // Device is configured, show chat mode
+      fetch(`${API_BASE}/status/mode`)
+        .then(async res => {
+          if (!res.ok) {
+            throw new Error('Mode check failed');
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data.isMonitor) {
             isMonitorMode = true;
             setView('chatView');
             initializeChatMode();
             return;
           }
-        }
-      } catch (error) {
-        console.warn('Could not check deployment status');
-      }
-      // Fall back to configuration mode
-      runDetection();
+
+          runDetection();
+        })
+        .catch((error) => {
+          console.warn('Could not check mode status:', error);
+          runDetection();
+        });
     }
 
     function initializeChatMode() {
