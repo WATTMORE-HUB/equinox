@@ -5,8 +5,16 @@ import logging
 import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from awscrt import io, mqtt, auth, http
-from awsiot import mqtt_connection_builder
+
+# Optional AWS IoT imports
+try:
+    from awscrt import io, mqtt, auth, http
+    from awsiot import mqtt_connection_builder
+    AWS_IOT_AVAILABLE = True
+except ImportError:
+    AWS_IOT_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.debug("AWS IoT libraries not available, IoT publishing disabled")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -76,6 +84,10 @@ class MonitoringService:
     
     def _initialize_iot_connection(self):
         """Initialize AWS IoT MQTT connection using the same structure as combine/heartbeat"""
+        if not AWS_IOT_AVAILABLE:
+            logger.debug("AWS IoT libraries not available, skipping IoT connection")
+            return
+        
         if not IOT_PUBLISH_ENABLED:
             logger.debug("IoT Core publishing disabled")
             return
