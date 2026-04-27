@@ -134,8 +134,8 @@ services:
       - monitor
   monitor:
     build:
-      dockerfile: monitor.Dockerfile
-      context: ./equinox_src/services
+      dockerfile: equinox_src/services/monitor.Dockerfile
+      context: .
     container_name: equinox-monitor
     restart: always
     environment:
@@ -144,7 +144,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - collect_data:/collect_data
-    working_dir: /app
+    privileged: true
 volumes:
   postgres_data:
   collect_data:
