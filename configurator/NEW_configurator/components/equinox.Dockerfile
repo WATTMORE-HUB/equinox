@@ -13,6 +13,9 @@ RUN npm ci --only=production
 COPY equinox_src src
 COPY equinox_public public
 
+# Copy hardware profiles for configuration loader
+COPY hardware_profiles hardware_profiles
+
 # Expose port for web UI
 EXPOSE 80
 

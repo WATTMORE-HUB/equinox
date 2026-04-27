@@ -21,6 +21,14 @@ class HardwareConfigLoader {
     try {
       const hardwareProfilesDir = path.join(__dirname, '..', '..', 'hardware_profiles');
       
+      // Check if directory exists
+      if (!fs.existsSync(hardwareProfilesDir)) {
+        console.warn('[HardwareConfigLoader] hardware_profiles directory not found at:', hardwareProfilesDir);
+        console.warn('[HardwareConfigLoader] Proceeding with empty profiles (deployment will use defaults)');
+        this.isLoaded = true;
+        return;
+      }
+      
       // Load master manifest
       const manifestPath = path.join(hardwareProfilesDir, 'hardware_manifest.json');
       const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
@@ -44,7 +52,9 @@ class HardwareConfigLoader {
       console.log(`[HardwareConfigLoader] Loaded ${Object.keys(this.profiles).length} hardware profiles`);
     } catch (error) {
       console.error('[HardwareConfigLoader] Failed to load hardware profiles:', error);
-      throw error;
+      // Don't throw - allow the system to continue without hardware profiles
+      // Deployment will use defaults
+      this.isLoaded = true;
     }
   }
 

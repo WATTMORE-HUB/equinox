@@ -363,31 +363,27 @@
     }
 
     function detectAndInitializeMode() {
-      // Check if device has been configured (by looking for deployment state)
-      // For now, check if /api/status/mode returns 'monitor'
-      fetch('/health')
-        .then(res => res.ok ? checkDeploymentStatus() : runDetection())
-        .catch(() => runDetection());
-    }
-
-    async function checkDeploymentStatus() {
-      try {
-        const response = await fetch(`${API_BASE}/deployment/status`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.state === 'completed') {
-            // Device is configured, show chat mode
+      fetch(`${API_BASE}/status/mode`)
+        .then(async res => {
+          if (!res.ok) {
+            throw new Error('Mode check failed');
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data.isMonitor) {
             isMonitorMode = true;
             setView('chatView');
             initializeChatMode();
             return;
           }
-        }
-      } catch (error) {
-        console.warn('Could not check deployment status');
-      }
-      // Fall back to configuration mode
-      runDetection();
+
+          runDetection();
+        })
+        .catch((error) => {
+          console.warn('Could not check mode status:', error);
+          runDetection();
+        });
     }
 
     function initializeChatMode() {
@@ -613,6 +609,55 @@
         }
 
         deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}. Deployment ID: ${deployData.deploymentId}`;
+        
+        // After deployment succeeds, set monitor mode and check periodically
+        console.log('Deployment successful, setting monitor mode...');
+        try {
+          const finalizeResponse = await fetch(`${API_BASE}/deployment/finalize`, {
+            method: 'POST'
+          });
+          if (finalizeResponse.ok) {
+            console.log('✓ Monitor mode set');
+            deploySummaryEl.textContent = 'Deployment complete. Switching to monitor mode...';
+            
+            // Wait a moment then check if we've switched to monitor mode
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Check mode every 2 seconds for up to 20 seconds
+            let modeChecks = 0;
+            const checkModeInterval = setInterval(async () => {
+              try {
+                const modeRes = await fetch(`${API_BASE}/status/mode`);
+                if (modeRes.ok) {
+                  const modeData = await modeRes.json();
+                  if (modeData.isMonitor) {
+                    clearInterval(checkModeInterval);
+                    console.log('✓ Mode switched to monitor');
+                    isMonitorMode = true;
+                    setView('chatView');
+                    initializeChatMode();
+                    return;
+                  }
+                }
+              } catch (e) {
+                console.warn('Mode check error:', e);
+              }
+              
+              modeChecks++;
+              if (modeChecks >= 10) {
+                clearInterval(checkModeInterval);
+                console.warn('Mode did not switch to monitor after 20 seconds, showing config mode');
+                runDetection();
+              }
+            }, 2000);
+          } else {
+            console.warn('Failed to set monitor mode, will retry on page reload');
+            deploySummaryEl.textContent = 'Deployment prepared. Please refresh the page to continue.';
+          }
+        } catch (finalizeErr) {
+          console.warn('Failed to call finalize endpoint:', finalizeErr.message);
+          // Don't fail here - let the mode detection run on next initialization
+        }
       } catch (error) {
         errorTextEl.textContent = `Deployment failed: ${error.message}`;
         setView('errorView');

@@ -69,8 +69,10 @@ async function autoConfigureEnvironment() {
   }
 
   const server = app.listen(PORT, () => {
+    const mode = process.env.EQUINOX_MODE || 'config';
     console.log(`LLM Deployment server listening on port ${PORT}`);
     console.log(`State file: ${stateManager.STATE_FILE_PATH}`);
+    console.log(`[Server] EQUINOX_MODE: ${mode}`);
     console.log(`[Server] Ready to accept requests`);
   });
 

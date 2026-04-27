@@ -94,6 +94,21 @@ router.post('/callback', (req, res) => {
   }
 });
 
+// GET /api/status/mode
+// Get current Equinox mode (config or monitor)
+router.get('/mode', (req, res) => {
+  try {
+    const mode = process.env.EQUINOX_MODE || 'config';
+    res.json({
+      mode,
+      isMonitor: mode === 'monitor',
+    });
+  } catch (err) {
+    console.error('Error fetching mode:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/status/state
 // Get entire state (for debugging)
 router.get('/state', (req, res) => {
