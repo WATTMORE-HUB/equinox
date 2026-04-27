@@ -249,7 +249,12 @@ class MonitoringService:
                     continue
                 parts = line.split('\t')
                 if len(parts) >= 3:
-                    name, status, container_id = parts[0], parts[1], parts[2]
+                    full_name, status, container_id = parts[0], parts[1], parts[2]
+                    
+                    # Clean container name - remove Balena UUID suffixes
+                    # Names like "postgres_14770565_4033849_c99ff1b4230ce075ef177a3da4c2ebe1"
+                    # become "postgres"
+                    name = full_name.split('_')[0]
                     
                     # Check if we should monitor this service
                     if not self._should_monitor(name):
