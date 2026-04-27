@@ -5,8 +5,8 @@ WORKDIR /app
 # Install Docker CLI (needed for docker ps, docker stats)
 RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
 
-# Copy monitoring service
-COPY src/services/monitor.py /app/monitor.py
+# Copy monitoring service (relative to dockerfile location: equinox_src/services/)
+COPY monitor.py /app/monitor.py
 
 # Environment variables
 ENV MONITORING_INTERVAL=300

@@ -130,6 +130,21 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - collect_data:/collect_data
+    depends_on:
+      - monitor
+  monitor:
+    build:
+      dockerfile: monitor.Dockerfile
+      context: ./equinox_src/services
+    container_name: equinox-monitor
+    restart: always
+    environment:
+      - MONITORING_INTERVAL=300
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - collect_data:/collect_data
+    working_dir: /app
 volumes:
   postgres_data:
   collect_data:
