@@ -181,7 +181,7 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
       console.log('[DEPLOYMENT ROUTE] Setting EQUINOX_MODE=monitor on device (pre-deployment)...');
       const balenaHelper = new BalenaApiHelper(balenaToken);
       await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
-      console.log('[DEPLOYMENT ROUTE] ✓ EQUINOX_MODE set to monitor');
+      console.log('[DEPLOYMENT ROUTE] [OK] EQUINOX_MODE set to monitor');
     } catch (modeErr) {
       console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set EQUINOX_MODE: ${modeErr.message}`);
       // Don't fail the deployment if mode setting fails

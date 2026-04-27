@@ -33,7 +33,7 @@ async function deployViaCloud(options) {
       console.log('[DEPLOYER] Setting environment variables on device before cloud deployment...');
       const balenaHelper = new BalenaApiHelper(balenaToken);
       const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
-      console.log(`[DEPLOYER] ✓ Set ${envResult.length} environment variables on device`);
+      console.log(`[DEPLOYER] [OK] Set ${envResult.length} environment variables on device`);
     }
 
     // Convert services to CSV format
@@ -79,7 +79,7 @@ async function deployViaCloud(options) {
     console.log('[DEPLOYER] Lambda response data:', JSON.stringify(response.data, null, 2));
     
     const commandId = response.data.commandId || response.data.taskId;
-    console.log(`✓ Cloud deployment started: ${commandId}`);
+    console.log(`[OK] Cloud deployment started: ${commandId}`);
     
     return {
       success: true,
@@ -134,7 +134,7 @@ async function deployServices(options) {
         console.log('Setting environment variables on device...');
         const balenaHelper = new BalenaApiHelper(balenaToken);
         const envResult = await balenaHelper.setDeviceEnvVars(deviceId, environmentVariables);
-        console.log(`✓ Set ${envResult.length} environment variables on device`);
+        console.log(`[OK] Set ${envResult.length} environment variables on device`);
       } catch (envErr) {
         console.warn(`[WARNING] Failed to set environment variables: ${envErr.message}`);
         console.warn('Proceeding with deployment, but environment variables may not be set');
@@ -161,7 +161,7 @@ async function deployServices(options) {
     }
 
     const device = deviceCheckResponse.data.d[0];
-    console.log(`✓ Device verified: ${device.device_name}`);
+    console.log(`[OK] Device verified: ${device.device_name}`);
 
     // Extract service names from the services array
     const serviceNames = services
@@ -185,9 +185,9 @@ async function deployServices(options) {
       };
     }
 
-    console.log(`✓ Project created at: ${projectResult.projectPath}`);
-    console.log(`✓ Services: ${projectResult.services.join(', ')}`);
-    console.log(`\n📝 Next step: Run 'balena push ${device.device_name}' from the project directory`);
+    console.log(`[OK] Project created at: ${projectResult.projectPath}`);
+    console.log(`[OK] Services: ${projectResult.services.join(', ')}`);
+    console.log(`\n[NOTE] Next step: Run 'balena push ${device.device_name}' from the project directory`);
     console.log(`   Project path: ${projectResult.projectPath}`);
 
     return {

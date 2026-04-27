@@ -78,7 +78,7 @@ class BalenaApiHelper {
         });
       }
 
-      console.log(`✓ Set ${name}=${value.substring(0, 20)}...`);
+      console.log(`[OK] Set ${name}=${value.substring(0, 20)}...`);
       return true;
     } catch (err) {
       console.error(`[BalenaApiHelper] Error setting env var ${name}:`, err.message);
@@ -155,7 +155,7 @@ class BalenaApiHelper {
 
       // Set all environment variables
       const results = await this.setDeviceEnvVars(deviceId, envVars);
-      console.log(`✓ Configured ${results.length} environment variables for monitor mode`);
+      console.log(`[OK] Configured ${results.length} environment variables for monitor mode`);
 
       return {
         success: true,

@@ -354,7 +354,7 @@
         console.error('Chat error:', error);
         const loadingEl = document.getElementById('chatLoading');
         if (loadingEl) loadingEl.remove();
-        addChatMessage('⚠ Unable to process question. Try again.', false);
+        addChatMessage('[WARN] Unable to process question. Try again.', false);
       } finally {
         chatLoading = false;
         chatSendBtn.disabled = false;

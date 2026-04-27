@@ -21,14 +21,14 @@ const configuratorPaths = [
 let configuratorFound = false;
 for (const p of configuratorPaths) {
   if (fs.existsSync(p)) {
-    console.log(`✓ Found configurator at: ${p}`);
+    console.log(`[OK] Found configurator at: ${p}`);
     configuratorFound = true;
     break;
   }
 }
 
 if (!configuratorFound) {
-  console.warn('⚠️  WARNING: create-project.js not found in expected locations');
+  console.warn('[WARN]  WARNING: create-project.js not found in expected locations');
   console.warn('   The deployment feature will not work until the configurator is available.');
   console.warn('   Expected locations:');
   configuratorPaths.forEach(p => console.warn(`     - ${p}`));
@@ -39,5 +39,5 @@ if (!configuratorFound) {
 }
 
 // Start the server
-console.log('🚀 Starting LLM Deployment Manager...');
+console.log('[LAUNCH] Starting LLM Deployment Manager...');
 require('./server.js');

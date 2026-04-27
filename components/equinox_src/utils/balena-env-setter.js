@@ -113,7 +113,7 @@ async function setEnvVar(uuid, name, value) {
     console.log(`Device found: ${device.device_name}`);
 
     await helper.setDeviceEnvVar(device.id, name, value);
-    console.log('✓ Environment variable set successfully');
+    console.log('[OK] Environment variable set successfully');
     console.log('Note: Services will need to be restarted to pick up the new variable');
   } catch (error) {
     console.error(`Failed to set variable: ${error.message}`);
@@ -136,8 +136,8 @@ async function setMonitorMode(uuid) {
     };
 
     const result = await helper.configureForMonitorMode(uuid, config);
-    console.log('✓ Device configured for monitor mode');
-    console.log(`✓ Set ${result.variablesSet} environment variables`);
+    console.log('[OK] Device configured for monitor mode');
+    console.log(`[OK] Set ${result.variablesSet} environment variables`);
     console.log('');
     console.log('Next steps:');
     console.log('1. Restart the equinox service');

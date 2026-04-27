@@ -135,7 +135,7 @@ app.get('/api/health', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-    console.log(`🚀 EnForm Configurator Server running at http://localhost:${port}`);
+    console.log(`[LAUNCH] EnForm Configurator Server running at http://localhost:${port}`);
     console.log(`📁 Serving static files from: ${__dirname}`);
     console.log(`🎯 API endpoint: http://localhost:${port}/api/create-project`);
     console.log(`\n💡 Open http://localhost:${port}/index.html to use the configurator`);

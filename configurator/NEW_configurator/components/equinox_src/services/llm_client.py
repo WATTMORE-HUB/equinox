@@ -141,9 +141,9 @@ class LLMClient:
         # Health check
         if "health" in question_lower or "status" in question_lower:
             if not errors and not warnings:
-                return f"✓ System is healthy. {len(containers)} containers running."
+                return f"[OK] System is healthy. {len(containers)} containers running."
             else:
-                return f"⚠ System has issues: {len(errors)} errors, {len(warnings)} warnings"
+                return f"[WARN] System has issues: {len(errors)} errors, {len(warnings)} warnings"
         
         # Container count
         if "container" in question_lower or "service" in question_lower:

@@ -289,7 +289,7 @@ class CSVConfigurator {
         document.getElementById('fileUploadArea').classList.add('has-file');
         
         const uploadLabel = document.querySelector('.upload-label');
-        uploadLabel.textContent = `✓ ${fileName} loaded successfully`;
+        uploadLabel.textContent = `[OK] ${fileName} loaded successfully`;
         
         const uploadHint = document.querySelector('.upload-hint');
         uploadHint.textContent = `${variableCount} variable pairs found`;
@@ -479,7 +479,7 @@ class CSVConfigurator {
         const resultItem = document.createElement('div');
         resultItem.className = `api-result-item api-result-${status}`;
         
-        const statusIcon = status === 'success' ? '✓' : '✗';
+        const statusIcon = status === 'success' ? '[OK]' : '[FAIL]';
         resultItem.innerHTML = `${statusIcon} <strong>${this.escapeHtml(variableName)}</strong>: ${this.escapeHtml(message)}`;
         
         resultsContainer.appendChild(resultItem);
@@ -508,9 +508,9 @@ class CSVConfigurator {
         
         if (errorCount === 0) {
             summaryItem.className += ' api-result-success';
-            summaryItem.innerHTML = `✓ All ${successCount} variables sent successfully!`;
+            summaryItem.innerHTML = `[OK] All ${successCount} variables sent successfully!`;
         } else {
-            summaryItem.innerHTML = `⚠ ${successCount} successful, ${errorCount} failed out of ${totalCount} total`;
+            summaryItem.innerHTML = `[WARN] ${successCount} successful, ${errorCount} failed out of ${totalCount} total`;
         }
         
         resultsContainer.appendChild(summaryItem);
@@ -790,7 +790,7 @@ class CSVConfigurator {
             // Manual creation required
             commandElement.innerHTML = `
                 <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; margin: 10px 0; border: 1px solid #ffeaa7;">
-                    <strong>⚠️ Server not running - Manual creation required</strong><br/>
+                    <strong>[WARN] Server not running - Manual creation required</strong><br/>
                     To start the server: <code>npm start</code> or <code>node server.js</code>
                 </div>
                 <strong>Or run this command manually:</strong><br/>
@@ -957,7 +957,7 @@ class CSVConfigurator {
                 <div>balena push ${appName}</div>
             </div>
             <div style="color: #ffd700; font-size: 0.9rem; margin-top: 10px;">
-                ⚠️ Note: This command needs to be run manually in your terminal as browser security prevents automatic execution.
+                [WARN] Note: This command needs to be run manually in your terminal as browser security prevents automatic execution.
             </div>
         `;
         

@@ -42,9 +42,9 @@ function generateFallbackResponse(question) {
   // Health check
   if (questionLower.includes('health') || questionLower.includes('status')) {
     if (!errors.length && !warnings.length) {
-      return `✓ System is healthy. ${Object.keys(containers).length} containers running.`;
+      return `[OK] System is healthy. ${Object.keys(containers).length} containers running.`;
     } else {
-      return `⚠ System has issues: ${errors.length} errors, ${warnings.length} warnings`;
+      return `[WARN] System has issues: ${errors.length} errors, ${warnings.length} warnings`;
     }
   }
 

@@ -77,7 +77,7 @@ class ProjectCreator {
     }
 
     async copyBaseFiles(projectPath) {
-        console.log('📋 Copying base files...');
+        console.log('[LIST] Copying base files...');
         
         const baseFiles = ['docker-compose.yml', 'license.md', 'requirements.txt'];
         
@@ -87,7 +87,7 @@ class ProjectCreator {
             
             try {
                 await fs.copyFile(sourcePath, destPath);
-                console.log(`  ✓ Copied ${file}`);
+                console.log(`  [OK] Copied ${file}`);
             } catch (error) {
                 console.error(`  ❌ Failed to copy ${file}: ${error.message}`);
                 throw error;
@@ -96,7 +96,7 @@ class ProjectCreator {
     }
 
     async copyServiceFiles(serviceDir, projectPath, srcPath, includeTemplates = false) {
-        console.log(`🔧 Processing service: ${serviceDir}`);
+        console.log(`[TOOL] Processing service: ${serviceDir}`);
         
         const sourcePath = path.join(this.componentsPath, serviceDir);
         
@@ -104,7 +104,7 @@ class ProjectCreator {
             // Check if source directory exists
             const stats = await fs.stat(sourcePath);
             if (!stats.isDirectory()) {
-                console.warn(`  ⚠️ ${serviceDir} is not a directory, skipping`);
+                console.warn(`  [WARN] ${serviceDir} is not a directory, skipping`);
                 return;
             }
 
@@ -119,29 +119,29 @@ class ProjectCreator {
                         // Copy Dockerfile to project root
                         const destPath = path.join(projectPath, file.name);
                         await fs.copyFile(sourceFilePath, destPath);
-                        console.log(`  ✓ Copied ${file.name} to project root`);
+                        console.log(`  [OK] Copied ${file.name} to project root`);
                     } else if (file.name.endsWith('.py')) {
                         // Copy Python files to src directory
                         const destPath = path.join(srcPath, file.name);
                         await fs.copyFile(sourceFilePath, destPath);
-                        console.log(`  ✓ Copied ${file.name} to src/`);
+                        console.log(`  [OK] Copied ${file.name} to src/`);
                     } else {
                         // Copy other files to project root
                         const destPath = path.join(projectPath, file.name);
                         await fs.copyFile(sourceFilePath, destPath);
-                        console.log(`  ✓ Copied ${file.name} to project root`);
+                        console.log(`  [OK] Copied ${file.name} to project root`);
                     }
                 } else if (file.isDirectory() && file.name === 'templates' && includeTemplates) {
                     // Special handling for templates directory (camera service)
                     const templatesDestPath = path.join(projectPath, 'templates');
                     await this.copyDirectory(sourceFilePath, templatesDestPath);
-                    console.log(`  ✓ Copied templates/ directory`);
+                    console.log(`  [OK] Copied templates/ directory`);
                 }
             }
             
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.warn(`  ⚠️ Service directory ${serviceDir} not found, skipping`);
+                console.warn(`  [WARN] Service directory ${serviceDir} not found, skipping`);
             } else {
                 console.error(`  ❌ Error processing ${serviceDir}: ${error.message}`);
                 throw error;
@@ -150,42 +150,42 @@ class ProjectCreator {
     }
 
     async copyEquinoxFiles(projectPath, srcPath) {
-        console.log(`🔧 Processing service: equinox`);
+        console.log(`[TOOL] Processing service: equinox`);
         
         try {
             // Copy equinox.Dockerfile
             const dockerfileSrc = path.join(this.componentsPath, 'equinox.Dockerfile');
             const dockerfileDest = path.join(projectPath, 'equinox.Dockerfile');
             await fs.copyFile(dockerfileSrc, dockerfileDest);
-            console.log(`  ✓ Copied equinox.Dockerfile to project root`);
+            console.log(`  [OK] Copied equinox.Dockerfile to project root`);
             
             // Copy equinox_package.json
             const packageSrc = path.join(this.componentsPath, 'equinox_package.json');
             const packageDest = path.join(projectPath, 'equinox_package.json');
             await fs.copyFile(packageSrc, packageDest);
-            console.log(`  ✓ Copied equinox_package.json`);
+            console.log(`  [OK] Copied equinox_package.json`);
             
             // Copy equinox_package-lock.json
             const lockSrc = path.join(this.componentsPath, 'equinox_package-lock.json');
             const lockDest = path.join(projectPath, 'equinox_package-lock.json');
             await fs.copyFile(lockSrc, lockDest);
-            console.log(`  ✓ Copied equinox_package-lock.json`);
+            console.log(`  [OK] Copied equinox_package-lock.json`);
             
             // Copy equinox_src directory
             const srcSourcePath = path.join(this.componentsPath, 'equinox_src');
             const srcDestPath = path.join(projectPath, 'equinox_src');
             await this.copyDirectory(srcSourcePath, srcDestPath);
-            console.log(`  ✓ Copied equinox_src/`);
+            console.log(`  [OK] Copied equinox_src/`);
             
             // Copy equinox_public directory
             const publicSourcePath = path.join(this.componentsPath, 'equinox_public');
             const publicDestPath = path.join(projectPath, 'equinox_public');
             await this.copyDirectory(publicSourcePath, publicDestPath);
-            console.log(`  ✓ Copied equinox_public/`);
+            console.log(`  [OK] Copied equinox_public/`);
             
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.warn(`  ⚠️ Equinox files not found, skipping`);
+                console.warn(`  [WARN] Equinox files not found, skipping`);
             } else {
                 console.error(`  ❌ Error processing equinox: ${error.message}`);
                 throw error;
@@ -211,16 +211,16 @@ class ProjectCreator {
     }
 
     async copyHardwareProfiles(projectPath) {
-        console.log(`🔧 Copying hardware profiles for Equinox...`);
+        console.log(`[TOOL] Copying hardware profiles for Equinox...`);
         
         try {
             const hardwareProfilesSrc = path.join(this.componentsPath, 'hardware_profiles');
             const hardwareProfilesDest = path.join(projectPath, 'hardware_profiles');
             await this.copyDirectory(hardwareProfilesSrc, hardwareProfilesDest);
-            console.log(`  ✓ Copied hardware_profiles/`);
+            console.log(`  [OK] Copied hardware_profiles/`);
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.warn(`  ⚠️ hardware_profiles directory not found, skipping`);
+                console.warn(`  [WARN] hardware_profiles directory not found, skipping`);
             } else {
                 console.error(`  ❌ Error copying hardware profiles: ${error.message}`);
                 throw error;
@@ -229,7 +229,7 @@ class ProjectCreator {
     }
 
     async modifyDockerCompose(projectPath, selectedServices) {
-        console.log('🐳 Modifying docker-compose.yml...');
+        console.log('[DOCKER] Modifying docker-compose.yml...');
         
         const dockerComposePath = path.join(projectPath, 'docker-compose.yml');
         
@@ -278,13 +278,13 @@ class ProjectCreator {
                 if (!enabledDockerServices.includes(service)) {
                     // Comment out this service
                     content = this.commentOutService(content, service);
-                    console.log(`  ✓ Commented out service: ${service}`);
+                    console.log(`  [OK] Commented out service: ${service}`);
                 }
             }
             
             // Write the modified content back
             await fs.writeFile(dockerComposePath, content, 'utf8');
-            console.log('  ✓ docker-compose.yml updated');
+            console.log('  [OK] docker-compose.yml updated');
             
         } catch (error) {
             console.error(`  ❌ Error modifying docker-compose.yml: ${error.message}`);
@@ -351,11 +351,11 @@ if (require.main === module) {
     const creator = new ProjectCreator();
     creator.createProject(projectName, selectedServices)
         .then((result) => {
-            console.log('\n🎉 Project creation completed successfully!');
+            console.log('\n[SUCCESS] Project creation completed successfully!');
             console.log(JSON.stringify(result, null, 2));
         })
         .catch((error) => {
-            console.error('\n💥 Project creation failed:', error.message);
+            console.error('\n[ERROR] Project creation failed:', error.message);
             process.exit(1);
         });
 }
