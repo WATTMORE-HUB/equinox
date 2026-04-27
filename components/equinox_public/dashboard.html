@@ -610,54 +610,14 @@
 
         deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}. Deployment ID: ${deployData.deploymentId}`;
         
-        // After deployment succeeds, set monitor mode and check periodically
-        console.log('Deployment successful, setting monitor mode...');
-        try {
-          const finalizeResponse = await fetch(`${API_BASE}/deployment/finalize`, {
-            method: 'POST'
-          });
-          if (finalizeResponse.ok) {
-            console.log('✓ Monitor mode set');
-            deploySummaryEl.textContent = 'Deployment complete. Switching to monitor mode...';
-            
-            // Wait a moment then check if we've switched to monitor mode
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Check mode every 2 seconds for up to 20 seconds
-            let modeChecks = 0;
-            const checkModeInterval = setInterval(async () => {
-              try {
-                const modeRes = await fetch(`${API_BASE}/status/mode`);
-                if (modeRes.ok) {
-                  const modeData = await modeRes.json();
-                  if (modeData.isMonitor) {
-                    clearInterval(checkModeInterval);
-                    console.log('✓ Mode switched to monitor');
-                    isMonitorMode = true;
-                    setView('chatView');
-                    initializeChatMode();
-                    return;
-                  }
-                }
-              } catch (e) {
-                console.warn('Mode check error:', e);
-              }
-              
-              modeChecks++;
-              if (modeChecks >= 10) {
-                clearInterval(checkModeInterval);
-                console.warn('Mode did not switch to monitor after 20 seconds, showing config mode');
-                runDetection();
-              }
-            }, 2000);
-          } else {
-            console.warn('Failed to set monitor mode, will retry on page reload');
-            deploySummaryEl.textContent = 'Deployment prepared. Please refresh the page to continue.';
-          }
-        } catch (finalizeErr) {
-          console.warn('Failed to call finalize endpoint:', finalizeErr.message);
-          // Don't fail here - let the mode detection run on next initialization
-        }
+        // Deployment mode is set on server before EC2 runs
+        // Just inform user to wait for deployment to complete
+        deploySummaryEl.textContent = 'Deployment initiated. Services will be deployed and Equinox will switch to monitoring mode automatically. Please refresh the page in a moment.';
+        
+        // Set a timeout to suggest refresh after 5 seconds
+        setTimeout(() => {
+          deploySummaryEl.textContent = 'Ready to refresh. Click the refresh button or wait for automatic detection.';
+        }, 5000);
       } catch (error) {
         errorTextEl.textContent = `Deployment failed: ${error.message}`;
         setView('errorView');
