@@ -126,6 +126,15 @@
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.2);
     }
+
+    /* Hide scrollbars while keeping scroll functionality */
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
   </style>
 </head>
 <body class="text-white min-h-screen">
@@ -151,7 +160,7 @@
       </div>
 
       <div class="w-full flex justify-center pb-4 md:pb-8">
-        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl">
+        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-6xl">
           <div id="locatingView" class="fade-in">
             <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Locating system</p>
             <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
@@ -220,7 +229,7 @@
             </h1>
             <p class="mt-5 text-base md:text-lg text-slate-400">Ask about container health, memory usage, or any recent errors.</p>
             
-            <div class="mt-8 max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
+            <div class="mt-8 max-h-[32rem] overflow-y-auto hide-scrollbar rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
               <div id="chatMessages" class="space-y-4 flex flex-col">
                 <div class="text-sm text-slate-500">
                   <p>Chat interface ready. Ask your first question!</p>
@@ -299,15 +308,23 @@
       });
     }
 
+    function escapeHtml(text) {
+      const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
     function addChatMessage(text, isUser) {
       const messageEl = document.createElement('div');
       messageEl.className = isUser ? 'text-right' : 'text-left';
       
       const bubbleEl = document.createElement('div');
       bubbleEl.className = isUser
-        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-xs text-sm'
-        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-xs text-sm';
-      bubbleEl.textContent = text;
+        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap'
+        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap';
+      
+      const escapedText = escapeHtml(text);
+      const htmlText = escapedText.replace(/\n/g, '<br>');
+      bubbleEl.innerHTML = htmlText;
       
       messageEl.appendChild(bubbleEl);
       chatMessages.appendChild(messageEl);
