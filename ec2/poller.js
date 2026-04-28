@@ -130,6 +130,20 @@ async function moveToCompleted(s3Key, success) {
     const newPrefix = success ? 'deployments/completed/' : 'deployments/failed/';
     const newKey = newPrefix + path.basename(s3Key);
 
+    // Check if source file still exists
+    try {
+      await s3.headObject({
+        Bucket: S3_BUCKET,
+        Key: s3Key
+      }).promise();
+    } catch (err) {
+      if (err.code === 'NotFound') {
+        await log(`Deployment ${deploymentId} was already processed, skipping move`);
+        return;
+      }
+      throw err;
+    }
+
     // Copy to new location
     await s3.copyObject({
       Bucket: S3_BUCKET,
