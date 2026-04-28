@@ -33,7 +33,7 @@ function loadMonitoringCache() {
 }
 
 function isSimpleQuestion(question) {
-  const simple_keywords = ['how many', 'count', 'running', 'health', 'status', 'memory', 'cpu', 'error', 'warning'];
+  const simple_keywords = ['how many', 'count', 'running', 'health', 'status', 'memory', 'cpu', 'error', 'warning', 'log'];
   const lower = question.toLowerCase();
   return simple_keywords.some(keyword => lower.includes(keyword));
 }
@@ -74,11 +74,21 @@ function generateFallbackResponse(question) {
     return response;
   }
 
-  if (questionLower.includes('error')) {
+  if (questionLower.includes('error') || questionLower.includes('log')) {
     if (errors.length > 0) {
-      return `Found ${errors.length} errors:\n${errors.slice(0, 3).join('\n')}`;
+      let response = `Found ${errors.length} errors:\n`;
+      errors.slice(0, 5).forEach((e, i) => {
+        response += `${i + 1}. ${e}\n`;
+      });
+      return response.trim();
+    } else if (warnings.length > 0) {
+      let response = `No errors detected, but found ${warnings.length} warnings:\n`;
+      warnings.slice(0, 3).forEach((w, i) => {
+        response += `${i + 1}. ${w}\n`;
+      });
+      return response.trim();
     } else {
-      return 'No recent errors detected.';
+      return 'No recent errors or warnings detected.';
     }
   }
 
