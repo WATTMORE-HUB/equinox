@@ -76,15 +76,15 @@ function generateFallbackResponse(question) {
 
   if (questionLower.includes('error') || questionLower.includes('log')) {
     if (errors.length > 0) {
-      let response = `Found ${errors.length} errors:\n`;
+      let response = `Found ${errors.length} errors:\n\n`;
       errors.slice(0, 5).forEach((e, i) => {
-        response += `${i + 1}. ${e}\n`;
+        response += `[ERROR ${i + 1}] ${e}\n`;
       });
       return response.trim();
     } else if (warnings.length > 0) {
-      let response = `No errors detected, but found ${warnings.length} warnings:\n`;
+      let response = `No errors detected, but found ${warnings.length} warnings:\n\n`;
       warnings.slice(0, 3).forEach((w, i) => {
-        response += `${i + 1}. ${w}\n`;
+        response += `[WARN ${i + 1}] ${w}\n`;
       });
       return response.trim();
     } else {
