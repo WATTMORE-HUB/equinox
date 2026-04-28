@@ -455,6 +455,11 @@ class MonitoringService:
             "warnings_recent": logs.get("warnings", [])
         }
         
+        # Update top-level cache with current errors/warnings for chat service
+        self.cache["errors_recent"] = logs.get("errors", [])
+        self.cache["warnings_recent"] = logs.get("warnings", [])
+        self.cache["last_updated"] = summary["timestamp"]
+        
         # Add to history
         self.cache["history"].append(summary)
         self._save_cache()
