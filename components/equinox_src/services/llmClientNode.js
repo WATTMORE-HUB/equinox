@@ -92,6 +92,18 @@ function generateFallbackResponse(question) {
     }
   }
 
+  if (questionLower.includes('warning') || questionLower.includes('warn')) {
+    if (warnings.length > 0) {
+      let response = `Found ${warnings.length} warnings:\n\n`;
+      warnings.slice(0, 5).forEach((w, i) => {
+        response += `[WARN ${i + 1}] ${w}\n`;
+      });
+      return response.trim();
+    } else {
+      return 'No recent warnings detected.';
+    }
+  }
+
   return `System overview: ${Object.keys(containers).length} containers running. Errors: ${errors.length}, Warnings: ${warnings.length}`;
 }
 
