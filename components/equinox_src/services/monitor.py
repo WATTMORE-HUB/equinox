@@ -324,33 +324,97 @@ class MonitoringService:
         
         return None
     
-    def analyze_logs(self):
-        """Analyze logs from /collect_data for errors and warnings"""
+    def _parse_container_logs(self, container_id, container_name, last_timestamp):
+        """Parse logs from a single container for errors and warnings"""
         errors = []
         warnings = []
         
         try:
-            collect_data_path = Path("/collect_data")
-            if not collect_data_path.exists():
+            # Get recent logs with timestamps
+            result = subprocess.run(
+                ['docker', 'logs', '--tail', '100', '--timestamps', container_id],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode != 0:
                 return {"errors": [], "warnings": []}
             
-            # Scan for error/warning patterns in recent logs
-            for log_file in collect_data_path.glob("*.log"):
+            # Parse log lines
+            for line in result.stdout.split('\n'):
+                if not line.strip():
+                    continue
+                
+                # Extract timestamp if present (format: 2026-04-28T17:31:14.519Z message)
                 try:
-                    with open(log_file, 'r') as f:
-                        lines = f.readlines()[-100:]  # Last 100 lines
-                        for line in lines:
-                            if 'error' in line.lower():
-                                errors.append(f"{log_file.name}: {line.strip()[:100]}")
-                            elif 'warning' in line.lower() or 'warn' in line.lower():
-                                warnings.append(f"{log_file.name}: {line.strip()[:100]}")
-                except Exception as e:
-                    logger.debug(f"Error reading {log_file}: {e}")
+                    # Try to extract ISO timestamp from docker logs output
+                    if line.startswith('2'):
+                        parts = line.split(' ', 1)
+                        if len(parts) >= 2:
+                            timestamp_str = parts[0]
+                            message = parts[1]
+                        else:
+                            timestamp_str = None
+                            message = line
+                    else:
+                        timestamp_str = None
+                        message = line
+                except:
+                    timestamp_str = None
+                    message = line
+                
+                # Check for errors and warnings
+                message_lower = message.lower()
+                
+                # Look for error patterns
+                if any(pattern in message_lower for pattern in ['error', 'traceback', 'exception', 'failed', 'needs keyword-only argument']):
+                    error_text = f"{container_name}: {message.strip()[:200]}"
+                    if error_text not in errors:
+                        errors.append(error_text)
+                
+                # Look for warning patterns
+                elif any(pattern in message_lower for pattern in ['warning', 'warn', 'deprecated']):
+                    warning_text = f"{container_name}: {message.strip()[:200]}"
+                    if warning_text not in warnings:
+                        warnings.append(warning_text)
             
-            # Limit to most recent
             return {
-                "errors": errors[-10:],
-                "warnings": warnings[-10:]
+                "errors": errors[-5:],  # Keep last 5 errors per container
+                "warnings": warnings[-5:]
+            }
+        
+        except subprocess.TimeoutExpired:
+            logger.debug(f"Timeout reading logs for {container_name}")
+            return {"errors": [], "warnings": []}
+        except Exception as e:
+            logger.debug(f"Error parsing logs for {container_name}: {e}")
+            return {"errors": [], "warnings": []}
+    
+    def analyze_logs(self):
+        """Analyze Docker container logs for errors and warnings"""
+        errors = []
+        warnings = []
+        
+        try:
+            # Get current time for filtering recent errors
+            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.polling_interval * 2)
+            last_timestamp = cutoff_time.isoformat()
+            
+            # Parse logs from each running container
+            for container_name, container_info in self.cache.get("containers", {}).items():
+                container_id = container_info.get("id")
+                if not container_id:
+                    continue
+                
+                logs = self._parse_container_logs(container_id, container_name, last_timestamp)
+                errors.extend(logs.get("errors", []))
+                warnings.extend(logs.get("warnings", []))
+            
+            # Deduplicate and limit to most recent
+            return {
+                "errors": list(dict.fromkeys(errors))[-10:],
+                "warnings": list(dict.fromkeys(warnings))[-10:]
             }
         
         except Exception as e:
