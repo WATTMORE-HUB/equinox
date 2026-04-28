@@ -324,6 +324,21 @@ class MonitoringService:
         
         return None
     
+    def _clean_log_line(self, line):
+        """Clean up log lines - remove ANSI codes and excessive whitespace"""
+        import re
+        # Remove ANSI color codes
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        line = ansi_escape.sub('', line)
+        # Remove leading/trailing whitespace
+        line = line.strip()
+        # Remove common traceback noise (only keep error type + message)
+        if 'traceback' in line.lower():
+            return 'Traceback (see logs for details)'
+        if line.startswith('File "/') or line.startswith('  '):
+            return None  # Skip traceback frame lines
+        return line
+    
     def _parse_container_logs(self, container_id, container_name, last_timestamp):
         """Parse logs from a single container for errors and warnings"""
         errors = []
@@ -364,18 +379,23 @@ class MonitoringService:
                     timestamp_str = None
                     message = line
                 
+                # Clean up the message
+                cleaned_message = self._clean_log_line(message)
+                if not cleaned_message:
+                    continue
+                
                 # Check for errors and warnings
-                message_lower = message.lower()
+                message_lower = cleaned_message.lower()
                 
                 # Look for error patterns
                 if any(pattern in message_lower for pattern in ['error', 'traceback', 'exception', 'failed', 'needs keyword-only argument']):
-                    error_text = f"{container_name}: {message.strip()[:200]}"
+                    error_text = f"{container_name}: {cleaned_message[:150]}"
                     if error_text not in errors:
                         errors.append(error_text)
                 
                 # Look for warning patterns
                 elif any(pattern in message_lower for pattern in ['warning', 'warn', 'deprecated']):
-                    warning_text = f"{container_name}: {message.strip()[:200]}"
+                    warning_text = f"{container_name}: {cleaned_message[:150]}"
                     if warning_text not in warnings:
                         warnings.append(warning_text)
             
