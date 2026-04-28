@@ -411,6 +411,61 @@ class MonitoringService:
             logger.debug(f"Error parsing logs for {container_name}: {e}")
             return {"errors": [], "warnings": []}
     
+    def check_file_activity(self):
+        """Check if files are being written to monitored directories"""
+        monitored_dirs = [
+            '/collect_data/meter',
+            '/collect_data/inverter',
+            '/collect_data/weather',
+            '/collect_data/recloser',
+            '/collect_data/tracker'
+        ]
+        
+        file_activity = {}
+        cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.polling_interval * 2)
+        cutoff_timestamp = cutoff_time.timestamp()
+        
+        for dir_path in monitored_dirs:
+            dir_name = os.path.basename(dir_path)
+            try:
+                if not os.path.isdir(dir_path):
+                    continue
+                
+                # Get all files in directory
+                files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+                
+                if not files:
+                    file_activity[dir_name] = {'status': 'no_files', 'count': 0}
+                    continue
+                
+                # Check for recently modified files
+                recent_files = []
+                for filename in files:
+                    filepath = os.path.join(dir_path, filename)
+                    try:
+                        mtime = os.path.getmtime(filepath)
+                        if mtime >= cutoff_timestamp:
+                            recent_files.append(filename)
+                    except OSError:
+                        continue
+                
+                if recent_files:
+                    file_activity[dir_name] = {
+                        'status': 'writing',
+                        'count': len(recent_files),
+                        'total_files': len(files)
+                    }
+                else:
+                    file_activity[dir_name] = {
+                        'status': 'idle',
+                        'count': len(files)
+                    }
+            except Exception as e:
+                logger.debug(f"Error checking files in {dir_path}: {e}")
+                file_activity[dir_name] = {'status': 'error'}
+        
+        return file_activity
+    
     def analyze_logs(self):
         """Analyze Docker container logs for errors and warnings"""
         errors = []
@@ -465,6 +520,7 @@ class MonitoringService:
         # Get current state
         self.poll_docker()
         logs = self.analyze_logs()
+        file_activity = self.check_file_activity()
         
         # Build summary
         summary = {
@@ -472,12 +528,14 @@ class MonitoringService:
             "container_count": len(self.cache.get("containers", {})),
             "containers": self.cache.get("containers", {}),
             "errors_recent": logs.get("errors", []),
-            "warnings_recent": logs.get("warnings", [])
+            "warnings_recent": logs.get("warnings", []),
+            "file_activity": file_activity
         }
         
-        # Update top-level cache with current errors/warnings for chat service
+        # Update top-level cache with current errors/warnings/file activity for chat service
         self.cache["errors_recent"] = logs.get("errors", [])
         self.cache["warnings_recent"] = logs.get("warnings", [])
+        self.cache["file_activity"] = file_activity
         self.cache["last_updated"] = summary["timestamp"]
         
         # Add to history

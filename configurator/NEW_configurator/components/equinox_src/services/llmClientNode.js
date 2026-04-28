@@ -104,6 +104,33 @@ function generateFallbackResponse(question) {
     }
   }
 
+  if (questionLower.includes('file') || questionLower.includes('write') || questionLower.includes('data')) {
+    const fileActivity = cache.file_activity || {};
+    const activeServices = [];
+    const idleServices = [];
+    
+    Object.entries(fileActivity).forEach(([service, info]) => {
+      if (info.status === 'writing') {
+        activeServices.push(`${service}: ${info.count} new files (${info.total_files} total)`);
+      } else if (info.status === 'idle') {
+        idleServices.push(`${service}: ${info.count} files (idle)`);
+      }
+    });
+    
+    if (activeServices.length === 0 && idleServices.length === 0) {
+      return 'No monitored data directories found on this device.';
+    }
+    
+    let response = '';
+    if (activeServices.length > 0) {
+      response += `Writing:\n${activeServices.map(s => `  - ${s}`).join('\n')}\n\n`;
+    }
+    if (idleServices.length > 0) {
+      response += `Idle:\n${idleServices.map(s => `  - ${s}`).join('\n')}`;
+    }
+    return response.trim();
+  }
+
   return `System overview: ${Object.keys(containers).length} containers running. Errors: ${errors.length}, Warnings: ${warnings.length}`;
 }
 
