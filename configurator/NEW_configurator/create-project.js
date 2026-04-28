@@ -34,9 +34,11 @@ class ProjectCreator {
                 'windspeed': 'windspeed_collect'
             };
 
-            // Always include these services
+            // Map and deduplicate selected services
+            const mappedServices = selectedServices.map(s => serviceMapping[s] || s);
+            // Always include combine and heartbeat if not already present
             const alwaysIncluded = ['combine', 'heartbeat'];
-            const allServiceDirs = [...alwaysIncluded, ...selectedServices.map(s => serviceMapping[s] || s)];
+            const allServiceDirs = [...new Set([...alwaysIncluded, ...mappedServices])];
 
             // Copy service files
             for (const serviceDir of allServiceDirs) {

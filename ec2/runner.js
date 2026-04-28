@@ -168,7 +168,11 @@ async function createProject(services) {
     }
     
     // Use ProjectCreator to generate project
-    const ProjectCreator = require(path.join(ENFORM_REPO_PATH, 'src/configurator/ProjectCreator.js'));
+    const createProjectScript = path.join(ENFORM_REPO_PATH, 'configurator/NEW_configurator/create-project.js');
+    if (!fs.existsSync(createProjectScript)) {
+      throw new Error(`create-project.js not found at ${createProjectScript}`);
+    }
+    const ProjectCreator = require(createProjectScript);
     const creator = new ProjectCreator();
     
     const result = await creator.createProject(projectName, serviceNames);
