@@ -222,7 +222,7 @@
           </div>
 
           <div id="chatView" class="hidden fade-in">
-            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">System monitoring</p>
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Equinox Monitor</p>
             <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
               What's on your mind?
             </h1>
@@ -312,6 +312,56 @@
       return text.replace(/[&<>"']/g, m => map[m]);
     }
 
+    function parseFileContentMessage(text) {
+      const marker = '__EQUINOX_FILE_CONTENT__\n';
+      const bodyMarker = '\n__EQUINOX_FILE_BODY__\n';
+
+      if (typeof text !== 'string' || !text.startsWith(marker)) {
+        return null;
+      }
+
+      const withoutMarker = text.slice(marker.length);
+      const bodyIndex = withoutMarker.indexOf(bodyMarker);
+      if (bodyIndex === -1) {
+        return null;
+      }
+
+      try {
+        const metadata = JSON.parse(withoutMarker.slice(0, bodyIndex));
+        const content = withoutMarker.slice(bodyIndex + bodyMarker.length);
+        return { metadata, content };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function renderFileContentMessage(text, messageEl, bubbleEl) {
+      const parsed = parseFileContentMessage(text);
+      if (!parsed) {
+        return false;
+      }
+
+      bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-4 w-full max-w-4xl text-sm';
+      const { metadata, content } = parsed;
+      bubbleEl.innerHTML = `
+        <div class="space-y-3">
+          <div>
+            <div class="text-slate-100 font-medium">Latest file from ${escapeHtml(metadata.directory)}</div>
+            <div class="text-xs text-slate-400 mt-1">${escapeHtml(metadata.fileName)} · ${escapeHtml(metadata.modified)}</div>
+            <div class="text-xs text-slate-500 mt-1 break-all">${escapeHtml(metadata.filePath)}</div>
+          </div>
+          <details class="rounded-xl border border-white/10 bg-black/20" open>
+            <summary class="cursor-pointer px-4 py-3 text-slate-300 select-none">View JSON payload</summary>
+            <div class="border-t border-white/10 px-4 py-4">
+              <pre class="max-h-[28rem] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-200 hide-scrollbar">${escapeHtml(content)}</pre>
+            </div>
+          </details>
+        </div>
+      `;
+      messageEl.appendChild(bubbleEl);
+      return true;
+    }
+
     function addChatMessage(text, isUser) {
       const messageEl = document.createElement('div');
       messageEl.className = isUser ? 'text-right' : 'text-left';
@@ -320,6 +370,12 @@
       bubbleEl.className = isUser
         ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap'
         : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap';
+
+      if (!isUser && renderFileContentMessage(text, messageEl, bubbleEl)) {
+        chatMessages.appendChild(messageEl);
+        chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+        return;
+      }
       
       const escapedText = escapeHtml(text);
       const htmlText = escapedText.replace(/\n/g, '<br>');
@@ -403,7 +459,7 @@
     }
 
     function initializeChatMode() {
-      addChatMessage('System monitoring active. How can I help?', false);
+      addChatMessage('Equinox Monitor is active. What do you want to inspect?', false);
       chatInput.focus();
     }
 

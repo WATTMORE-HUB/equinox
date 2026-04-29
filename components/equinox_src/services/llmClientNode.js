@@ -5,6 +5,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
@@ -13,6 +14,19 @@ const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
 const OLLAMA_MODEL = 'mistral';
 const OLLAMA_TIMEOUT = 5000;
+
+// Supported data directories for file viewing (Equinox Monitor)
+const SUPPORTED_DIRECTORIES = {
+  'tracker': '/collect_data/tracker',
+  'meter': '/collect_data/meter',
+  'inverter': '/collect_data/inverter',
+  'weather': '/collect_data/weather',
+  'recloser': '/collect_data/recloser'
+};
+
+// Special marker to indicate file content response
+const FILE_CONTENT_MARKER = '__EQUINOX_FILE_CONTENT__';
+const FILE_BODY_MARKER = '__EQUINOX_FILE_BODY__';
 
 function loadMonitoringCache() {
   try {
@@ -75,6 +89,90 @@ function formatGroupedMessages(intro, messages, fallbackLabel) {
   return sections.join('\n').trim();
 }
 
+function parseRequestedDirectory(question) {
+  const lower = question.toLowerCase();
+
+  for (const directoryName of Object.keys(SUPPORTED_FILE_DIRECTORIES)) {
+    if (lower.includes(`/${directoryName}`) || lower.includes(` ${directoryName}`) || lower.endsWith(directoryName)) {
+      return directoryName;
+    }
+  }
+
+  return null;
+}
+
+function isLatestFileQuestion(question) {
+  const lower = question.toLowerCase();
+  const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents');
+  const asksForLatest = lower.includes('latest') || lower.includes('recent') || lower.includes('newest') || lower.includes('most recent');
+  const requestedDirectory = parseRequestedDirectory(question);
+
+  return Boolean(requestedDirectory && asksForFile && asksForLatest);
+}
+
+function getLatestFileInfo(directoryPath) {
+  try {
+    if (!fs.existsSync(directoryPath)) {
+      return { error: `I couldn't find ${directoryPath} on this device.` };
+    }
+
+    const files = fs.readdirSync(directoryPath)
+      .map((name) => {
+        const fullPath = path.join(directoryPath, name);
+        const stats = fs.statSync(fullPath);
+        return { name, fullPath, stats };
+      })
+      .filter((entry) => entry.stats.isFile())
+      .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+
+    if (!files.length) {
+      return { error: `I couldn't find any files in ${directoryPath}.` };
+    }
+
+    return {
+      name: files[0].name,
+      fullPath: files[0].fullPath,
+      modified: files[0].stats.mtime.toISOString()
+    };
+  } catch (error) {
+    return { error: `I couldn't inspect ${directoryPath}: ${error.message}` };
+  }
+}
+
+function buildFileContentResponse(directoryName) {
+  const directoryPath = SUPPORTED_FILE_DIRECTORIES[directoryName];
+  if (!directoryPath) {
+    return `I can only read the latest file in /${Object.keys(SUPPORTED_FILE_DIRECTORIES).join(', /')}.`;
+  }
+
+  const latestFile = getLatestFileInfo(directoryPath);
+  if (latestFile.error) {
+    return latestFile.error;
+  }
+
+  try {
+    const rawContent = fs.readFileSync(latestFile.fullPath, 'utf8');
+    let formattedContent = rawContent;
+
+    try {
+      formattedContent = JSON.stringify(JSON.parse(rawContent), null, 2);
+    } catch (error) {
+      formattedContent = rawContent;
+    }
+
+    const metadata = JSON.stringify({
+      directory: `/${directoryName}`,
+      fileName: latestFile.name,
+      filePath: latestFile.fullPath,
+      modified: latestFile.modified
+    });
+
+    return `${FILE_CONTENT_MARKER}\n${metadata}\n${FILE_BODY_MARKER}\n${formattedContent}`;
+  } catch (error) {
+    return `I found the latest file in /${directoryName}, but I couldn't read it: ${error.message}`;
+  }
+}
+
 function generateFallbackResponse(question) {
   const cache = loadMonitoringCache();
   const questionLower = question.toLowerCase();
@@ -82,6 +180,10 @@ function generateFallbackResponse(question) {
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
+
+  if (isLatestFileQuestion(question)) {
+    return buildFileContentResponse(parseRequestedDirectory(question));
+  }
 
   if (questionLower.includes('health') || questionLower.includes('status')) {
     if (!errors.length && !warnings.length) {
