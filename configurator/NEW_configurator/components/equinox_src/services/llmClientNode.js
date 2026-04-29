@@ -122,16 +122,19 @@ function generateFallbackResponse(question) {
 
   if (questionLower.includes('error') || questionLower.includes('log')) {
     if (errors.length > 0) {
+      // Show last 5 errors across all containers to avoid one container dominating
+      const lastFiveErrors = errors.slice(-5);
       return formatGroupedMessages(
-        `I found ${pluralize(errors.length, 'error')}. Here they are, grouped by container:`,
-        errors,
+        `I found ${pluralize(errors.length, 'error')} total. Here are the last 5, grouped by container:`,
+        lastFiveErrors,
         'unattributed'
       );
     }
     if (warnings.length > 0) {
+      const lastFiveWarnings = warnings.slice(-5);
       return formatGroupedMessages(
-        `No recent errors. I did find ${pluralize(warnings.length, 'warning')}:`,
-        warnings,
+        `No recent errors. I did find ${pluralize(warnings.length, 'warning')} total. Here are the last 5:`,
+        lastFiveWarnings,
         'unattributed'
       );
     }
@@ -140,9 +143,10 @@ function generateFallbackResponse(question) {
 
   if (questionLower.includes('warning') || questionLower.includes('warn')) {
     if (warnings.length > 0) {
+      const lastFiveWarnings = warnings.slice(-5);
       return formatGroupedMessages(
-        `I found ${pluralize(warnings.length, 'warning')}. Here they are, grouped by container:`,
-        warnings,
+        `I found ${pluralize(warnings.length, 'warning')} total. Here are the last 5, grouped by container:`,
+        lastFiveWarnings,
         'unattributed'
       );
     }
