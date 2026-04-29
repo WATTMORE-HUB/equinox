@@ -415,6 +415,12 @@ Answer:`;
 
 async function query(question) {
   try {
+    // Check for environment variables questions first (these always use fallback)
+    if (isEnvironmentVariablesQuestion(question)) {
+      console.log('[LLM Client] Using fallback for environment variables question');
+      return generateFallbackResponse(question);
+    }
+
     if (isSimpleQuestion(question)) {
       console.log('[LLM Client] Using fallback for simple question');
       return generateFallbackResponse(question);
