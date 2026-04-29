@@ -67,12 +67,9 @@ function formatGroupedMessages(intro, messages, fallbackLabel) {
   Object.entries(grouped).forEach(([container, entries]) => {
     sections.push('');
     sections.push(`${container}:`);
-    entries.slice(0, 3).forEach((entry) => {
+    entries.forEach((entry) => {
       sections.push(`  - ${entry}`);
     });
-    if (entries.length > 3) {
-      sections.push(`  - ... and ${entries.length - 3} more`);
-    }
   });
 
   return sections.join('\n').trim();
