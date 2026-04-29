@@ -5,6 +5,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
@@ -13,6 +14,19 @@ const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
 const OLLAMA_MODEL = 'mistral';
 const OLLAMA_TIMEOUT = 5000;
+
+// Supported data directories for file viewing (Equinox Monitor)
+const SUPPORTED_DIRECTORIES = {
+  'tracker': '/collect_data/tracker',
+  'meter': '/collect_data/meter',
+  'inverter': '/collect_data/inverter',
+  'weather': '/collect_data/weather',
+  'recloser': '/collect_data/recloser'
+};
+
+// Special marker to indicate file content response
+const FILE_CONTENT_MARKER = '__EQUINOX_FILE_CONTENT__';
+const FILE_BODY_MARKER = '__EQUINOX_FILE_BODY__';
 
 function loadMonitoringCache() {
   try {

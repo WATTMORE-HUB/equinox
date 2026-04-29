@@ -6,40 +6,38 @@
   <title>Equinox Deployment</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.2);
+      --neon-accent: #667eea;
+      --text-main: rgba(255, 255, 255, 0.9);
+      --text-muted: rgba(255, 255, 255, 0.6);
+    }
     * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     body {
-      background:
-        radial-gradient(circle at 50% 18%, rgba(82, 140, 255, 0.18), transparent 24%),
-        radial-gradient(circle at 50% 28%, rgba(112, 178, 255, 0.08), transparent 34%),
-        linear-gradient(180deg, #050816 0%, #070b14 40%, #03050a 100%);
-      overflow: hidden;
+      background: #050508;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    @keyframes pulse-core {
-      0%, 100% {
-        transform: scale(0.92);
-        opacity: 0.72;
-        filter: blur(0px);
-      }
-      50% {
-        transform: scale(1.08);
-        opacity: 1;
-        filter: blur(1px);
-      }
-    }
-
-    @keyframes pulse-halo {
-      0%, 100% {
-        transform: scale(0.88);
-        opacity: 0.25;
-      }
-      50% {
-        transform: scale(1.18);
-        opacity: 0.55;
-      }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+      position: relative;
+      z-index: 1;
     }
 
     @keyframes drift {
@@ -56,52 +54,24 @@
       animation: fade-in 0.5s ease-out;
     }
 
-    .light-shell {
-      position: relative;
-      width: min(44vw, 26rem);
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: drift 4s ease-in-out infinite;
-    }
-
-    .light-halo {
-      position: absolute;
-      inset: 0;
-      border-radius: 9999px;
-      background: radial-gradient(circle, rgba(89, 161, 255, 0.36) 0%, rgba(89, 161, 255, 0.14) 32%, rgba(89, 161, 255, 0) 70%);
-      animation: pulse-halo 3s ease-in-out infinite;
-      filter: blur(10px);
-    }
-
-    .light-core {
-      width: 34%;
-      aspect-ratio: 1;
-      border-radius: 9999px;
-      background: radial-gradient(circle at 30% 30%, #d7eeff 0%, #8fd1ff 18%, #499eff 48%, #155dfc 72%, rgba(21, 93, 252, 0.08) 100%);
-      box-shadow:
-        0 0 30px rgba(115, 184, 255, 0.85),
-        0 0 90px rgba(59, 130, 246, 0.45),
-        0 0 180px rgba(59, 130, 246, 0.2);
-      animation: pulse-core 2.2s ease-in-out infinite;
-    }
-
-    .light-grid {
-      position: absolute;
-      inset: 18%;
-      border-radius: 9999px;
-      border: 1px solid rgba(158, 198, 255, 0.08);
-      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.03);
-    }
-
     .glass-panel {
-      background: rgba(7, 11, 20, 0.62);
-      border: 1px solid rgba(153, 183, 255, 0.12);
+      backdrop-filter: blur(24px) saturate(120%);
+      -webkit-backdrop-filter: blur(24px) saturate(120%);
+      background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.05) 0%,
+          rgba(255, 255, 255, 0.01) 100%
+      );
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-highlight);
+      border-left: 1px solid var(--glass-highlight);
       box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(20px);
+          0 20px 40px rgba(0, 0, 0, 0.4),
+          inset 0 0 20px rgba(255, 255, 255, 0.02);
+      border-radius: 24px;
+      color: var(--text-main);
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      overflow: hidden;
     }
 
     .ghost-button {
@@ -126,12 +96,20 @@
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.2);
     }
+
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
   </style>
 </head>
-<body class="text-white min-h-screen">
-  <main class="min-h-screen flex flex-col relative">
-    <section class="flex-1 flex flex-col justify-between px-6 py-8 md:px-10 md:py-10">
-      <div class="flex items-center justify-between text-sm text-slate-400">
+<body>
+  <div style="min-h-screen flex flex-col relative">
+    <section class="flex-1 flex flex-col justify-between px-6 py-8 md:px-10 md:py-10" style="position: relative;">
+      <div class="flex items-center justify-between text-sm text-slate-400" style="position: relative; z-index: 20;">
         <div class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200">✦</div>
           <div>
@@ -142,16 +120,11 @@
         <div id="serverStatusText" class="text-xs uppercase tracking-[0.22em] text-slate-500">Connected</div>
       </div>
 
-      <div class="flex-1 flex items-center justify-center">
-        <div class="light-shell" aria-hidden="true">
-          <div class="light-halo"></div>
-          <div class="light-grid"></div>
-          <div id="lightCore" class="light-core"></div>
-        </div>
+      <div style="position: fixed; top: 60px; left: 0; width: 100vw; bottom: 0; z-index: 0; pointer-events: none;" id="canvas-container">
+        <canvas id="neural-network-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"></canvas>
       </div>
-
-      <div class="w-full flex justify-center pb-4 md:pb-8">
-        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl">
+      <div id="dashboard-panel-container" class="w-full flex justify-center pb-4 md:pb-8" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; pointer-events: auto;">
+        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl" style="pointer-events: auto;">
           <div id="locatingView" class="fade-in">
             <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Locating system</p>
             <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
@@ -243,11 +216,164 @@
         </div>
       </div>
     </section>
-  </main>
+  </div>
 
-  <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 text-xs uppercase tracking-[0.22em] text-slate-500">
+  <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 text-xs uppercase tracking-[0.22em] text-slate-500" style="z-index: 20;">
     Powered by Wattmore
   </div>
+
+  <script type="importmap">
+  {
+      "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+      }
+  }
+  </script>
+  <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+      
+      const config = {
+          paused: false,
+          activePaletteIndex: 0,
+          currentFormation: 0,
+          numFormations: 3,
+          densityFactor: 1
+      };
+      const colorPalettes = [
+          [
+              new THREE.Color(0x00ff41),
+              new THREE.Color(0x39ff14),
+              new THREE.Color(0x00ff00),
+              new THREE.Color(0x32cd32),
+              new THREE.Color(0x00ff41)
+          ],
+          [
+              new THREE.Color(0x00ff41),
+              new THREE.Color(0x39ff14),
+              new THREE.Color(0x00ff00),
+              new THREE.Color(0x32cd32),
+              new THREE.Color(0x00ff41)
+          ],
+          [
+              new THREE.Color(0x00ff41),
+              new THREE.Color(0x39ff14),
+              new THREE.Color(0x00ff00),
+              new THREE.Color(0x32cd32),
+              new THREE.Color(0x00ff41)
+          ]
+      ];
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.002);
+      const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 8, 28);
+      const canvasElement = document.getElementById('neural-network-canvas');
+      const canvasContainer = canvasElement.parentElement;
+      const renderer = new THREE.WebGLRenderer({
+          canvas: canvasElement,
+          antialias: true,
+          powerPreference: "high-performance",
+          alpha: true
+      });
+      let composer;
+      let bloomPass;
+      function updateRendererSize() {
+          const w = canvasContainer.clientWidth;
+          const h = canvasContainer.clientHeight;
+          renderer.setSize(w, h);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          if (composer) composer.setSize(w, h);
+          if (bloomPass) bloomPass.resolution.set(w, h);
+      }
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x050508, 0);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      composer = new EffectComposer(renderer);
+      bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          1.8,
+          0.6,
+          0.7
+      );
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(bloomPass);
+      composer.addPass(new OutputPass());
+      updateRendererSize();
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.rotateSpeed = 0.6;
+      controls.minDistance = 8;
+      controls.maxDistance = 80;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.2;
+      controls.enablePan = false;
+      const pulseUniforms = {
+          uTime: { value: 0.0 },
+          uPulsePositions: { value: [
+              new THREE.Vector3(1e3, 1e3, 1e3),
+              new THREE.Vector3(1e3, 1e3, 1e3),
+              new THREE.Vector3(1e3, 1e3, 1e3)
+          ]},
+          uPulseTimes: { value: [-1e3, -1e3, -1e3] },
+          uPulseColors: { value: [
+              new THREE.Color(1, 1, 1),
+              new THREE.Color(1, 1, 1),
+              new THREE.Color(1, 1, 1)
+          ]},
+          uPulseSpeed: { value: 18.0 },
+          uBaseNodeSize: { value: 0.6 }
+      };
+      let neuralNetwork = null;
+      let nodesMesh = null;
+      let connectionsMesh = null;
+      const clock = new THREE.Clock();
+      function animate() {
+          requestAnimationFrame(animate);
+          const t = clock.getElapsedTime();
+          if (!config.paused) {
+              if (nodesMesh) {
+                  nodesMesh.rotation.y = Math.sin(t * 0.04) * 0.05;
+              }
+              if (connectionsMesh) {
+                  connectionsMesh.rotation.y = Math.sin(t * 0.04) * 0.05;
+              }
+          }
+          controls.update();
+          composer.render();
+      }
+      function onWindowResize() {
+          syncCanvasBoundary();
+          updateRendererSize();
+      }
+      function syncCanvasBoundary() {
+          const panelContainer = document.getElementById('dashboard-panel-container');
+          const canvasContainerEl = document.getElementById('canvas-container');
+          if (!panelContainer || !canvasContainerEl) return;
+          const panelRect = panelContainer.getBoundingClientRect();
+          const reservedBottom = Math.max(window.innerHeight - panelRect.bottom, 0);
+          canvasContainerEl.style.bottom = `${reservedBottom}px`;
+      }
+      window.addEventListener('resize', onWindowResize);
+      document.addEventListener('click', (e) => {
+          if (e.target.closest('.glass-panel') || e.target.closest('input') || e.target.closest('button:not(.neural-network-canvas)')) {
+              return;
+          }
+      });
+      if (canvasElement && canvasElement.parentElement) {
+          syncCanvasBoundary();
+          updateRendererSize();
+          animate();
+      } else {
+          console.error('Canvas element not found');
+      }
+  </script>
 
   <script>
     const API_BASE = '/api';
