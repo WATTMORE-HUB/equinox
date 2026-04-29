@@ -78,7 +78,7 @@ function formatGroupedMessages(intro, messages, fallbackLabel) {
 function parseRequestedDirectory(question) {
   const lower = question.toLowerCase();
 
-  for (const directoryName of Object.keys(SUPPORTED_FILE_DIRECTORIES)) {
+  for (const directoryName of Object.keys(SUPPORTED_DIRECTORIES)) {
     if (lower.includes(`/${directoryName}`) || lower.includes(` ${directoryName}`) || lower.endsWith(directoryName)) {
       return directoryName;
     }
@@ -126,9 +126,9 @@ function getLatestFileInfo(directoryPath) {
 }
 
 function buildFileContentResponse(directoryName) {
-  const directoryPath = SUPPORTED_FILE_DIRECTORIES[directoryName];
+  const directoryPath = SUPPORTED_DIRECTORIES[directoryName];
   if (!directoryPath) {
-    return `I can only read the latest file in /${Object.keys(SUPPORTED_FILE_DIRECTORIES).join(', /')}.`;
+    return `I can only read the latest file in /${Object.keys(SUPPORTED_DIRECTORIES).join(', /')}.`;
   }
 
   const latestFile = getLatestFileInfo(directoryPath);

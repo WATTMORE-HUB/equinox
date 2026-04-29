@@ -9,6 +9,18 @@ const path = require('path');
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
+// Supported data directories for file viewing
+const SUPPORTED_DIRECTORIES = {
+  'tracker': '/collect_data/tracker',
+  'meter': '/collect_data/meter',
+  'inverter': '/collect_data/inverter',
+  'weather': '/collect_data/weather',
+  'recloser': '/collect_data/recloser'
+};
+
+const FILE_CONTENT_MARKER = '__EQUINOX_FILE_CONTENT__';
+const FILE_BODY_MARKER = '__EQUINOX_FILE_BODY__';
+
 /**
  * Load the latest monitoring cache
  */
