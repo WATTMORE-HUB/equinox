@@ -1267,6 +1267,73 @@
       return true;
     }
 
+    function renderEnvironmentVariablesMessage(text, messageEl, bubbleEl) {
+      const envMarker = '__EQUINOX_ENV_UPLOAD__';
+      if (!text.includes(envMarker)) {
+        return false;
+      }
+
+      bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-4 w-full max-w-4xl text-sm';
+      bubbleEl.innerHTML = `
+        <div class="space-y-3">
+          <div class="text-slate-100 font-medium">Update Environment Variables</div>
+          <div class="text-sm text-slate-300 mt-2">Upload a CSV file with environment variables to update. Format: KEY,VALUE on each line.</div>
+          <div class="mt-4">
+            <input type="file" id="envFileInput" accept=".csv" class="block w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600" />
+          </div>
+          <button id="envUploadBtn" class="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Upload Variables</button>
+          <div id="envStatus" class="text-xs text-slate-400 mt-2"></div>
+        </div>
+      `;
+      messageEl.appendChild(bubbleEl);
+      
+      // Add event listeners after rendering
+      const uploadBtn = document.getElementById('envUploadBtn');
+      const fileInput = document.getElementById('envFileInput');
+      const statusDiv = document.getElementById('envStatus');
+      
+      uploadBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          statusDiv.textContent = 'Please select a file';
+          statusDiv.className = 'text-xs text-red-400 mt-2';
+          return;
+        }
+        
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+        statusDiv.textContent = 'Processing...';
+        statusDiv.className = 'text-xs text-slate-400 mt-2';
+        
+        try {
+          const formData = new FormData();
+          formData.append('csvFile', file);
+          
+          const response = await fetch(`${API_BASE}/chat/upload-env-variables`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Upload failed');
+          }
+          
+          statusDiv.textContent = `Successfully updated ${data.variablesSet || 0} environment variable(s)`;
+          statusDiv.className = 'text-xs text-green-400 mt-2';
+          uploadBtn.textContent = 'Upload Complete';
+        } catch (error) {
+          statusDiv.textContent = `Error: ${error.message}`;
+          statusDiv.className = 'text-xs text-red-400 mt-2';
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'Upload Variables';
+        }
+      });
+      
+      return true;
+    }
+
     function addChatMessage(text, isUser) {
       const messageEl = document.createElement('div');
       messageEl.className = isUser ? 'text-right' : 'text-left';
@@ -1275,6 +1342,12 @@
       bubbleEl.className = isUser
         ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap'
         : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap';
+
+      if (!isUser && renderEnvironmentVariablesMessage(text, messageEl, bubbleEl)) {
+        chatMessages.appendChild(messageEl);
+        chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+        return;
+      }
 
       if (!isUser && renderFileContentMessage(text, messageEl, bubbleEl)) {
         chatMessages.appendChild(messageEl);

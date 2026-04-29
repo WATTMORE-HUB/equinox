@@ -28,6 +28,9 @@ const SUPPORTED_DIRECTORIES = {
 const FILE_CONTENT_MARKER = '__EQUINOX_FILE_CONTENT__';
 const FILE_BODY_MARKER = '__EQUINOX_FILE_BODY__';
 
+// Special marker to indicate environment variables upload needed
+const ENV_UPLOAD_MARKER = '__EQUINOX_ENV_UPLOAD__';
+
 function loadMonitoringCache() {
   try {
     if (fs.existsSync(MONITORING_CACHE_PATH)) {
@@ -110,6 +113,33 @@ function isLatestFileQuestion(question) {
   return Boolean(requestedDirectory && asksForFile && asksForLatest);
 }
 
+function isEnvironmentVariablesQuestion(question) {
+  const lower = question.toLowerCase();
+  const envKeywords = [
+    'environment variable',
+    'env var',
+    'env variable',
+    'environment variables',
+    'env variables',
+    'env vars',
+    'set variable',
+    'set env',
+    'update variable',
+    'update env',
+    'change variable',
+    'change env'
+  ];
+  return envKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildEnvironmentVariablesResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'upload_environment_variables',
+    description: 'Upload a CSV file with environment variables to update'
+  });
+  return `${ENV_UPLOAD_MARKER}\n${metadata}`;
+}
+
 function getLatestFileInfo(directoryPath) {
   try {
     if (!fs.existsSync(directoryPath)) {
@@ -180,6 +210,10 @@ function generateFallbackResponse(question) {
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
+
+  if (isEnvironmentVariablesQuestion(question)) {
+    return buildEnvironmentVariablesResponse();
+  }
 
   if (isLatestFileQuestion(question)) {
     return buildFileContentResponse(parseRequestedDirectory(question));
