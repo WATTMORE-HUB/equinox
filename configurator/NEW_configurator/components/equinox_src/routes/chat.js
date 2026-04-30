@@ -1,10 +1,8 @@
 const express = require('express');
 const multer = require('multer');
-const csv = require('csv-parser');
-const { Readable } = require('stream');
 const llmClient = require('../services/llmClientNode');
-const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
+const { applyEnvironmentVariablesFromCSV } = require('../utils/envVarHelper');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -61,59 +59,26 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
   }
 
   try {
-    console.log('[Chat API] Getting Balena token...');
-    // Get Balena token from secure server-side storage (lazy load on demand)
+    // Lazy load token on demand - allows token to be loaded from secure storage even in Monitor mode
     const balenaToken = await balenaTokenManager.ensureToken();
-    console.log(`[Chat API] Token available: ${!!balenaToken}`);
-    
     if (!balenaToken) {
-      console.log('[Chat API] Balena token not available');
       return res.status(503).json({ error: 'Balena token not configured on server' });
     }
 
     // Get device UUID from environment (set by Balena supervisor)
     const deviceUuid = process.env.BALENA_DEVICE_UUID;
-    console.log(`[Chat API] Device UUID: ${deviceUuid}`);
-    
     if (!deviceUuid) {
       return res.status(400).json({ error: 'Device UUID not available. This endpoint must run on a Balena device.' });
     }
-
-    // Parse CSV
-    console.log('[Chat API] Parsing CSV...');
-    const variables = {};
-    await new Promise((resolve, reject) => {
-      Readable.from([csvFile.buffer.toString()])
-        .pipe(csv())
-        .on('data', (row) => {
-          const key = Object.keys(row)[0];
-          const value = Object.values(row)[0];
-          if (key && value) {
-            variables[key] = value;
-            console.log(`[Chat API] Parsed variable: ${key}`);
-          }
-        })
-        .on('error', reject)
-        .on('end', resolve);
-    });
-
-    console.log(`[Chat API] Total variables parsed: ${Object.keys(variables).length}`);
-    
-    if (Object.keys(variables).length === 0) {
-      console.log('[Chat API] No valid variables found in CSV');
-      return res.status(400).json({ error: 'CSV file is empty or has no valid KEY,VALUE pairs' });
-    }
-
     // Apply environment variables via Balena API
     console.log('[Chat API] Applying variables via Balena API...');
-    const balenaHelper = new BalenaApiHelper(balenaToken);
-    const results = await balenaHelper.setDeviceEnvVars(deviceUuid, variables);
+    const result = await applyEnvironmentVariablesFromCSV(csvFile.buffer, balenaToken, deviceUuid);
 
-    console.log(`[Chat API] Successfully applied ${results.length} variables`);
+    console.log(`[Chat API] Successfully applied ${result.count} variables`);
     res.json({
-      variablesSet: results.length,
-      appliedVariables: Object.keys(variables),
-      message: `Successfully applied ${results.length} environment variable(s). Changes will take effect after service restart.`
+      variablesSet: result.count,
+      appliedVariables: result.appliedVariables,
+      message: `Successfully applied ${result.count} environment variable(s). Changes will take effect after service restart.`
     });
   } catch (error) {
     console.error('[Chat API] Error uploading env variables:', error.message);
