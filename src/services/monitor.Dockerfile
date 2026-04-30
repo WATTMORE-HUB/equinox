@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
-COPY configurator/NEW_configurator/components/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy monitoring service
