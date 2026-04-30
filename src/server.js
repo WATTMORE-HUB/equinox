@@ -84,7 +84,25 @@ async function autoConfigureEnvironment() {
   try {
     // Initialize Balena token manager before starting server
     await balenaTokenManager.loadToken();
-    console.log(`[Server] Balena token loaded from: ${balenaTokenManager.getSourceInfo()}`);
+    const sourceInfo = balenaTokenManager.getSourceInfo();
+    const isLoaded = balenaTokenManager.isLoaded();
+    console.log(`[Server] Balena token loaded: ${isLoaded}, from: ${sourceInfo}`);
+    
+    if (isLoaded) {
+      // In Configure mode, automatically persist the token for Monitor mode to use
+      const mode = process.env.EQUINOX_MODE || 'config';
+      if (mode === 'config') {
+        console.log('[Server] Running in Configure mode - attempting to persist token to /collect_data for Monitor mode...');
+        const persistSuccess = balenaTokenManager.constructor.createSecureConfigFile(
+          balenaTokenManager.getToken()
+        );
+        if (persistSuccess) {
+          console.log('[Server] [OK] Token persisted to secure storage for Monitor mode');
+        } else {
+          console.warn('[Server] Warning: Could not persist token, but it will still work in Configure mode');
+        }
+      }
+    }
     
     // Auto-configure environment on startup if needed
     await autoConfigureEnvironment();
