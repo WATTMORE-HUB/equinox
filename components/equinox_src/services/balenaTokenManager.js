@@ -61,6 +61,23 @@ class BalenaTokenManager {
             this.token = config.token;
             this.loadedFrom = `S3 (s3://${s3Bucket}/${s3Key})`;
             console.log('[BalenaTokenManager] Loaded token from S3 bucket');
+            
+            // Persist to local secure config so it's available even if AWS creds are unavailable later
+            try {
+              const configDir = '/etc/equinox';
+              const configPath = path.join(configDir, 'balena-token.json');
+              if (!fs.existsSync(configDir)) {
+                fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+              }
+              fs.writeFileSync(configPath, JSON.stringify({ token: this.token }), {
+                mode: 0o600
+              });
+              console.log('[BalenaTokenManager] Persisted token to secure config file for future use');
+            } catch (persistError) {
+              console.warn(`[BalenaTokenManager] Warning: Failed to persist token locally: ${persistError.message}`);
+              // Don't fail the load - token is still available in memory
+            }
+            
             return this.token;
           }
         } catch (s3Error) {
