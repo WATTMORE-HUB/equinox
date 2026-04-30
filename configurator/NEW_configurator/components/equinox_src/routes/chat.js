@@ -71,16 +71,18 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
       return res.status(400).json({ error: 'Device UUID not available. This endpoint must run on a Balena device.' });
     }
 
-    // Parse CSV
+    // Parse CSV - expects columns named KEY and VALUE
     const variables = {};
     await new Promise((resolve, reject) => {
       Readable.from([csvFile.buffer.toString()])
         .pipe(csv())
         .on('data', (row) => {
-          const key = Object.keys(row)[0];
-          const value = Object.values(row)[0];
+          // CSV should have KEY and VALUE columns
+          const key = row.KEY || row.key;
+          const value = row.VALUE || row.value;
           if (key && value) {
             variables[key] = value;
+            console.log(`[Chat API] Parsed: ${key}=${value.substring(0, 20)}...`);
           }
         })
         .on('error', reject)
