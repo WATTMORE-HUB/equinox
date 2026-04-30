@@ -252,6 +252,38 @@ router.get('/device-info', (req, res) => {
   }
 });
 
+// POST /api/deployment/persist-token
+// Save the current Balena token to /collect_data for use in Monitor mode
+// Called by Configurator during setup to ensure token persists after deployment
+router.post('/persist-token', (req, res) => {
+  try {
+    // Get the currently loaded token
+    const balenaToken = balenaTokenManager.getToken();
+    if (!balenaToken) {
+      return res.status(503).json({ error: 'No Balena token loaded. Cannot persist token.' });
+    }
+
+    // Try to persist the token using the static method
+    // This will try /collect_data first, then /etc/equinox
+    const success = balenaTokenManager.constructor.createSecureConfigFile(balenaToken);
+    
+    if (success) {
+      const sourceInfo = balenaTokenManager.getSourceInfo();
+      console.log(`[PERSIST-TOKEN] Successfully persisted token (originally from: ${sourceInfo})`);
+      res.json({
+        success: true,
+        message: 'Balena token persisted to secure storage for Monitor mode',
+        source: sourceInfo
+      });
+    } else {
+      return res.status(500).json({ error: 'Failed to persist token to /collect_data or /etc/equinox' });
+    }
+  } catch (err) {
+    console.error('[PERSIST-TOKEN] Error:', err.message);
+    res.status(500).json({ error: `Failed to persist token: ${err.message}` });
+  }
+});
+
 // GET /api/deployment/:deploymentId
 // Get deployment details
 router.get('/:deploymentId', (req, res) => {
