@@ -51,29 +51,35 @@ router.post('/', async (req, res) => {
  * Response: { variablesSet: number, appliedVariables: object, errors?: string[] }
  */
 router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) => {
-  const csvFile = req.file;
-  
-  console.log('[Chat API] Environment variables upload endpoint called');
-
-  if (!csvFile) {
-    console.log('[Chat API] No CSV file provided');
-    return res.status(400).json({ error: 'CSV file is required' });
-  }
-
+  let csvFile;
   try {
+    csvFile = req.file;
+    console.log('[Chat API] Environment variables upload endpoint called');
+
+    if (!csvFile) {
+      console.log('[Chat API] No CSV file provided');
+      return res.status(400).json({ error: 'CSV file is required' });
+    }
+
     // Lazy load token on demand - allows token to be loaded from secure storage even in Monitor mode
+    console.log('[Chat API] Loading Balena token...');
     const balenaToken = await balenaTokenManager.ensureToken();
+    console.log(`[Chat API] Token available: ${!!balenaToken}`);
+    
     if (!balenaToken) {
       return res.status(503).json({ error: 'Balena token not configured on server' });
     }
 
     // Get device UUID from environment (set by Balena supervisor)
     const deviceUuid = process.env.BALENA_DEVICE_UUID;
+    console.log(`[Chat API] Device UUID: ${deviceUuid}`);
+    
     if (!deviceUuid) {
       return res.status(400).json({ error: 'Device UUID not available. This endpoint must run on a Balena device.' });
     }
 
     // Parse CSV
+    console.log('[Chat API] Parsing CSV file...');
     const variables = {};
     await new Promise((resolve, reject) => {
       Readable.from([csvFile.buffer.toString()])
@@ -83,31 +89,42 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
           const value = Object.values(row)[0];
           if (key && value) {
             variables[key] = value;
+            console.log(`[Chat API] Parsed: ${key}=${value}`);
           }
         })
         .on('error', reject)
         .on('end', resolve);
     });
 
+    console.log(`[Chat API] Parsed ${Object.keys(variables).length} variables`);
+    
     if (Object.keys(variables).length === 0) {
       return res.status(400).json({ error: 'CSV file is empty or has no valid KEY,VALUE pairs' });
     }
 
     // Apply environment variables via Balena API
+    console.log('[Chat API] Applying variables via Balena API...');
     const balenaHelper = new BalenaApiHelper(balenaToken);
     const results = await balenaHelper.setDeviceEnvVars(deviceUuid, variables);
+    console.log(`[Chat API] Applied ${results.length} variables successfully`);
 
-    res.json({
+    return res.json({
       variablesSet: results.length,
       appliedVariables: Object.keys(variables),
       message: `Successfully applied ${results.length} environment variable(s). Changes will take effect after service restart.`
     });
   } catch (error) {
-    console.error('[Chat API] Error uploading env variables:', error.message);
-    console.error('[Chat API] Stack trace:', error.stack);
-    // Make sure we always return valid JSON
-    if (!res.headersSent) {
-      res.status(500).json({ error: `Failed to apply environment variables: ${error.message}` });
+    console.error('[Chat API] Caught error:', error.message || error);
+    console.error('[Chat API] Error type:', error.constructor.name);
+    console.error('[Chat API] Stack:', error.stack);
+    
+    // Always return valid JSON error response
+    try {
+      if (!res.headersSent) {
+        return res.status(500).json({ error: `Failed to process upload: ${error.message || 'Unknown error'}` });
+      }
+    } catch (responseError) {
+      console.error('[Chat API] Failed to send error response:', responseError.message);
     }
   }
 });
