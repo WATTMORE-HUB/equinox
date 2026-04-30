@@ -70,15 +70,25 @@ class BalenaTokenManager {
         console.warn('[BalenaTokenManager] Skipping S3 token lookup because AWS credentials are not configured in the container');
       }
 
-      // Fallback: try secure config file
-      const configPath = path.join('/etc/equinox', 'balena-token.json');
-      if (fs.existsSync(configPath)) {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        if (config.token) {
-          this.token = config.token;
-          this.loadedFrom = 'secure config file';
-          console.log('[BalenaTokenManager] Loaded token from secure config file');
-          return this.token;
+      // Fallback: try secure config files (check /collect_data first, then /etc/equinox)
+      const configPaths = [
+        path.join(process.env.COLLECT_DATA_PATH || '/collect_data', 'balena-token.json'),
+        path.join('/etc/equinox', 'balena-token.json')
+      ];
+      
+      for (const configPath of configPaths) {
+        if (fs.existsSync(configPath)) {
+          try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            if (config.token) {
+              this.token = config.token;
+              this.loadedFrom = `secure config file (${configPath})`;
+              console.log(`[BalenaTokenManager] Loaded token from ${configPath}`);
+              return this.token;
+            }
+          } catch (parseErr) {
+            console.warn(`[BalenaTokenManager] Failed to parse config file ${configPath}: ${parseErr.message}`);
+          }
         }
       }
 
@@ -144,30 +154,40 @@ class BalenaTokenManager {
   /**
    * Create a secure config file (for setup purposes)
    * IMPORTANT: This is only for setup - in production, use env vars
+   * Tries /collect_data first (more persistent), then /etc/equinox
    */
   static createSecureConfigFile(token) {
-    try {
-      const configDir = '/etc/equinox';
-      const configPath = path.join(configDir, 'balena-token.json');
+    const persistPaths = [
+      { dir: process.env.COLLECT_DATA_PATH || '/collect_data', label: 'COLLECT_DATA_PATH' },
+      { dir: '/etc/equinox', label: '/etc/equinox' }
+    ];
 
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+    for (const { dir, label } of persistPaths) {
+      try {
+        const configPath = path.join(dir, 'balena-token.json');
+
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+        }
+
+        // Write config file with restricted permissions
+        const config = { token };
+        fs.writeFileSync(configPath, JSON.stringify(config), {
+          mode: 0o600 // Read/write for owner only
+        });
+
+        console.log(`[BalenaTokenManager] Secure config file created at ${configPath}`);
+        console.log('[BalenaTokenManager] File permissions set to 0600 (owner read/write only)');
+        return true;
+      } catch (error) {
+        console.warn(`[BalenaTokenManager] Warning: Could not create config file in ${label}: ${error.message}`);
+        // Continue to next path
       }
-
-      // Write config file with restricted permissions
-      const config = { token };
-      fs.writeFileSync(configPath, JSON.stringify(config), {
-        mode: 0o600 // Read/write for owner only
-      });
-
-      console.log(`[BalenaTokenManager] Secure config file created at ${configPath}`);
-      console.log('[BalenaTokenManager] File permissions set to 0600 (owner read/write only)');
-      return true;
-    } catch (error) {
-      console.error('[BalenaTokenManager] Error creating secure config file:', error.message);
-      return false;
     }
+
+    console.error('[BalenaTokenManager] Error: Could not create secure config file in any location');
+    return false;
   }
 }
 
