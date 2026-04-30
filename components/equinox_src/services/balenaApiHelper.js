@@ -52,15 +52,13 @@ class BalenaApiHelper {
   }
 
   /**
-   * Set environment variable on device
+   * Set environment variable on device (internal, requires existingVars map)
    * Creates new or updates existing
    * If variable already exists and update fails, logs warning but succeeds (idempotent)
    */
-  async setDeviceEnvVar(deviceId, name, value) {
+  async _setDeviceEnvVarWithMap(deviceId, name, value, existingVarsMap) {
     try {
-      // First check if var exists
-      const envVars = await this.getDeviceEnvVars(deviceId);
-      const existing = envVars.find(v => v.name === name);
+      const existing = existingVarsMap.get(name);
 
       if (existing) {
         // Update existing
@@ -102,6 +100,22 @@ class BalenaApiHelper {
   }
 
   /**
+   * Set environment variable on device
+   * Creates new or updates existing
+   */
+  async setDeviceEnvVar(deviceId, name, value) {
+    try {
+      // First check if var exists
+      const envVars = await this.getDeviceEnvVars(deviceId);
+      const existingVarsMap = new Map(envVars.map(v => [v.name, v]));
+      return await this._setDeviceEnvVarWithMap(deviceId, name, value, existingVarsMap);
+    } catch (err) {
+      console.error(`[BalenaApiHelper] Error setting env var ${name}:`, err.message);
+      throw err;
+    }
+  }
+
+  /**
    * Set multiple environment variables on device
    * deviceId can be either UUID or internal ID
    * Continues setting vars even if some fail, returns results for all
@@ -120,10 +134,14 @@ class BalenaApiHelper {
       const results = [];
       const errors = [];
       
+      // Fetch existing environment variables ONCE
+      const existingEnvVars = await this.getDeviceEnvVars(deviceId);
+      const existingVarsMap = new Map(existingEnvVars.map(v => [v.name, v]));
+      
       for (const [name, value] of Object.entries(envVars)) {
         if (value) {  // Skip empty values
           try {
-            await this.setDeviceEnvVar(deviceId, name, value);
+            await this._setDeviceEnvVarWithMap(deviceId, name, value, existingVarsMap);
             results.push({ name, success: true });
           } catch (err) {
             // Collect error but continue with next variable
