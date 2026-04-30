@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const llmClient = require('../services/llmClientNode');
+const systemReportGenerator = require('../services/systemReportGenerator');
 const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
 
@@ -102,6 +103,28 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
     if (!res.headersSent) {
       res.status(500).json({ error: `Failed to apply environment variables: ${error.message}` });
     }
+  }
+});
+
+/**
+ * Get a comprehensive system health report
+ * GET /api/chat/system-report
+ * Response: { report: object, narrative: string }
+ */
+router.get('/system-report', (req, res) => {
+  try {
+    console.log('[Chat API] Generating system report');
+    const report = systemReportGenerator.generateReport();
+    const narrative = systemReportGenerator.generateNarrativeSummary(report);
+    
+    res.json({
+      report,
+      narrative,
+      health_status: report.overall_health
+    });
+  } catch (error) {
+    console.error('[Chat API] Error generating system report:', error.message);
+    res.status(500).json({ error: `Failed to generate system report: ${error.message}` });
   }
 });
 

@@ -113,6 +113,29 @@ function isLatestFileQuestion(question) {
   return Boolean(requestedDirectory && asksForFile && asksForLatest);
 }
 
+function isSystemHealthQuestion(question) {
+  const lower = question.toLowerCase();
+  const healthKeywords = [
+    'system report',
+    'holistic',
+    'how is my system',
+    'system doing',
+    'overall health',
+    'complete picture',
+    'full status',
+    'everything status'
+  ];
+  return healthKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildSystemHealthResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'system_health_report',
+    description: 'Generate comprehensive system health report'
+  });
+  return `__EQUINOX_SYSTEM_REPORT__\n${metadata}`;
+}
+
 function isEnvironmentVariablesQuestion(question) {
   const lower = question.toLowerCase();
   const envKeywords = [
@@ -210,6 +233,10 @@ function generateFallbackResponse(question) {
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
+
+  if (isSystemHealthQuestion(question)) {
+    return buildSystemHealthResponse();
+  }
 
   if (isEnvironmentVariablesQuestion(question)) {
     return buildEnvironmentVariablesResponse();
