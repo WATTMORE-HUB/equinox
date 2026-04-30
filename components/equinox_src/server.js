@@ -59,13 +59,22 @@ async function autoConfigureEnvironment() {
 (async () => {
   try {
     // Initialize Balena token manager before starting server
+    console.log('[Server] Attempting to load Balena token...');
     await balenaTokenManager.loadToken();
-    console.log(`[Server] Balena token loaded from: ${balenaTokenManager.getSourceInfo()}`);
+    const sourceInfo = balenaTokenManager.getSourceInfo();
+    const isLoaded = balenaTokenManager.isLoaded();
+    console.log(`[Server] Balena token loaded: ${isLoaded}, from: ${sourceInfo}`);
+    
+    if (!isLoaded) {
+      console.warn('[Server] WARNING: Balena token is not loaded. Environment variables upload will fail.');
+      console.warn('[Server] Make sure BALENA_API_TOKEN env var, S3 bucket, or /etc/equinox/balena-token.json is configured.');
+    }
     
     // Auto-configure environment on startup if needed
     await autoConfigureEnvironment();
   } catch (error) {
-    console.warn(`[Server] Failed to load Balena token on startup: ${error.message}`);
+    console.error(`[Server] Error during startup: ${error.message}`);
+    console.error('[Server] Stack:', error.stack);
   }
 
   const server = app.listen(PORT, () => {
