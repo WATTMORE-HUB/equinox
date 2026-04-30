@@ -98,6 +98,7 @@ class BalenaApiHelper {
   /**
    * Set multiple environment variables on device
    * deviceId can be either UUID or internal ID
+   * Continues setting vars even if some fail, returns results for all
    */
   async setDeviceEnvVars(deviceIdOrUuid, envVars) {
     try {
@@ -111,12 +112,29 @@ class BalenaApiHelper {
       }
       
       const results = [];
+      const errors = [];
+      
       for (const [name, value] of Object.entries(envVars)) {
         if (value) {  // Skip empty values
-          await this.setDeviceEnvVar(deviceId, name, value);
-          results.push({ name, success: true });
+          try {
+            await this.setDeviceEnvVar(deviceId, name, value);
+            results.push({ name, success: true });
+          } catch (err) {
+            // Collect error but continue with next variable
+            const errorMsg = `Failed to set ${name}: ${err.message}`;
+            console.error(`[BalenaApiHelper] ${errorMsg}`);
+            errors.push(errorMsg);
+            results.push({ name, success: false, error: err.message });
+          }
         }
       }
+      
+      // If there were errors, log them but don't throw
+      if (errors.length > 0) {
+        console.warn(`[BalenaApiHelper] ${errors.length} error(s) while setting environment variables:`);
+        errors.forEach(e => console.warn(`  - ${e}`));
+      }
+      
       return results;
     } catch (err) {
       console.error('[BalenaApiHelper] Error setting multiple env vars:', err.message);
