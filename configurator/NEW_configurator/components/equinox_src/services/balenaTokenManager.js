@@ -119,10 +119,18 @@ class BalenaTokenManager {
 
   /**
    * Async method to ensure token is loaded from S3/files
+   * This handles lazy loading - if token isn't cached, it will try to load again
+   * This is important for cases where AWS credentials become available after startup
    */
   async ensureToken() {
     if (!this.token) {
+      console.log('[BalenaTokenManager] Token not cached, attempting to load...');
       await this.loadToken();
+      if (this.token) {
+        console.log(`[BalenaTokenManager] Successfully loaded token from ${this.loadedFrom}`);
+      } else {
+        console.warn('[BalenaTokenManager] Token still unavailable after load attempt');
+      }
     }
     return this.token;
   }
