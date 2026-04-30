@@ -1,7 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const csv = require('csv-parser');
-const { Readable } = require('stream');
 const llmClient = require('../services/llmClientNode');
 const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
@@ -71,23 +69,20 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
       return res.status(400).json({ error: 'Device UUID not available. This endpoint must run on a Balena device.' });
     }
 
-    // Parse CSV - expects columns named KEY and VALUE
+    // Parse CSV - format: VAR_NAME,value (no headers, just two columns)
     const variables = {};
-    await new Promise((resolve, reject) => {
-      Readable.from([csvFile.buffer.toString()])
-        .pipe(csv())
-        .on('data', (row) => {
-          // CSV should have KEY and VALUE columns
-          const key = row.KEY || row.key;
-          const value = row.VALUE || row.value;
-          if (key && value) {
-            variables[key] = value;
-            console.log(`[Chat API] Parsed: ${key}=${value.substring(0, 20)}...`);
-          }
-        })
-        .on('error', reject)
-        .on('end', resolve);
-    });
+    const lines = csvFile.buffer.toString().trim().split('\n');
+    
+    for (const line of lines) {
+      const [key, ...valueParts] = line.split(',');
+      // Join remaining parts with comma in case the value contains commas
+      const value = valueParts.join(',');
+      
+      if (key && value) {
+        variables[key.trim()] = value.trim();
+        console.log(`[Chat API] Parsed: ${key.trim()}=${value.trim().substring(0, 20)}...`);
+      }
+    }
 
     if (Object.keys(variables).length === 0) {
       return res.status(400).json({ error: 'CSV file is empty or has no valid KEY,VALUE pairs' });
