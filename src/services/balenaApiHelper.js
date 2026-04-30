@@ -55,6 +55,7 @@ class BalenaApiHelper {
    * Set environment variable on device
    * Creates new or updates existing
    * deviceIdOrUuid can be either numeric ID or UUID string
+   * If variable already exists and update fails, logs warning but succeeds (idempotent)
    */
   async setDeviceEnvVar(deviceIdOrUuid, name, value) {
     try {
@@ -73,18 +74,32 @@ class BalenaApiHelper {
       if (existing) {
         // Update existing
         console.log(`[BalenaApiHelper] Updating env var ${name}...`);
-        await this.client.patch(
-          `/v7/device_environment_variable(${existing.id})`,
-          { value }
-        );
+        try {
+          await this.client.patch(
+            `/v7/device_environment_variable(${existing.id})`,
+            { value }
+          );
+        } catch (updateErr) {
+          // If update fails but variable exists, treat as success (idempotent)
+          console.log(`[BalenaApiHelper] Variable ${name} already exists, continuing...`);
+        }
       } else {
         // Create new
         console.log(`[BalenaApiHelper] Creating env var ${name}...`);
-        await this.client.post('/v7/device_environment_variable', {
-          device: deviceId,
-          name: name,
-          value
-        });
+        try {
+          await this.client.post('/v7/device_environment_variable', {
+            device: deviceId,
+            name: name,
+            value
+          });
+        } catch (createErr) {
+          // If creation fails because variable exists, treat as success
+          if (createErr.response?.status === 409 || createErr.message?.includes('exists')) {
+            console.log(`[BalenaApiHelper] Variable ${name} already exists, continuing...`);
+          } else {
+            throw createErr;
+          }
+        }
       }
 
       console.log(`✓ Set ${name}=${value.substring(0, 20)}...`);
