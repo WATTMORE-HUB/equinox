@@ -1,8 +1,10 @@
 const express = require('express');
 const multer = require('multer');
+const csv = require('csv-parser');
+const { Readable } = require('stream');
 const llmClient = require('../services/llmClientNode');
+const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
-const { applyEnvironmentVariablesFromCSV } = require('../utils/envVarHelper');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -70,15 +72,35 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
     if (!deviceUuid) {
       return res.status(400).json({ error: 'Device UUID not available. This endpoint must run on a Balena device.' });
     }
-    // Apply environment variables via Balena API
-    console.log('[Chat API] Applying variables via Balena API...');
-    const result = await applyEnvironmentVariablesFromCSV(csvFile.buffer, balenaToken, deviceUuid);
 
-    console.log(`[Chat API] Successfully applied ${result.count} variables`);
+    // Parse CSV
+    const variables = {};
+    await new Promise((resolve, reject) => {
+      Readable.from([csvFile.buffer.toString()])
+        .pipe(csv())
+        .on('data', (row) => {
+          const key = Object.keys(row)[0];
+          const value = Object.values(row)[0];
+          if (key && value) {
+            variables[key] = value;
+          }
+        })
+        .on('error', reject)
+        .on('end', resolve);
+    });
+
+    if (Object.keys(variables).length === 0) {
+      return res.status(400).json({ error: 'CSV file is empty or has no valid KEY,VALUE pairs' });
+    }
+
+    // Apply environment variables via Balena API
+    const balenaHelper = new BalenaApiHelper(balenaToken);
+    const results = await balenaHelper.setDeviceEnvVars(deviceUuid, variables);
+
     res.json({
-      variablesSet: result.count,
-      appliedVariables: result.appliedVariables,
-      message: `Successfully applied ${result.count} environment variable(s). Changes will take effect after service restart.`
+      variablesSet: results.length,
+      appliedVariables: Object.keys(variables),
+      message: `Successfully applied ${results.length} environment variable(s). Changes will take effect after service restart.`
     });
   } catch (error) {
     console.error('[Chat API] Error uploading env variables:', error.message);
