@@ -58,8 +58,8 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
   }
 
   try {
-    // Get Balena token from secure server-side storage (loads from env/S3/file)
-    const balenaToken = await balenaTokenManager.ensureToken();
+    // Get Balena token from secure server-side storage (loaded at server startup)
+    const balenaToken = balenaTokenManager.getToken();
     if (!balenaToken) {
       return res.status(503).json({ error: 'Balena token not configured on server' });
     }
