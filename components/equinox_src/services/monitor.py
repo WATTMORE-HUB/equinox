@@ -5,6 +5,7 @@ import logging
 import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+import psutil
 
 # Optional AWS IoT imports
 try:
@@ -411,8 +412,56 @@ class MonitoringService:
             logger.debug(f"Error parsing logs for {container_name}: {e}")
             return {"errors": [], "warnings": []}
     
+    def get_system_metrics(self):
+        """Collect system-level metrics: CPU, memory, storage, temperature"""
+        try:
+            metrics = {
+                "cpu_percent": psutil.cpu_percent(interval=1),
+                "memory": {
+                    "percent": psutil.virtual_memory().percent,
+                    "used_gb": round(psutil.virtual_memory().used / (1024**3), 2),
+                    "total_gb": round(psutil.virtual_memory().total / (1024**3), 2)
+                },
+                "storage": {}
+            }
+            
+            # Check storage for key paths
+            storage_paths = [
+                '/collect_data',
+                '/'
+            ]
+            
+            for path in storage_paths:
+                if os.path.exists(path):
+                    try:
+                        usage = psutil.disk_usage(path)
+                        metrics["storage"][path] = {
+                            "percent": usage.percent,
+                            "used_gb": round(usage.used / (1024**3), 2),
+                            "total_gb": round(usage.total / (1024**3), 2)
+                        }
+                    except Exception as e:
+                        logger.debug(f"Error getting storage for {path}: {e}")
+            
+            # Try to get temperature (may not be available on all systems)
+            try:
+                temps = psutil.sensors_temperatures()
+                if temps:
+                    # Get first available temperature
+                    for sensor_name, readings in temps.items():
+                        if readings:
+                            metrics["temperature_celsius"] = readings[0].current
+                            break
+            except Exception as e:
+                logger.debug(f"Temperature sensors not available: {e}")
+            
+            return metrics
+        except Exception as e:
+            logger.error(f"Error collecting system metrics: {e}")
+            return {}
+    
     def check_file_activity(self):
-        """Check if files are being written to monitored directories"""
+        """Check if files are being written to monitored directories and get freshness"""
         monitored_dirs = [
             '/collect_data/meter',
             '/collect_data/inverter',
@@ -424,6 +473,7 @@ class MonitoringService:
         file_activity = {}
         cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.polling_interval * 2)
         cutoff_timestamp = cutoff_time.timestamp()
+        now_timestamp = datetime.now(timezone.utc).timestamp()
         
         for dir_path in monitored_dirs:
             dir_name = os.path.basename(dir_path)
@@ -438,33 +488,53 @@ class MonitoringService:
                     file_activity[dir_name] = {'status': 'no_files', 'count': 0}
                     continue
                 
-                # Check for recently modified files
+                # Find most recent file and check freshness
+                most_recent_mtime = 0
                 recent_files = []
                 for filename in files:
                     filepath = os.path.join(dir_path, filename)
                     try:
                         mtime = os.path.getmtime(filepath)
+                        most_recent_mtime = max(most_recent_mtime, mtime)
                         if mtime >= cutoff_timestamp:
                             recent_files.append(filename)
                     except OSError:
                         continue
                 
+                # Calculate age of most recent file in seconds
+                age_seconds = int(now_timestamp - most_recent_mtime) if most_recent_mtime else None
+                
+                activity_status = {}
+                activity_status['count'] = len(files)
+                activity_status['total_files'] = len(files)
+                
+                if most_recent_mtime:
+                    activity_status['most_recent_age_seconds'] = age_seconds
+                    activity_status['most_recent_age_human'] = self._format_age(age_seconds)
+                
                 if recent_files:
-                    file_activity[dir_name] = {
-                        'status': 'writing',
-                        'count': len(recent_files),
-                        'total_files': len(files)
-                    }
+                    activity_status['status'] = 'writing'
+                    activity_status['recent_count'] = len(recent_files)
                 else:
-                    file_activity[dir_name] = {
-                        'status': 'idle',
-                        'count': len(files)
-                    }
+                    activity_status['status'] = 'idle'
+                
+                file_activity[dir_name] = activity_status
             except Exception as e:
                 logger.debug(f"Error checking files in {dir_path}: {e}")
                 file_activity[dir_name] = {'status': 'error'}
         
         return file_activity
+    
+    def _format_age(self, seconds):
+        """Format age in seconds to human readable format"""
+        if seconds < 60:
+            return f"{seconds}s ago"
+        elif seconds < 3600:
+            return f"{int(seconds/60)}m ago"
+        elif seconds < 86400:
+            return f"{int(seconds/3600)}h ago"
+        else:
+            return f"{int(seconds/86400)}d ago"
     
     def analyze_logs(self):
         """Analyze Docker container logs for errors and warnings"""
@@ -518,6 +588,7 @@ class MonitoringService:
         self._cleanup_old_history()
         
         # Get current state
+        system_metrics = self.get_system_metrics()
         self.poll_docker()
         logs = self.analyze_logs()
         file_activity = self.check_file_activity()
@@ -525,6 +596,7 @@ class MonitoringService:
         # Build summary
         summary = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "system_metrics": system_metrics,
             "container_count": len(self.cache.get("containers", {})),
             "containers": self.cache.get("containers", {}),
             "errors_recent": logs.get("errors", []),
@@ -532,7 +604,8 @@ class MonitoringService:
             "file_activity": file_activity
         }
         
-        # Update top-level cache with current errors/warnings/file activity for chat service
+        # Update top-level cache with current data for chat service
+        self.cache["system_metrics"] = system_metrics
         self.cache["errors_recent"] = logs.get("errors", [])
         self.cache["warnings_recent"] = logs.get("warnings", [])
         self.cache["file_activity"] = file_activity
@@ -542,8 +615,10 @@ class MonitoringService:
         self.cache["history"].append(summary)
         self._save_cache()
         
-        logger.info(f"Generated summary: {summary['container_count']} containers, "
-                   f"{len(summary['errors_recent'])} errors, {len(summary['warnings_recent'])} warnings")
+        logger.info(f"Generated summary: CPU {system_metrics.get('cpu_percent', 'N/A')}%, "
+                   f"Memory {system_metrics.get('memory', {}).get('percent', 'N/A')}%, "
+                   f"{summary['container_count']} containers, "
+                   f"{len(summary['errors_recent'])} errors")
         
         # Publish to AWS IoT Core if critical findings
         if IOT_PUBLISH_ENABLED and (summary['errors_recent'] or summary['container_count'] == 0):
