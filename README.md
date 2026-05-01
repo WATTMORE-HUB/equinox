@@ -26,36 +26,6 @@ All documentation is in the [`docs/`](docs/) directory:
 **Confirmation with hardware details and site selection fallback**
 ![Equinox Dashboard - Confirm](equinox2.png)
 
-## Quick Start
-
-1. Deploy to Balena device: `balena push YourFleet`
-2. Open device dashboard in browser
-3. System auto-detects your location and hardware
-4. Confirm the detected site (or select different site from dropdown)
-5. Click Confirm to deploy
-
-## What This System Does
-
-**Phase 3: Advanced Chat Interface for System Monitoring**
-- Query container logs and system status in natural language
-- Monitor all data directories and file freshness
-- Get structured JSON data for programmatic access
-- Upload and apply new environment variables from CSV files
-- Receive detailed holistic system health reports with metrics
-
-**Phase 2: Location-Aware Deployment Dashboard**
-- Auto-detects device location and matches to nearest site
-- Auto-discovers hardware from Wattmore configurator
-- One-click deployment with fallback site selection
-- Beautiful cinematic dashboard with smooth UX
-- Powered by Balena API and Wattmore integration
-
-**Phase 1: Cloud Deployment Infrastructure** (completed)
-- Hardware profile database with CSV caching
-- Wattmore API scraper for project discovery
-- Secure Balena token storage (env vars or S3)
-- Config generator merging hardware + site data
-
 ## Project Structure
 
 ```
@@ -121,21 +91,6 @@ All documentation is in the [`docs/`](docs/) directory:
 - Chat interface: Fully operational with system monitoring
 - AWS IoT publishing: Active and scheduled
 
-## Cost
-
-~$8-12/month (or free with AWS free tier)
-- EC2 t2.micro: $7-10
-- Lambda: <$1
-- API Gateway: ~$0.50
-
-## Next Steps
-
-1. Open [`docs/AWS_SETUP.md`](docs/AWS_SETUP.md)
-2. Follow the 8 provisioning steps (takes ~30 minutes)
-3. Update CM4 configuration
-4. Test end-to-end deployment
-5. Enable AWS IoT Core publishing with device credentials
-6. Configure monitoring intervals via SYSTEM_REPORT_INTERVAL env var (default 600 seconds)
 
 ---
 

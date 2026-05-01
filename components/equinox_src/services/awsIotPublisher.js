@@ -1,11 +1,11 @@
 /**
  * AWS IoT Core Publisher
  * Handles publishing system reports and monitoring data to AWS IoT Core via MQTT
+ * Note: Actual MQTT publishing is handled by Python monitor.py service
+ * This module provides the message building logic for Node.js chat endpoints
  */
 
-const awsIot = require('aws-iot-device-sdk-v2');
 const fs = require('fs');
-const path = require('path');
 
 const logger = console;
 
