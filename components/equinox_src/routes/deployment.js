@@ -178,13 +178,22 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
     // This ensures the device env var is set before EC2 runs balena push
     // When containers restart, they'll read this mode from device env
     try {
-      console.log('[DEPLOYMENT ROUTE] Setting EQUINOX_MODE=monitor on device (pre-deployment)...');
+      console.log('[DEPLOYMENT ROUTE] Setting device environment variables (pre-deployment)...');
       const balenaHelper = new BalenaApiHelper(balenaToken);
+      
+      // Set EQUINOX_MODE to monitor
       await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
       console.log('[DEPLOYMENT ROUTE] [OK] EQUINOX_MODE set to monitor');
+      
+      // Set AWS IoT publishing enabled and topic (user will provide credentials via CSV upload)
+      await balenaHelper.setDeviceEnvVar(deviceId, 'IOT_PUBLISH_ENABLED', 'true');
+      console.log('[DEPLOYMENT ROUTE] [OK] IOT_PUBLISH_ENABLED set to true');
+      
+      await balenaHelper.setDeviceEnvVar(deviceId, 'IOT_TOPIC', 'operate/device_reports');
+      console.log('[DEPLOYMENT ROUTE] [OK] IOT_TOPIC set to operate/device_reports');
     } catch (modeErr) {
-      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set EQUINOX_MODE: ${modeErr.message}`);
-      // Don't fail the deployment if mode setting fails
+      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set environment variables: ${modeErr.message}`);
+      // Don't fail the deployment if env var setting fails
     }
     
     // Call deployer service to set environment variables on device and trigger EC2 deployment
