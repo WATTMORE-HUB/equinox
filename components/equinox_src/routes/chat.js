@@ -33,6 +33,24 @@ router.post('/', async (req, res) => {
         setTimeout(() => reject(new Error('Query timeout')), 35000);
       })
     ]);
+    
+    // If LLM detected a system health query, fetch and return the actual report
+    if (answer && answer.includes('__EQUINOX_SYSTEM_REPORT__')) {
+      console.log('[Chat API] System health query detected, generating report');
+      try {
+        const report = systemReportGenerator.generateReport();
+        const narrative = systemReportGenerator.generateNarrativeSummary(report);
+        return res.json({
+          answer: narrative,
+          report: report,
+          health_status: report.overall_health
+        });
+      } catch (reportError) {
+        console.error('[Chat API] Error generating system report:', reportError.message);
+        return res.status(500).json({ error: `Failed to generate system report: ${reportError.message}` });
+      }
+    }
+    
     res.json({ answer });
   } catch (error) {
     console.error('[Chat API] Error:', error.message || error);
