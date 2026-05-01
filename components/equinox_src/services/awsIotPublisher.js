@@ -162,9 +162,10 @@ class AwsIotPublisher {
 
   /**
    * Publish system report to AWS IoT Core
+   * For on-demand reports, write to file for monitor.py to pick up and publish
    */
   async publishSystemReport(report, onDemand = false) {
-    if (!IOT_PUBLISH_ENABLED || !this.isConnected) {
+    if (!IOT_PUBLISH_ENABLED) {
       return false;
     }
 
@@ -188,15 +189,28 @@ class AwsIotPublisher {
       const message = this.buildMessage(report, severity, 'health_report');
       const topic = `${IOT_TOPIC}/${process.env.BALENA_DEVICE_UUID || THING_NAME}`;
 
-      // Log the intent (actual publishing would require aws-iot-device-sdk or mqtt.js setup)
-      logger.info(
-        `[AWS IoT] Would publish ${onDemand ? 'on-demand' : 'scheduled'} report to ${topic}`
-      );
-      logger.debug(`[AWS IoT] Message: ${JSON.stringify(message).substring(0, 200)}...`);
-
-      return true;
+      if (onDemand) {
+        // For on-demand reports, write to file for monitor.py to pick up and publish immediately
+        const onDemandReportPath = `${collectDataDir}/pending_iot_report.json`;
+        fs.writeFileSync(
+          onDemandReportPath,
+          JSON.stringify({
+            timestamp: Date.now(),
+            report: message,
+            topic: topic,
+          })
+        );
+        logger.info(
+          `[AWS IoT] On-demand report written to ${onDemandReportPath} for monitor.py to publish`
+        );
+        return true;
+      } else {
+        // Scheduled reports are handled by monitor.py
+        logger.debug(`[AWS IoT] Scheduled report ready (handled by monitor.py)`);
+        return true;
+      }
     } catch (error) {
-      logger.error(`[AWS IoT] Error publishing system report: ${error.message}`);
+      logger.error(`[AWS IoT] Error preparing system report: ${error.message}`);
       return false;
     }
   }

@@ -678,6 +678,40 @@ class MonitoringService:
         
         return summary
     
+    def check_pending_on_demand_report(self):
+        """Check for on-demand report from chat interface and publish immediately"""
+        pending_report_path = "/collect_data/pending_iot_report.json"
+        try:
+            if os.path.exists(pending_report_path):
+                with open(pending_report_path, 'r') as f:
+                    pending = json.load(f)
+                
+                # Publish the on-demand report
+                if self.mqtt_connection and IOT_PUBLISH_ENABLED:
+                    try:
+                        connect_future = self.mqtt_connection.connect()
+                        connect_future.result(timeout=15)
+                        
+                        self.mqtt_connection.publish(
+                            topic=pending['topic'],
+                            payload=json.dumps(pending['report']),
+                            qos=mqtt.QoS.AT_LEAST_ONCE
+                        )
+                        logger.info(f"Published on-demand report to {pending['topic']}")
+                        
+                        disconnect_future = self.mqtt_connection.disconnect()
+                        disconnect_future.result(timeout=5)
+                    except Exception as e:
+                        logger.error(f"Failed to publish on-demand report: {e}")
+                
+                # Clean up the file
+                try:
+                    os.remove(pending_report_path)
+                except Exception as e:
+                    logger.debug(f"Could not remove pending report file: {e}")
+        except Exception as e:
+            logger.debug(f"Error checking pending on-demand report: {e}")
+    
     def run(self):
         """Main monitoring loop"""
         logger.info(f"Starting monitoring service (interval: {self.polling_interval}s, report interval: {self.report_interval}s)")
@@ -685,6 +719,9 @@ class MonitoringService:
         while True:
             try:
                 summary = self.generate_summary()
+                
+                # Check for on-demand reports from chat interface
+                self.check_pending_on_demand_report()
                 
                 # Publish comprehensive system report on schedule
                 current_time = time.time()
