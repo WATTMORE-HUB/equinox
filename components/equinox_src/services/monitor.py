@@ -27,6 +27,7 @@ logging.basicConfig(
 MONITORING_CACHE_PATH = "/collect_data/monitoring_cache.json"
 MONITORING_CONFIG_PATH = "/collect_data/monitoring_config.json"
 POLLING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "300"))  # 5 minutes default
+SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "600"))  # 10 minutes default
 LOG_RETENTION_DAYS = 7
 
 # AWS IoT Core configuration (mirrors combine/heartbeat pattern)
@@ -80,6 +81,8 @@ class MonitoringService:
         self.cache = self._load_cache()
         self.config = self._load_config()
         self.polling_interval = POLLING_INTERVAL
+        self.report_interval = SYSTEM_REPORT_INTERVAL
+        self.last_report_time = 0
         self.mqtt_connection = None
         self._initialize_iot_connection()
     
@@ -117,13 +120,16 @@ class MonitoringService:
             logger.error(f"Failed to initialize AWS IoT MQTT connection: {e}")
             self.mqtt_connection = None
     
-    def _build_iot_message(self, summary, severity):
+    def _build_iot_message(self, summary, severity, report_type="alert"):
         """Build AWS IoT message payload for monitoring reports"""
-        return {
+        system_metrics = summary.get("system_metrics", {})
+        
+        message = {
             "siteId": os.getenv("SITE"),
             "deviceId": os.getenv("EDGE_ID"),
             "edgeId": os.getenv("BALENA_DEVICE_UUID"),
-            "alertOccurredAt": int(datetime.now().timestamp() * 1000),
+            "reportType": report_type,
+            "reportedAt": int(datetime.now().timestamp() * 1000),
             "severity": severity,
             "summary": {
                 "containerCount": summary["container_count"],
@@ -134,8 +140,28 @@ class MonitoringService:
                 "warningsRecent": summary["warnings_recent"]
             }
         }
+        
+        # Add system metrics if this is a comprehensive health report
+        if report_type == "health_report":
+            message["systemMetrics"] = {
+                "cpu": {
+                    "percent": system_metrics.get("cpu_percent"),
+                    "status": "critical" if system_metrics.get("cpu_percent", 0) > 90 else "warning" if system_metrics.get("cpu_percent", 0) > 75 else "normal"
+                },
+                "memory": {
+                    "percent": system_metrics.get("memory", {}).get("percent"),
+                    "usedGb": system_metrics.get("memory", {}).get("used_gb"),
+                    "totalGb": system_metrics.get("memory", {}).get("total_gb"),
+                    "status": "critical" if system_metrics.get("memory", {}).get("percent", 0) > 90 else "warning" if system_metrics.get("memory", {}).get("percent", 0) > 70 else "normal"
+                },
+                "storage": system_metrics.get("storage", {}),
+                "temperature": system_metrics.get("temperature_celsius")
+            }
+            message["fileActivity"] = summary.get("file_activity", {})
+        
+        return message
     
-    def _publish_to_iot(self, summary, severity):
+    def _publish_to_iot(self, summary, severity, report_type="alert"):
         """Publish monitoring report to AWS IoT Core using the same pattern as combine/heartbeat"""
         if not IOT_PUBLISH_ENABLED or not self.mqtt_connection:
             return False
@@ -145,7 +171,7 @@ class MonitoringService:
             connect_future = self.mqtt_connection.connect()
             connect_future.result(timeout=15)
             
-            message = self._build_iot_message(summary, severity)
+            message = self._build_iot_message(summary, severity, report_type)
             topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
             
             # Publish with 15s timeout
@@ -154,7 +180,7 @@ class MonitoringService:
                 payload=json.dumps(message),
                 qos=mqtt.QoS.AT_LEAST_ONCE
             )
-            logger.info(f"Published to '{topic}': {len(message)} bytes")
+            logger.info(f"Published {report_type} to '{topic}': {len(message)} bytes")
             
             # Disconnect gracefully
             disconnect_future = self.mqtt_connection.disconnect()
@@ -162,6 +188,31 @@ class MonitoringService:
             return True
         except Exception as e:
             logger.error(f"Failed to publish to AWS IoT Core: {e}")
+            return False
+    
+    def publish_system_report(self, summary):
+        """Publish a comprehensive system health report to AWS IoT Core on schedule"""
+        if not IOT_PUBLISH_ENABLED:
+            return False
+        
+        try:
+            # Determine overall health status
+            system_metrics = summary.get("system_metrics", {})
+            cpu_percent = system_metrics.get("cpu_percent", 0)
+            memory_percent = system_metrics.get("memory", {}).get("percent", 0)
+            errors = len(summary.get("errors_recent", []))
+            failed_containers = sum(1 for c in summary.get("containers", {}).values() if "Exited" in c.get("status", ""))
+            
+            if errors > 0 or failed_containers > 0 or cpu_percent > 90 or memory_percent > 90:
+                severity = "critical"
+            elif cpu_percent > 75 or memory_percent > 70:
+                severity = "warning"
+            else:
+                severity = "healthy"
+            
+            return self._publish_to_iot(summary, severity, report_type="health_report")
+        except Exception as e:
+            logger.error(f"Error publishing system report: {e}")
             return False
         
     def _load_cache(self):
@@ -629,11 +680,18 @@ class MonitoringService:
     
     def run(self):
         """Main monitoring loop"""
-        logger.info(f"Starting monitoring service (interval: {self.polling_interval}s)")
+        logger.info(f"Starting monitoring service (interval: {self.polling_interval}s, report interval: {self.report_interval}s)")
         
         while True:
             try:
-                self.generate_summary()
+                summary = self.generate_summary()
+                
+                # Publish comprehensive system report on schedule
+                current_time = time.time()
+                if current_time - self.last_report_time >= self.report_interval:
+                    self.publish_system_report(summary)
+                    self.last_report_time = current_time
+                
                 time.sleep(self.polling_interval)
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {e}")

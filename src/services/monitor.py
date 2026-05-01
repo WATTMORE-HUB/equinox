@@ -5,8 +5,17 @@ import logging
 import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from awscrt import io, mqtt, auth, http
-from awsiot import mqtt_connection_builder
+import psutil
+
+# Optional AWS IoT imports
+try:
+    from awscrt import io, mqtt, auth, http
+    from awsiot import mqtt_connection_builder
+    AWS_IOT_AVAILABLE = True
+except ImportError:
+    AWS_IOT_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.debug("AWS IoT libraries not available, IoT publishing disabled")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -18,6 +27,7 @@ logging.basicConfig(
 MONITORING_CACHE_PATH = "/collect_data/monitoring_cache.json"
 MONITORING_CONFIG_PATH = "/collect_data/monitoring_config.json"
 POLLING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "300"))  # 5 minutes default
+SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "600"))  # 10 minutes default
 LOG_RETENTION_DAYS = 7
 
 # AWS IoT Core configuration (mirrors combine/heartbeat pattern)
@@ -71,11 +81,17 @@ class MonitoringService:
         self.cache = self._load_cache()
         self.config = self._load_config()
         self.polling_interval = POLLING_INTERVAL
+        self.report_interval = SYSTEM_REPORT_INTERVAL
+        self.last_report_time = 0
         self.mqtt_connection = None
         self._initialize_iot_connection()
     
     def _initialize_iot_connection(self):
         """Initialize AWS IoT MQTT connection using the same structure as combine/heartbeat"""
+        if not AWS_IOT_AVAILABLE:
+            logger.debug("AWS IoT libraries not available, skipping IoT connection")
+            return
+        
         if not IOT_PUBLISH_ENABLED:
             logger.debug("IoT Core publishing disabled")
             return
@@ -104,13 +120,16 @@ class MonitoringService:
             logger.error(f"Failed to initialize AWS IoT MQTT connection: {e}")
             self.mqtt_connection = None
     
-    def _build_iot_message(self, summary, severity):
+    def _build_iot_message(self, summary, severity, report_type="alert"):
         """Build AWS IoT message payload for monitoring reports"""
-        return {
+        system_metrics = summary.get("system_metrics", {})
+        
+        message = {
             "siteId": os.getenv("SITE"),
             "deviceId": os.getenv("EDGE_ID"),
             "edgeId": os.getenv("BALENA_DEVICE_UUID"),
-            "alertOccurredAt": int(datetime.now().timestamp() * 1000),
+            "reportType": report_type,
+            "reportedAt": int(datetime.now().timestamp() * 1000),
             "severity": severity,
             "summary": {
                 "containerCount": summary["container_count"],
@@ -121,8 +140,28 @@ class MonitoringService:
                 "warningsRecent": summary["warnings_recent"]
             }
         }
+        
+        # Add system metrics if this is a comprehensive health report
+        if report_type == "health_report":
+            message["systemMetrics"] = {
+                "cpu": {
+                    "percent": system_metrics.get("cpu_percent"),
+                    "status": "critical" if system_metrics.get("cpu_percent", 0) > 90 else "warning" if system_metrics.get("cpu_percent", 0) > 75 else "normal"
+                },
+                "memory": {
+                    "percent": system_metrics.get("memory", {}).get("percent"),
+                    "usedGb": system_metrics.get("memory", {}).get("used_gb"),
+                    "totalGb": system_metrics.get("memory", {}).get("total_gb"),
+                    "status": "critical" if system_metrics.get("memory", {}).get("percent", 0) > 90 else "warning" if system_metrics.get("memory", {}).get("percent", 0) > 70 else "normal"
+                },
+                "storage": system_metrics.get("storage", {}),
+                "temperature": system_metrics.get("temperature_celsius")
+            }
+            message["fileActivity"] = summary.get("file_activity", {})
+        
+        return message
     
-    def _publish_to_iot(self, summary, severity):
+    def _publish_to_iot(self, summary, severity, report_type="alert"):
         """Publish monitoring report to AWS IoT Core using the same pattern as combine/heartbeat"""
         if not IOT_PUBLISH_ENABLED or not self.mqtt_connection:
             return False
@@ -132,7 +171,7 @@ class MonitoringService:
             connect_future = self.mqtt_connection.connect()
             connect_future.result(timeout=15)
             
-            message = self._build_iot_message(summary, severity)
+            message = self._build_iot_message(summary, severity, report_type)
             topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
             
             # Publish with 15s timeout
@@ -141,7 +180,7 @@ class MonitoringService:
                 payload=json.dumps(message),
                 qos=mqtt.QoS.AT_LEAST_ONCE
             )
-            logger.info(f"Published to '{topic}': {len(message)} bytes")
+            logger.info(f"Published {report_type} to '{topic}': {len(message)} bytes")
             
             # Disconnect gracefully
             disconnect_future = self.mqtt_connection.disconnect()
@@ -149,6 +188,31 @@ class MonitoringService:
             return True
         except Exception as e:
             logger.error(f"Failed to publish to AWS IoT Core: {e}")
+            return False
+    
+    def publish_system_report(self, summary):
+        """Publish a comprehensive system health report to AWS IoT Core on schedule"""
+        if not IOT_PUBLISH_ENABLED:
+            return False
+        
+        try:
+            # Determine overall health status
+            system_metrics = summary.get("system_metrics", {})
+            cpu_percent = system_metrics.get("cpu_percent", 0)
+            memory_percent = system_metrics.get("memory", {}).get("percent", 0)
+            errors = len(summary.get("errors_recent", []))
+            failed_containers = sum(1 for c in summary.get("containers", {}).values() if "Exited" in c.get("status", ""))
+            
+            if errors > 0 or failed_containers > 0 or cpu_percent > 90 or memory_percent > 90:
+                severity = "critical"
+            elif cpu_percent > 75 or memory_percent > 70:
+                severity = "warning"
+            else:
+                severity = "healthy"
+            
+            return self._publish_to_iot(summary, severity, report_type="health_report")
+        except Exception as e:
+            logger.error(f"Error publishing system report: {e}")
             return False
         
     def _load_cache(self):
@@ -220,7 +284,9 @@ class MonitoringService:
             )
             
             if result.returncode != 0:
-                logger.error(f"Docker ps failed: {result.stderr}")
+                logger.error(f"Docker ps failed with return code {result.returncode}")
+                logger.error(f"stderr: {result.stderr}")
+                logger.error(f"stdout: {result.stdout}")
                 # Keep previous state if Docker call fails
                 return False
             
@@ -235,7 +301,12 @@ class MonitoringService:
                     continue
                 parts = line.split('\t')
                 if len(parts) >= 3:
-                    name, status, container_id = parts[0], parts[1], parts[2]
+                    full_name, status, container_id = parts[0], parts[1], parts[2]
+                    
+                    # Clean container name - remove Balena UUID suffixes
+                    # Names like "postgres_14770565_4033849_c99ff1b4230ce075ef177a3da4c2ebe1"
+                    # become "postgres"
+                    name = full_name.split('_')[0]
                     
                     # Check if we should monitor this service
                     if not self._should_monitor(name):
@@ -305,33 +376,241 @@ class MonitoringService:
         
         return None
     
-    def analyze_logs(self):
-        """Analyze logs from /collect_data for errors and warnings"""
+    def _clean_log_line(self, line):
+        """Clean up log lines - remove ANSI codes and excessive whitespace"""
+        import re
+        # Remove ANSI color codes
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        line = ansi_escape.sub('', line)
+        # Remove leading/trailing whitespace
+        line = line.strip()
+        # Remove common traceback noise (only keep error type + message)
+        if 'traceback' in line.lower():
+            return 'Traceback (see logs for details)'
+        if line.startswith('File "/') or line.startswith('  '):
+            return None  # Skip traceback frame lines
+        return line
+    
+    def _parse_container_logs(self, container_id, container_name, last_timestamp):
+        """Parse logs from a single container for errors and warnings"""
         errors = []
         warnings = []
         
         try:
-            collect_data_path = Path("/collect_data")
-            if not collect_data_path.exists():
+            # Get recent logs with timestamps
+            result = subprocess.run(
+                ['docker', 'logs', '--tail', '100', '--timestamps', container_id],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode != 0:
                 return {"errors": [], "warnings": []}
             
-            # Scan for error/warning patterns in recent logs
-            for log_file in collect_data_path.glob("*.log"):
+            # Parse log lines
+            for line in result.stdout.split('\n'):
+                if not line.strip():
+                    continue
+                
+                # Extract timestamp if present (format: 2026-04-28T17:31:14.519Z message)
                 try:
-                    with open(log_file, 'r') as f:
-                        lines = f.readlines()[-100:]  # Last 100 lines
-                        for line in lines:
-                            if 'error' in line.lower():
-                                errors.append(f"{log_file.name}: {line.strip()[:100]}")
-                            elif 'warning' in line.lower() or 'warn' in line.lower():
-                                warnings.append(f"{log_file.name}: {line.strip()[:100]}")
-                except Exception as e:
-                    logger.debug(f"Error reading {log_file}: {e}")
+                    # Try to extract ISO timestamp from docker logs output
+                    if line.startswith('2'):
+                        parts = line.split(' ', 1)
+                        if len(parts) >= 2:
+                            timestamp_str = parts[0]
+                            message = parts[1]
+                        else:
+                            timestamp_str = None
+                            message = line
+                    else:
+                        timestamp_str = None
+                        message = line
+                except:
+                    timestamp_str = None
+                    message = line
+                
+                # Clean up the message
+                cleaned_message = self._clean_log_line(message)
+                if not cleaned_message:
+                    continue
+                
+                # Check for errors and warnings
+                message_lower = cleaned_message.lower()
+                
+                # Look for error patterns
+                if any(pattern in message_lower for pattern in ['error', 'traceback', 'exception', 'failed', 'needs keyword-only argument']):
+                    error_text = f"{container_name}: {cleaned_message[:150]}"
+                    if error_text not in errors:
+                        errors.append(error_text)
+                
+                # Look for warning patterns
+                elif any(pattern in message_lower for pattern in ['warning', 'warn', 'deprecated']):
+                    warning_text = f"{container_name}: {cleaned_message[:150]}"
+                    if warning_text not in warnings:
+                        warnings.append(warning_text)
             
-            # Limit to most recent
             return {
-                "errors": errors[-10:],
-                "warnings": warnings[-10:]
+                "errors": errors[-5:],  # Keep last 5 errors per container
+                "warnings": warnings[-5:]
+            }
+        
+        except subprocess.TimeoutExpired:
+            logger.debug(f"Timeout reading logs for {container_name}")
+            return {"errors": [], "warnings": []}
+        except Exception as e:
+            logger.debug(f"Error parsing logs for {container_name}: {e}")
+            return {"errors": [], "warnings": []}
+    
+    def get_system_metrics(self):
+        """Collect system-level metrics: CPU, memory, storage, temperature"""
+        try:
+            metrics = {
+                "cpu_percent": psutil.cpu_percent(interval=1),
+                "memory": {
+                    "percent": psutil.virtual_memory().percent,
+                    "used_gb": round(psutil.virtual_memory().used / (1024**3), 2),
+                    "total_gb": round(psutil.virtual_memory().total / (1024**3), 2)
+                },
+                "storage": {}
+            }
+            
+            # Check storage for key paths
+            storage_paths = [
+                '/collect_data',
+                '/'
+            ]
+            
+            for path in storage_paths:
+                if os.path.exists(path):
+                    try:
+                        usage = psutil.disk_usage(path)
+                        metrics["storage"][path] = {
+                            "percent": usage.percent,
+                            "used_gb": round(usage.used / (1024**3), 2),
+                            "total_gb": round(usage.total / (1024**3), 2)
+                        }
+                    except Exception as e:
+                        logger.debug(f"Error getting storage for {path}: {e}")
+            
+            # Try to get temperature (may not be available on all systems)
+            try:
+                temps = psutil.sensors_temperatures()
+                if temps:
+                    # Get first available temperature
+                    for sensor_name, readings in temps.items():
+                        if readings:
+                            metrics["temperature_celsius"] = readings[0].current
+                            break
+            except Exception as e:
+                logger.debug(f"Temperature sensors not available: {e}")
+            
+            return metrics
+        except Exception as e:
+            logger.error(f"Error collecting system metrics: {e}")
+            return {}
+    
+    def check_file_activity(self):
+        """Check if files are being written to monitored directories and get freshness"""
+        monitored_dirs = [
+            '/collect_data/meter',
+            '/collect_data/inverter',
+            '/collect_data/weather',
+            '/collect_data/recloser',
+            '/collect_data/tracker'
+        ]
+        
+        file_activity = {}
+        cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.polling_interval * 2)
+        cutoff_timestamp = cutoff_time.timestamp()
+        now_timestamp = datetime.now(timezone.utc).timestamp()
+        
+        for dir_path in monitored_dirs:
+            dir_name = os.path.basename(dir_path)
+            try:
+                if not os.path.isdir(dir_path):
+                    continue
+                
+                # Get all files in directory
+                files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+                
+                if not files:
+                    file_activity[dir_name] = {'status': 'no_files', 'count': 0}
+                    continue
+                
+                # Find most recent file and check freshness
+                most_recent_mtime = 0
+                recent_files = []
+                for filename in files:
+                    filepath = os.path.join(dir_path, filename)
+                    try:
+                        mtime = os.path.getmtime(filepath)
+                        most_recent_mtime = max(most_recent_mtime, mtime)
+                        if mtime >= cutoff_timestamp:
+                            recent_files.append(filename)
+                    except OSError:
+                        continue
+                
+                # Calculate age of most recent file in seconds
+                age_seconds = int(now_timestamp - most_recent_mtime) if most_recent_mtime else None
+                
+                activity_status = {}
+                activity_status['count'] = len(files)
+                activity_status['total_files'] = len(files)
+                
+                if most_recent_mtime:
+                    activity_status['most_recent_age_seconds'] = age_seconds
+                    activity_status['most_recent_age_human'] = self._format_age(age_seconds)
+                
+                if recent_files:
+                    activity_status['status'] = 'writing'
+                    activity_status['recent_count'] = len(recent_files)
+                else:
+                    activity_status['status'] = 'idle'
+                
+                file_activity[dir_name] = activity_status
+            except Exception as e:
+                logger.debug(f"Error checking files in {dir_path}: {e}")
+                file_activity[dir_name] = {'status': 'error'}
+        
+        return file_activity
+    
+    def _format_age(self, seconds):
+        """Format age in seconds to human readable format"""
+        if seconds < 60:
+            return f"{seconds}s ago"
+        elif seconds < 3600:
+            return f"{int(seconds/60)}m ago"
+        elif seconds < 86400:
+            return f"{int(seconds/3600)}h ago"
+        else:
+            return f"{int(seconds/86400)}d ago"
+    
+    def analyze_logs(self):
+        """Analyze Docker container logs for errors and warnings"""
+        errors = []
+        warnings = []
+        
+        try:
+            # Get current time for filtering recent errors
+            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.polling_interval * 2)
+            last_timestamp = cutoff_time.isoformat()
+            
+            # Parse logs from each running container
+            for container_name, container_info in self.cache.get("containers", {}).items():
+                container_id = container_info.get("id")
+                if not container_id:
+                    continue
+                
+                logs = self._parse_container_logs(container_id, container_name, last_timestamp)
+                errors.extend(logs.get("errors", []))
+                warnings.extend(logs.get("warnings", []))
+            
+            # Deduplicate and limit to most recent
+            return {
+                "errors": list(dict.fromkeys(errors))[-10:],
+                "warnings": list(dict.fromkeys(warnings))[-10:]
             }
         
         except Exception as e:
@@ -360,24 +639,37 @@ class MonitoringService:
         self._cleanup_old_history()
         
         # Get current state
+        system_metrics = self.get_system_metrics()
         self.poll_docker()
         logs = self.analyze_logs()
+        file_activity = self.check_file_activity()
         
         # Build summary
         summary = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "system_metrics": system_metrics,
             "container_count": len(self.cache.get("containers", {})),
             "containers": self.cache.get("containers", {}),
             "errors_recent": logs.get("errors", []),
-            "warnings_recent": logs.get("warnings", [])
+            "warnings_recent": logs.get("warnings", []),
+            "file_activity": file_activity
         }
+        
+        # Update top-level cache with current data for chat service
+        self.cache["system_metrics"] = system_metrics
+        self.cache["errors_recent"] = logs.get("errors", [])
+        self.cache["warnings_recent"] = logs.get("warnings", [])
+        self.cache["file_activity"] = file_activity
+        self.cache["last_updated"] = summary["timestamp"]
         
         # Add to history
         self.cache["history"].append(summary)
         self._save_cache()
         
-        logger.info(f"Generated summary: {summary['container_count']} containers, "
-                   f"{len(summary['errors_recent'])} errors, {len(summary['warnings_recent'])} warnings")
+        logger.info(f"Generated summary: CPU {system_metrics.get('cpu_percent', 'N/A')}%, "
+                   f"Memory {system_metrics.get('memory', {}).get('percent', 'N/A')}%, "
+                   f"{summary['container_count']} containers, "
+                   f"{len(summary['errors_recent'])} errors")
         
         # Publish to AWS IoT Core if critical findings
         if IOT_PUBLISH_ENABLED and (summary['errors_recent'] or summary['container_count'] == 0):
@@ -388,11 +680,18 @@ class MonitoringService:
     
     def run(self):
         """Main monitoring loop"""
-        logger.info(f"Starting monitoring service (interval: {self.polling_interval}s)")
+        logger.info(f"Starting monitoring service (interval: {self.polling_interval}s, report interval: {self.report_interval}s)")
         
         while True:
             try:
-                self.generate_summary()
+                summary = self.generate_summary()
+                
+                # Publish comprehensive system report on schedule
+                current_time = time.time()
+                if current_time - self.last_report_time >= self.report_interval:
+                    self.publish_system_report(summary)
+                    self.last_report_time = current_time
+                
                 time.sleep(self.polling_interval)
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {e}")
@@ -400,6 +699,10 @@ class MonitoringService:
 
 
 if __name__ == "__main__":
+    logger.info("Monitor service starting...")
+    logger.info(f"Cache path: {MONITORING_CACHE_PATH}")
+    logger.info(f"Polling interval: {POLLING_INTERVAL} seconds")
     make_certs()
     monitor = MonitoringService()
+    logger.info("Monitor service initialized, starting monitoring loop")
     monitor.run()
