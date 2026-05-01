@@ -127,6 +127,19 @@ services:
       - LOG_CHECK_INTERVAL=3600000
       - VALIDATION_WINDOW=600000
       - EQUINOX_MODE=${EQUINOX_MODE}
+      # AWS IoT Core Configuration (optional - set via device env vars if using)
+      - IOT_PUBLISH_ENABLED=${IOT_PUBLISH_ENABLED:-false}
+      - AWSENDPOINT=${AWSENDPOINT}
+      - THINGNAME=${THINGNAME}
+      - CERT_NAME=${CERT_NAME}
+      - CERT=${CERT}
+      - KEY_NAME=${KEY_NAME}
+      - KEY=${KEY}
+      - CA_1_NAME=${CA_1_NAME}
+      - CA_1=${CA_1}
+      - IOT_TOPIC=${IOT_TOPIC:-operate/device_reports}
+      - SITE=${SITE}
+      - EDGE_ID=${EDGE_ID}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - collect_data:/collect_data
@@ -140,7 +153,22 @@ services:
     restart: always
     environment:
       - MONITORING_INTERVAL=300
+      - SYSTEM_REPORT_INTERVAL=600
       - PYTHONUNBUFFERED=1
+      # AWS IoT Core Configuration (optional - set via device env vars if using)
+      - IOT_PUBLISH_ENABLED=${IOT_PUBLISH_ENABLED:-false}
+      - AWSENDPOINT=${AWSENDPOINT}
+      - THINGNAME=${THINGNAME}
+      - CERT_NAME=${CERT_NAME}
+      - CERT=${CERT}
+      - KEY_NAME=${KEY_NAME}
+      - KEY=${KEY}
+      - CA_1_NAME=${CA_1_NAME}
+      - CA_1=${CA_1}
+      - IOT_TOPIC=${IOT_TOPIC:-operate/device_reports}
+      - SITE=${SITE}
+      - EDGE_ID=${EDGE_ID}
+      - BALENA_DEVICE_UUID=${BALENA_DEVICE_UUID}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - collect_data:/collect_data
