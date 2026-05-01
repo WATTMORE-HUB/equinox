@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const llmClient = require('../services/llmClientNode');
 const systemReportGenerator = require('../services/systemReportGenerator');
+const awsIotPublisher = require('../services/awsIotPublisher');
 const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
 
@@ -40,6 +41,12 @@ router.post('/', async (req, res) => {
       try {
         const report = systemReportGenerator.generateReport();
         const narrative = systemReportGenerator.generateNarrativeSummary(report);
+        
+        // Publish to AWS IoT Core on-demand
+        awsIotPublisher.publishSystemReport(report, true).catch((err) => {
+          console.warn('[Chat API] Failed to publish report to AWS IoT:', err);
+        });
+        
         return res.json({
           answer: narrative,
           report: report,
@@ -129,11 +136,16 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
  * GET /api/chat/system-report
  * Response: { report: object, narrative: string }
  */
-router.get('/system-report', (req, res) => {
+router.get('/system-report', async (req, res) => {
   try {
     console.log('[Chat API] Generating system report');
     const report = systemReportGenerator.generateReport();
     const narrative = systemReportGenerator.generateNarrativeSummary(report);
+    
+    // Publish to AWS IoT Core on-demand
+    awsIotPublisher.publishSystemReport(report, true).catch((err) => {
+      console.warn('[Chat API] Failed to publish report to AWS IoT:', err);
+    });
     
     res.json({
       report,
