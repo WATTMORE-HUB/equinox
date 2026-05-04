@@ -83,6 +83,7 @@ services:
     restart: always
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_MODELS=/root/.ollama/models
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -93,7 +94,26 @@ services:
         max-size: "10m"
         max-file: "3"
     # Start Ollama and pull mistral model if not already present
-    entrypoint: /bin/bash -c "ollama serve & sleep 5 && (ollama list | grep -q mistral || ollama pull mistral) && wait"
+    command: /bin/bash -c "
+      set -e
+      echo '[Ollama Init] Starting Ollama server...'
+      echo '[Ollama Init] Model storage path: /root/.ollama/models'
+      ls -lah /root/.ollama/ 2>/dev/null || echo '[Ollama Init] /root/.ollama does not exist yet'
+      ollama serve &
+      sleep 15
+      echo '[Ollama Init] Checking for mistral model...'
+      if ! ollama list | grep -q mistral; then
+        echo '[Ollama Init] Pulling mistral model (this may take 15-30 minutes)...'
+        ollama pull mistral
+        echo '[Ollama Init] Mistral model pull complete'
+      else
+        echo '[Ollama Init] Mistral model already present'
+      fi
+      echo '[Ollama Init] Available models:'
+      ollama list
+      echo '[Ollama Init] Ready for queries'
+      wait
+    "
 
   # Include all other services (combine, heartbeat, etc.)
   # Add your existing services here
