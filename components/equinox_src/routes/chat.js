@@ -5,9 +5,22 @@ const systemReportGenerator = require('../services/systemReportGenerator');
 const awsIotPublisher = require('../services/awsIotPublisher');
 const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
+const ollamaDownloader = require('../services/ollamaDownloader');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Ensure Ollama mistral model is downloaded on first chat request
+let modelEnsured = false;
+async function ensureOllamaModel() {
+  if (modelEnsured) return;
+  modelEnsured = true;
+  try {
+    await ollamaDownloader.ensureModelAvailable();
+  } catch (error) {
+    console.warn('[Chat API] Warning: Ollama model may not be available:', error.message);
+  }
+}
 
 /**
  * Query the LLM with a question about system health
@@ -28,6 +41,8 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    // Ensure Ollama model is available (runs once)
+    await ensureOllamaModel();
     const answer = await Promise.race([
       llmClient.query(trimmedQuestion),
       new Promise((_, reject) => {

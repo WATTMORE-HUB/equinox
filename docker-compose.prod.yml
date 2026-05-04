@@ -83,10 +83,8 @@ services:
     restart: always
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
-      - OLLAMA_MODELS=/root/.ollama/models
     volumes:
       - ollama_data:/root/.ollama
-      - ./ollama-init.sh:/ollama-init.sh:ro
     networks:
       - default
     logging:
@@ -94,8 +92,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # Start Ollama and pull mistral model if not already present
-    entrypoint: bash /ollama-init.sh
+    # Pre-pull mistral model on startup
+    init: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   # Include all other services (combine, heartbeat, etc.)
   # Add your existing services here
