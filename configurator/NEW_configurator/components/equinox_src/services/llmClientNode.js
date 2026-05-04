@@ -259,72 +259,76 @@ function generateFallbackResponse(question) {
 
   if (questionLower.includes('health') || questionLower.includes('status')) {
     if (!errors.length && !warnings.length) {
-      return `${pluralize(containerCount, 'container')} running. No recent errors or warnings.`;
+      return `I see ${pluralize(containerCount, 'container')} running with no recent errors or warnings. Everything looks good.`;
     }
-    return `${pluralize(containerCount, 'container')} running. ${pluralize(errors.length, 'error')} and ${pluralize(warnings.length, 'warning')} in the latest monitor window.`;
+    const errorText = errors.length > 0 ? `${pluralize(errors.length, 'error')}` : 'no errors';
+    const warningText = warnings.length > 0 ? `${pluralize(warnings.length, 'warning')}` : 'no warnings';
+    return `${pluralize(containerCount, 'container')} running. I found ${errorText} and ${warningText} in recent activity.`;
   }
 
   if (questionLower.includes('container') || questionLower.includes('service')) {
-    const names = Object.keys(containers).join(', ');
     if (!containerCount) {
-      return 'No containers are running.';
+      return 'No containers are running at the moment.';
     }
-    return `${pluralize(containerCount, 'container')} running: ${names}`;
+    const names = Object.keys(containers).join(', ');
+    return `I see ${pluralize(containerCount, 'container')} running: ${names}.`;
   }
 
   if (questionLower.includes('memory') || questionLower.includes('ram')) {
     if (!containerCount) {
-      return 'No containers are running.';
+      return 'No containers are running, so I have no memory data to share.';
     }
-    const lines = [`Memory across ${pluralize(containerCount, 'container')}:`];
+    const lines = [];
     for (const [name, data] of Object.entries(containers)) {
-      lines.push(`  - ${name}: ${data.memory_usage || 'N/A'} (${data.memory_percent || 'N/A'})`);
+      const usage = data.memory_usage || 'unavailable';
+      const percent = data.memory_percent || 'N/A';
+      lines.push(`${name}: ${usage} (${percent})`);
     }
-    return lines.join('\n');
+    return `Memory usage: ${lines.join(', ')}`;
   }
 
   if (questionLower.includes('cpu') || questionLower.includes('processor')) {
     if (!containerCount) {
-      return 'No containers are running.';
+      return 'No containers are running, so I have no CPU data to share.';
     }
-    const lines = [`CPU across ${pluralize(containerCount, 'container')}:`];
+    const cpuData = [];
     for (const [name, data] of Object.entries(containers)) {
-      lines.push(`  - ${name}: ${data.cpu_percent || 'N/A'}`);
+      const cpu = data.cpu_percent || 'N/A';
+      cpuData.push(`${name}: ${cpu}`);
     }
-    return lines.join('\n');
+    return `CPU usage: ${cpuData.join(', ')}`;
   }
 
   if (questionLower.includes('error') || questionLower.includes('log')) {
     if (errors.length > 0) {
-      // Show last 5 errors across all containers to avoid one container dominating
       const lastFiveErrors = errors.slice(-5);
       return formatGroupedMessages(
-        `I found ${pluralize(errors.length, 'error')} total. Here are the last 5, grouped by container:`,
+        `I found ${pluralize(errors.length, 'error')} total. Here are the most recent:`,
         lastFiveErrors,
-        'unattributed'
+        'unknown'
       );
     }
     if (warnings.length > 0) {
       const lastFiveWarnings = warnings.slice(-5);
       return formatGroupedMessages(
-        `No recent errors. I did find ${pluralize(warnings.length, 'warning')} total. Here are the last 5:`,
+        `No errors found. I did see ${pluralize(warnings.length, 'warning')} warnings:`,
         lastFiveWarnings,
-        'unattributed'
+        'unknown'
       );
     }
-    return 'No recent errors or warnings detected.';
+    return 'No recent errors or warnings.';
   }
 
   if (questionLower.includes('warning') || questionLower.includes('warn')) {
     if (warnings.length > 0) {
       const lastFiveWarnings = warnings.slice(-5);
       return formatGroupedMessages(
-        `I found ${pluralize(warnings.length, 'warning')} total. Here are the last 5, grouped by container:`,
+        `I found ${pluralize(warnings.length, 'warning')} total. Here are the most recent:`,
         lastFiveWarnings,
-        'unattributed'
+        'unknown'
       );
     }
-    return 'No recent warnings detected.';
+    return 'No warnings detected.';
   }
 
   if (questionLower.includes('file') || questionLower.includes('write') || questionLower.includes('data')) {
@@ -334,27 +338,27 @@ function generateFallbackResponse(question) {
 
     Object.entries(fileActivity).forEach(([service, info]) => {
       if (info.status === 'writing') {
-        activeServices.push(`${service}: ${info.count} new files (${info.total_files} total)`);
+        activeServices.push(`${service} writing (${info.count} new of ${info.total_files} total)`);
       } else if (info.status === 'idle') {
-        idleServices.push(`${service}: ${info.count} files (idle)`);
+        idleServices.push(`${service} idle (${info.count} files)`);
       }
     });
 
     if (activeServices.length === 0 && idleServices.length === 0) {
-      return 'No monitored data directories found on this device.';
+      return 'I don\'t see any monitored data directories at the moment.';
     }
 
-    let response = 'Here is the current file activity:';
+    const parts = [];
     if (activeServices.length > 0) {
-      response += `\n\nWriting:\n${activeServices.map(s => `  - ${s}`).join('\n')}`;
+      parts.push(`Writing: ${activeServices.join(', ')}`);
     }
     if (idleServices.length > 0) {
-      response += `\n\nIdle:\n${idleServices.map(s => `  - ${s}`).join('\n')}`;
+      parts.push(`Idle: ${idleServices.join(', ')}`);
     }
-    return response.trim();
+    return `File activity: ${parts.join('. ')}.`;
   }
 
-  return `${pluralize(containerCount, 'container')} running. ${pluralize(errors.length, 'error')} and ${pluralize(warnings.length, 'warning')} in the current monitor snapshot.`;
+  return `I see ${pluralize(containerCount, 'container')} running with ${pluralize(errors.length, 'error')} and ${pluralize(warnings.length, 'warning')} in recent activity.`;
 }
 
 function constructContext() {

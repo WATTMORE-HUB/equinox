@@ -44,57 +44,85 @@ function loadMonitoringCache() {
 /**
  * Generate a rule-based response (fallback)
  */
+function pluralize(count, singular, plural = null) {
+  return `${count} ${count === 1 ? singular : (plural || `${singular}s`)}`;
+}
+
 function generateFallbackResponse(question) {
   const cache = loadMonitoringCache();
   const questionLower = question.toLowerCase();
   const containers = cache.containers || {};
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
+  const containerCount = Object.keys(containers).length;
 
   // Health check
   if (questionLower.includes('health') || questionLower.includes('status')) {
     if (!errors.length && !warnings.length) {
-      return `✓ System is healthy. ${Object.keys(containers).length} containers running.`;
+      return `I see ${pluralize(containerCount, 'container')} running with no recent errors or warnings. Everything looks good.`;
     } else {
-      return `⚠ System has issues: ${errors.length} errors, ${warnings.length} warnings`;
+      const errorText = errors.length > 0 ? `${pluralize(errors.length, 'error')}` : 'no errors';
+      const warningText = warnings.length > 0 ? `${pluralize(warnings.length, 'warning')}` : 'no warnings';
+      return `${pluralize(containerCount, 'container')} running. I found ${errorText} and ${warningText} in recent activity.`;
     }
   }
 
   // Container count
   if (questionLower.includes('container') || questionLower.includes('service')) {
+    if (!containerCount) {
+      return 'No containers are running at the moment.';
+    }
     const names = Object.keys(containers).join(', ');
-    return `Currently running ${Object.keys(containers).length} containers: ${names || 'none'}`;
+    return `I see ${pluralize(containerCount, 'container')} running: ${names}.`;
   }
 
   // Memory check
   if (questionLower.includes('memory') || questionLower.includes('ram')) {
-    let response = 'Memory Usage:\n';
-    for (const [name, data] of Object.entries(containers)) {
-      response += `  ${name}: ${data.memory_usage || 'N/A'} (${data.memory_percent || 'N/A'})\n`;
+    if (!containerCount) {
+      return 'No containers are running, so I have no memory data to share.';
     }
-    return response;
+    const lines = [];
+    for (const [name, data] of Object.entries(containers)) {
+      const usage = data.memory_usage || 'unavailable';
+      const percent = data.memory_percent || 'N/A';
+      lines.push(`${name}: ${usage} (${percent})`);
+    }
+    return `Memory usage: ${lines.join(', ')}`;
   }
 
   // CPU check
   if (questionLower.includes('cpu') || questionLower.includes('processor')) {
-    let response = 'CPU Usage:\n';
-    for (const [name, data] of Object.entries(containers)) {
-      response += `  ${name}: ${data.cpu_percent || 'N/A'}\n`;
+    if (!containerCount) {
+      return 'No containers are running, so I have no CPU data to share.';
     }
-    return response;
+    const cpuData = [];
+    for (const [name, data] of Object.entries(containers)) {
+      const cpu = data.cpu_percent || 'N/A';
+      cpuData.push(`${name}: ${cpu}`);
+    }
+    return `CPU usage: ${cpuData.join(', ')}`;
   }
 
   // Errors
   if (questionLower.includes('error')) {
     if (errors.length > 0) {
-      return `Found ${errors.length} errors:\n${errors.slice(0, 3).join('\n')}`;
+      return `I found ${pluralize(errors.length, 'error')} total. Here are the most recent: ${errors.slice(-3).join(', ')}`;
     } else {
       return 'No recent errors detected.';
     }
   }
 
+  // Warnings
+  if (questionLower.includes('warning')) {
+    if (warnings.length > 0) {
+      return `I found ${pluralize(warnings.length, 'warning')} total. Here are the most recent: ${warnings.slice(-3).join(', ')}`;
+    } else {
+      return 'No warnings detected.';
+    }
+  }
+
   // Default response
-  return `System overview: ${Object.keys(containers).length} containers running. Errors: ${errors.length}, Warnings: ${warnings.length}`;
+  return `I see ${pluralize(containerCount, 'container')} running with ${pluralize(errors.length, 'error')} and ${pluralize(warnings.length, 'warning')} in recent activity.`;
 }
 
 /**
