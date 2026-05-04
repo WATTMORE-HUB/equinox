@@ -112,9 +112,9 @@ class AwsIotPublisher {
     const systemMetrics = report.system_metrics || {};
 
     const message = {
-      siteId: process.env.SITE,
-      deviceId: process.env.EDGE_ID,
-      edgeId: process.env.BALENA_DEVICE_UUID,
+      site_id: process.env.SITE_ID,
+      device_id: process.env.EDGE_ID,
+      edge_id: process.env.EDGE_ID,
       reportType: reportType,
       reportedAt: Date.now(),
       severity: severity,
@@ -187,7 +187,7 @@ class AwsIotPublisher {
       }
 
       const message = this.buildMessage(report, severity, 'health_report');
-      const topic = `${IOT_TOPIC}/${process.env.BALENA_DEVICE_UUID || THING_NAME}`;
+      const topic = `${IOT_TOPIC}/${process.env.EDGE_ID || THING_NAME}`;
 
       if (onDemand) {
         // For on-demand reports, write to file for monitor.py to pick up and publish immediately
@@ -233,7 +233,7 @@ class AwsIotPublisher {
         errors > 0 || failedContainers > 0 ? 'critical' : 'warning';
 
       const message = this.buildMessage(report, severity, 'alert');
-      const topic = `${IOT_TOPIC}/${process.env.BALENA_DEVICE_UUID || THING_NAME}`;
+      const topic = `${IOT_TOPIC}/${process.env.EDGE_ID || THING_NAME}`;
 
       logger.info(`[AWS IoT] Would publish alert to ${topic}`);
       logger.debug(`[AWS IoT] Alert: ${JSON.stringify(message).substring(0, 200)}...`);
