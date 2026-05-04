@@ -49,9 +49,20 @@ function loadMonitoringCache() {
 }
 
 function isSimpleQuestion(question) {
-  const simpleKeywords = ['how many', 'count', 'running', 'health', 'status', 'memory', 'cpu', 'error', 'warning', 'log'];
   const lower = question.toLowerCase();
-  return simpleKeywords.some(keyword => lower.includes(keyword));
+  const simplePatterns = [
+    /^how many containers\b/,
+    /^how many errors\b/,
+    /^how many warnings\b/,
+    /^count containers\b/,
+    /^count errors\b/,
+    /^count warnings\b/,
+    /^what containers are running\b/,
+    /^list running containers\b/,
+    /^are there any errors\b/,
+    /^are there any warnings\b/
+  ];
+  return simplePatterns.some((pattern) => pattern.test(lower));
 }
 
 function pluralize(count, singular, plural = null) {
@@ -379,6 +390,22 @@ function constructContext() {
     });
   }
 
+  const fileActivity = cache.file_activity || {};
+  const activeDirectories = Object.entries(fileActivity).map(([name, info]) => {
+    const status = info.status || 'unknown';
+    const freshness = info.most_recent_age_human || 'unknown';
+    return `  - ${name}: ${status}, latest file ${freshness}`;
+  });
+
+  if (activeDirectories.length > 0) {
+    context += '\nMonitored Directories:\n';
+    activeDirectories.forEach((line) => {
+      context += `${line}\n`;
+    });
+  }
+
+  context += `\nSupported latest-file directories: ${Object.keys(SUPPORTED_DIRECTORIES).map((dir) => `/${dir}`).join(', ')}\n`;
+
   return context;
 }
 
@@ -398,6 +425,13 @@ Prefer formats like:
 - "5 containers are running. The highest memory usage is ..."
 - "No recent errors. I did find 2 warnings:"
 Keep the response concise, specific, and tied to the data below.
+If the user asks for something outside the available data, say so plainly and briefly redirect them to the kinds of questions you can answer, such as:
+- container status
+- recent errors or warnings
+- CPU and memory usage
+- file activity in monitored directories
+- latest JSON/file contents from supported directories
+- full system health reports
 
 System Status:
 ${context}
