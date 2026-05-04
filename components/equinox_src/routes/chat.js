@@ -10,15 +10,15 @@ const ollamaDownloader = require('../services/ollamaDownloader');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Ensure Ollama mistral model is downloaded on first chat request
-let modelEnsured = false;
+// Model download helper - can be called manually if needed
 async function ensureOllamaModel() {
-  if (modelEnsured) return;
-  modelEnsured = true;
   try {
+    console.log('[Chat API] Attempting to ensure Ollama model...');
     await ollamaDownloader.ensureModelAvailable();
+    console.log('[Chat API] Model ensured successfully');
   } catch (error) {
-    console.warn('[Chat API] Warning: Ollama model may not be available:', error.message);
+    console.warn('[Chat API] Warning: Could not ensure model:', error.message);
+    console.warn('[Chat API] Will use fallback responses until model is available');
   }
 }
 
@@ -51,6 +51,20 @@ router.post('/', async (req, res) => {
         setTimeout(() => reject(new Error('Query timeout')), 35000);
       })
     ]);
+    
+    // If LLM detected a model download request
+    if (answer && answer.includes('__EQUINOX_DOWNLOAD_MODEL__')) {
+      console.log('[Chat API] Model download request detected, initiating download...');
+      try {
+        await ensureOllamaModel();
+        return res.json({
+          answer: 'Ollama model download initiated. This may take 15-30 minutes. Check the logs for progress.'
+        });
+      } catch (error) {
+        console.error('[Chat API] Error triggering model download:', error.message);
+        return res.status(500).json({ error: `Failed to initiate download: ${error.message}` });
+      }
+    }
     
     // If LLM detected a system health query, fetch and return the actual report
     if (answer && answer.includes('__EQUINOX_SYSTEM_REPORT__')) {
@@ -161,6 +175,28 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
     if (!res.headersSent) {
       res.status(500).json({ error: `Failed to apply environment variables: ${error.message}` });
     }
+  }
+});
+
+/**
+ * Manually trigger Ollama model download
+ * POST /api/chat/download-model
+ * Response: { status: string, message: string }
+ */
+router.post('/download-model', async (req, res) => {
+  try {
+    console.log('[Chat API] Manually triggering Ollama model download...');
+    await ensureOllamaModel();
+    res.json({
+      status: 'success',
+      message: 'Model download initiated. This may take 15-30 minutes. Check logs for progress.'
+    });
+  } catch (error) {
+    console.error('[Chat API] Error triggering model download:', error.message);
+    res.status(500).json({
+      status: 'error',
+      message: `Failed to trigger download: ${error.message}`
+    });
   }
 });
 

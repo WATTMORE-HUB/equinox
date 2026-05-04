@@ -166,6 +166,31 @@ function isEnvironmentVariablesQuestion(question) {
   return envKeywords.some(keyword => lower.includes(keyword));
 }
 
+function isModelDownloadQuestion(question) {
+  const lower = question.toLowerCase();
+  const modelKeywords = [
+    'download model',
+    'pull model',
+    'get model',
+    'fetch model',
+    'download ollama',
+    'pull ollama',
+    'install model',
+    'load model',
+    'download mistral',
+    'pull mistral'
+  ];
+  return modelKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildModelDownloadResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'download_ollama_model',
+    description: 'Download and cache the Ollama mistral model'
+  });
+  return `__EQUINOX_DOWNLOAD_MODEL__\n${metadata}`;
+}
+
 function buildEnvironmentVariablesResponse() {
   const metadata = JSON.stringify({
     instruction: 'upload_environment_variables',
@@ -244,6 +269,10 @@ function generateFallbackResponse(question) {
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
+
+  if (isModelDownloadQuestion(question)) {
+    return buildModelDownloadResponse();
+  }
 
   if (isSystemHealthQuestion(question)) {
     return buildSystemHealthResponse();

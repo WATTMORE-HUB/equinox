@@ -84,7 +84,10 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     volumes:
-      - ollama_data:/root/.ollama
+      # Store Ollama data in collect_data alongside the rest of the monitor state
+      # This puts the downloaded models at /collect_data/ollama where everything else lives
+      - collect_data:/collect_data
+      - collect_data:/root/.ollama
     networks:
       - default
     logging:
@@ -92,7 +95,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # Pre-pull mistral model on startup
     init: true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
