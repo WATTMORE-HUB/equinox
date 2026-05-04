@@ -36,25 +36,34 @@ async function checkModelAvailable() {
  * Download mistral model using Ollama HTTP API
  */
 async function downloadModel() {
-  logger.info('[Ollama Downloader] Starting mistral model download via API...');
+  logger.info(`[Ollama Downloader] Starting mistral model download via API at ${OLLAMA_HOST}/api/pull...`);
 
-  const response = await fetch(`${OLLAMA_HOST}/api/pull`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: OLLAMA_MODEL,
-      stream: false
-    })
-  });
+  try {
+    const response = await fetch(`${OLLAMA_HOST}/api/pull`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: OLLAMA_MODEL,
+        stream: false
+      }),
+      timeout: 600000 // 10 minutes for model download
+    });
 
-  if (!response.ok) {
-    throw new Error(`Ollama pull API returned ${response.status}`);
+    logger.info(`[Ollama Downloader] Pull API response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'unknown error');
+      throw new Error(`Ollama pull API returned ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json().catch(() => ({}));
+    logger.info(`[Ollama Downloader] Pull response: ${JSON.stringify(data).substring(0, 200)}`);
+    logger.info('[Ollama Downloader] Mistral model download complete');
+    return true;
+  } catch (error) {
+    logger.error(`[Ollama Downloader] Download error: ${error.message}`);
+    throw error;
   }
-
-  const data = await response.json().catch(() => ({}));
-  logger.info(`[Ollama Downloader] Pull response: ${JSON.stringify(data)}`);
-  logger.info('[Ollama Downloader] Mistral model download complete');
-  return true;
 }
 
 /**

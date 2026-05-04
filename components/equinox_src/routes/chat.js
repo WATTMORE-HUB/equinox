@@ -42,7 +42,9 @@ router.post('/', async (req, res) => {
 
   try {
     // Ensure Ollama model is available (runs once)
+    console.log('[Chat API] Ensuring Ollama model is available...');
     await ensureOllamaModel();
+    console.log('[Chat API] Ollama model check complete');
     const answer = await Promise.race([
       llmClient.query(trimmedQuestion),
       new Promise((_, reject) => {
