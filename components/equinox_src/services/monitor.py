@@ -439,14 +439,18 @@ class MonitoringService:
                 # Check for errors and warnings
                 message_lower = cleaned_message.lower()
                 
-                # Look for error patterns
-                if any(pattern in message_lower for pattern in ['error', 'traceback', 'exception', 'failed', 'needs keyword-only argument']):
+                # Look for error patterns - be specific to avoid false positives
+                # Match [ERROR] log level or actual error keywords (traceback, exception, failed)
+                if ('[error]' in message_lower or 'traceback' in message_lower or 
+                    'exception' in message_lower or 'failed' in message_lower or
+                    'needs keyword-only argument' in message_lower):
                     error_text = f"{container_name}: {cleaned_message[:150]}"
                     if error_text not in errors:
                         errors.append(error_text)
                 
                 # Look for warning patterns
-                elif any(pattern in message_lower for pattern in ['warning', 'warn', 'deprecated']):
+                elif ('[warn]' in message_lower or 'traceback' not in message_lower and 
+                      'deprecated' in message_lower):
                     warning_text = f"{container_name}: {cleaned_message[:150]}"
                     if warning_text not in warnings:
                         warnings.append(warning_text)
