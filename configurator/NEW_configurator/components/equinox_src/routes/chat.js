@@ -117,11 +117,27 @@ router.post('/upload-env-variables', upload.single('csvFile'), async (req, res) 
     // Apply environment variables via Balena API
     const balenaHelper = new BalenaApiHelper(balenaToken);
     const results = await balenaHelper.setDeviceEnvVars(deviceUuid, variables);
+    
+    // If AWS IoT credentials are being set, automatically enable IoT publishing
+    const hasAwsIotCreds = Object.keys(variables).some(key => 
+      ['AWSENDPOINT', 'THINGNAME', 'CERT', 'KEY', 'CA_1'].some(cred => key.includes(cred))
+    );
+    
+    if (hasAwsIotCreds) {
+      try {
+        console.log('[Chat API] AWS IoT credentials detected, enabling IoT publishing...');
+        await balenaHelper.setDeviceEnvVar(deviceUuid, 'IOT_PUBLISH_ENABLED', 'true');
+        await balenaHelper.setDeviceEnvVar(deviceUuid, 'IOT_TOPIC', 'operate/device_reports');
+        console.log('[Chat API] [OK] IoT publishing enabled');
+      } catch (iotErr) {
+        console.warn('[Chat API] Warning: Could not auto-enable IoT publishing:', iotErr.message);
+      }
+    }
 
     res.json({
       variablesSet: results.length,
       appliedVariables: Object.keys(variables),
-      message: `Successfully applied ${results.length} environment variable(s). Changes will take effect after service restart.`
+      message: `Successfully applied ${results.length} environment variable(s).${hasAwsIotCreds ? ' AWS IoT publishing enabled.' : ''} Changes will take effect after service restart.`
     });
   } catch (error) {
     console.error('[Chat API] Error uploading env variables:', error.message);
