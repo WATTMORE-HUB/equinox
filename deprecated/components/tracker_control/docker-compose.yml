@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # OpenVPN Client Container
+  openvpn-client:
+    image: dperson/openvpn-client
+    container_name: vpn_client
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    restart: unless-stopped
+    volumes:
+      # - ./matt.hosking@wattmore.com.ovpn:/vpn/vpn.conf:ro
+      - "collect_data/vpn/matt.hosking@wattmore.com.opvn:/vpn/vpn.conf"
+    environment:
+      - FIREWALL=""  # Disable firewall to allow inter-container communication
+    networks:
+      - vpn_network
+    healthcheck:
+      test: ["CMD", "ping", "-c", "1", "10.16.49.164"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+
+  # AJAX Client Container (shares network with VPN)
+  operate-tracker-control:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: ajax_client
+    depends_on:
+      openvpn-client:
+        condition: service_healthy
+    network_mode: "service:openvpn-client"  # Share network stack with VPN container
+    environment:
+      - TARGET_IP=10.16.49.164
+      - VPN_USERNAME=user
+      - VPN_PASSWORD=myplant
+      - AJAX_CMD=21
+      - AJAX_PRM1=0
+    volumes:
+      - ./output:/app/output  # Mount for output files
+    restart: "no"  # Don't restart automatically - run once
+
+networks:
+  vpn_network:
+    driver: bridge
+
+volumes:
+  collect_data:
+  output:
+    driver: local

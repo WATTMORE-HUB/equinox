@@ -1,0 +1,86 @@
+version: "2"
+
+services:
+  video-server:
+    build:
+      dockerfile: app.Dockerfile
+      context: .
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+    volumes:
+        - "collect_data:/collect_data"
+  # operate-register-test:
+  #   build:
+  #     dockerfile: register_test.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  #   restart: no
+  # operate-config:
+  #   build:
+  #     dockerfile: config.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  #   restart: no
+  # operate-heartbeat:
+  #   build:
+  #     dockerfile: heartbeat.Dockerfile
+  #     context: .
+  #   # devices:
+  #   #   - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   #   - "/dev/ttyUSB1:/dev/ttyUSB1"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  # operate-meter-collect:
+  #   build:
+  #     dockerfile: meter_collect.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  # operate-inverter-collect:
+  #   build:
+  #     dockerfile: inverter_collect.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB1:/dev/ttyUSB1"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  # #   # restart: no
+  # operate-weather-collect:
+  #   build:
+  #     dockerfile: weather_collect.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #     - "/dev/ttyUSB1:/dev/ttyUSB1"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  # # # #   # restart: no
+  # operate-combine:
+  #   build:
+  #     dockerfile: combine.Dockerfile
+  #     context: .
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   volumes:
+  #     - "collect_data:/collect_data"
+  #   privileged: true
+  # # # #   restart: no
+volumes:
+  collect_data:
