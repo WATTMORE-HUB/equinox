@@ -214,9 +214,10 @@ function buildSoftwareUpdateResponse() {
 function buildModelDownloadResponse() {
   const metadata = JSON.stringify({
     instruction: 'download_ollama_model',
-    description: 'Download and cache the Ollama mistral model'
+    description: 'Download and cache the Ollama mistral model',
+    timestamp: new Date().toISOString()
   });
-  return `__EQUINOX_DOWNLOAD_MODEL__\n${metadata}`;
+  return `__EQUINOX_DOWNLOAD_MODEL__\n[DETECTION_WORKING_v2]\n${metadata}`;
 }
 
 function buildEnvironmentVariablesResponse() {
