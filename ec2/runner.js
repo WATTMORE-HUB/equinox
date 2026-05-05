@@ -103,10 +103,10 @@ async function validateInputs() {
     throw new Error(`Repository path not found: ${ENFORM_REPO_PATH}`);
   }
   
-  // Verify create-project.js exists
+  // Verify ProjectCreator exists (moved to deprecated directory)
   const createProjectPath = path.join(
     ENFORM_REPO_PATH,
-    'src/configurator/ProjectCreator.js'
+    'deprecated/configurator/NEW_configurator/components/equinox_src/configurator/ProjectCreator.js'
   );
   if (!fs.existsSync(createProjectPath)) {
     throw new Error(`ProjectCreator not found at ${createProjectPath}`);
@@ -167,8 +167,8 @@ async function createProject(services) {
       throw new Error('No valid services found in CSV');
     }
     
-    // Use ProjectCreator to generate project
-    const createProjectScript = path.join(ENFORM_REPO_PATH, 'configurator/NEW_configurator/create-project.js');
+    // Use ProjectCreator to generate project (now in deprecated directory)
+    const createProjectScript = path.join(ENFORM_REPO_PATH, 'deprecated/configurator/NEW_configurator/create-project.js');
     if (!fs.existsSync(createProjectScript)) {
       throw new Error(`create-project.js not found at ${createProjectScript}`);
     }
