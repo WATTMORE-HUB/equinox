@@ -7,6 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Startup log to verify this module is loaded
+console.log('[LLM Client] Module loading: Full Ollama integration version with model download detection');
+
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
