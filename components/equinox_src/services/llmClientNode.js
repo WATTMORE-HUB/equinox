@@ -509,6 +509,9 @@ Answer:`;
 
 async function query(question) {
   try {
+    console.log(`[LLM Client] query() called with: "${question}"`);
+    console.log(`[LLM Client] isModelDownloadQuestion result: ${isModelDownloadQuestion(question)}`);
+    
     // Check for model download requests first (highest priority)
     if (isModelDownloadQuestion(question)) {
       console.log('[LLM Client] Model download request detected');
