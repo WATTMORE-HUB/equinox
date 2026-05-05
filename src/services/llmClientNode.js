@@ -183,6 +183,31 @@ function isModelDownloadQuestion(question) {
   return modelKeywords.some(keyword => lower.includes(keyword));
 }
 
+function isSoftwareUpdateQuestion(question) {
+  const lower = question.toLowerCase();
+  const updateKeywords = [
+    'pull latest software',
+    'update software',
+    'deploy latest',
+    'redeploy',
+    'new deployment',
+    'push latest',
+    'fetch latest code',
+    'reload code',
+    'restart deployment',
+    'deploy new version'
+  ];
+  return updateKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildSoftwareUpdateResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'trigger_redeploy',
+    description: 'Pull latest software and trigger Balena deployment'
+  });
+  return `__EQUINOX_REDEPLOY__\n${metadata}`;
+}
+
 function buildModelDownloadResponse() {
   const metadata = JSON.stringify({
     instruction: 'download_ollama_model',
@@ -510,9 +535,16 @@ Answer:`;
 async function query(question) {
   try {
     console.log(`[LLM Client] query() called with: "${question}"`);
+    console.log(`[LLM Client] isSoftwareUpdateQuestion result: ${isSoftwareUpdateQuestion(question)}`);
     console.log(`[LLM Client] isModelDownloadQuestion result: ${isModelDownloadQuestion(question)}`);
     
-    // Check for model download requests first (highest priority)
+    // Check for software update requests (highest priority)
+    if (isSoftwareUpdateQuestion(question)) {
+      console.log('[LLM Client] Software update/redeploy request detected');
+      return buildSoftwareUpdateResponse();
+    }
+
+    // Check for model download requests (second priority)
     if (isModelDownloadQuestion(question)) {
       console.log('[LLM Client] Model download request detected');
       return buildModelDownloadResponse();
