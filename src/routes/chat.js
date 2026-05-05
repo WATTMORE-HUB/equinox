@@ -1,5 +1,6 @@
 const express = require('express');
 const llmClient = require('../services/llmClientNode');
+const redeployHelper = require('../services/redeployHelper');
 
 const router = express.Router();
 
@@ -28,6 +29,26 @@ router.post('/', async (req, res) => {
         setTimeout(() => reject(new Error('Query timeout')), 35000);
       })
     ]);
+
+    // Check for redeploy request
+    if (answer && answer.includes('__EQUINOX_REDEPLOY__')) {
+      console.log('[Chat API] Redeploy request detected, initiating deployment...');
+      try {
+        const deployResult = await redeployHelper.triggerRedeploy();
+        return res.json({
+          answer: deployResult.message,
+          deployment: {
+            triggered: deployResult.success,
+            deploymentId: deployResult.deploymentId,
+            commandId: deployResult.commandId
+          }
+        });
+      } catch (error) {
+        console.error('[Chat API] Error triggering redeploy:', error.message);
+        return res.status(500).json({ error: `Failed to trigger redeploy: ${error.message}` });
+      }
+    }
+
     res.json({ answer });
   } catch (error) {
     console.error('[Chat API] Error:', error.message || error);
