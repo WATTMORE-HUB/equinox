@@ -15,11 +15,11 @@ class ProjectCreator {
     // Paths where create-project.js might be located
     this.configuratorPaths = [
       // Local development path (relative to this project)
-      path.join(__dirname, '../../../configurator/NEW_configurator'),
+      path.join(__dirname, '../../configurator'),
       // Production path on CM4
-      '/app/src/configurator',
+      '/app/configurator',
       // Alternative paths
-      path.join(process.cwd(), 'configurator', 'NEW_configurator')
+      path.join(process.cwd(), 'configurator')
     ];
     
     this.finishedProjectsPath = this.findFinishedProjectsPath();
@@ -28,7 +28,7 @@ class ProjectCreator {
   findFinishedProjectsPath() {
     // Try to find the finished_projects directory
     const possiblePaths = [
-      path.join(__dirname, '../../../configurator/finished_projects'),
+      path.join(__dirname, '../../finished_projects'),
       '/app/finished_projects',
       path.join(process.cwd(), 'finished_projects')
     ];

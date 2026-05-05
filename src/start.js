@@ -8,14 +8,14 @@
 const fs = require('fs');
 const path = require('path');
 
-// Check if create-project.js is available (now in deprecated directory)
+// Check if create-project.js is available
 const configuratorPaths = [
-  // Development path - moved to deprecated
-  path.join(__dirname, '../deprecated/configurator/NEW_configurator/create-project.js'),
-  // Production on CM4 (if deployed via the main enform repo)
-  '/app/deprecated/configurator/NEW_configurator/create-project.js',
+  // Development path
+  path.join(__dirname, '../configurator/create-project.js'),
+  // Production on CM4
+  '/app/configurator/create-project.js',
   // Alternative
-  path.join(process.cwd(), 'deprecated/configurator', 'NEW_configurator', 'create-project.js')
+  path.join(process.cwd(), 'configurator', 'create-project.js')
 ];
 
 let configuratorFound = false;
