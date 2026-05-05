@@ -509,10 +509,22 @@ Answer:`;
 
 async function query(question) {
   try {
-    // Check for environment variables questions first (these always use fallback)
+    // Check for model download requests first (highest priority)
+    if (isModelDownloadQuestion(question)) {
+      console.log('[LLM Client] Model download request detected');
+      return buildModelDownloadResponse();
+    }
+
+    // Check for environment variables questions (these always use fallback)
     if (isEnvironmentVariablesQuestion(question)) {
       console.log('[LLM Client] Using fallback for environment variables question');
       return generateFallbackResponse(question);
+    }
+
+    // Check for system health questions
+    if (isSystemHealthQuestion(question)) {
+      console.log('[LLM Client] System health question detected');
+      return buildSystemHealthResponse();
     }
 
     if (isSimpleQuestion(question)) {
