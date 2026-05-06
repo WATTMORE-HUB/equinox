@@ -183,7 +183,9 @@ function isModelDownloadQuestion(question) {
     'download mistral',
     'pull mistral'
   ];
-  return modelKeywords.some(keyword => lower.includes(keyword));
+  const result = modelKeywords.some(keyword => lower.includes(keyword));
+  console.log(`[isModelDownloadQuestion] question="${question}" lower="${lower}" result=${result}`);
+  return result;
 }
 
 function isSoftwareUpdateQuestion(question) {
