@@ -202,7 +202,9 @@ function isSoftwareUpdateQuestion(question) {
     'restart deployment',
     'deploy new version'
   ];
-  return updateKeywords.some(keyword => lower.includes(keyword));
+  const result = updateKeywords.some(keyword => lower.includes(keyword));
+  console.log(`[isSoftwareUpdateQuestion] question="${question}" lower="${lower}" keywords=${JSON.stringify(updateKeywords)} result=${result}`);
+  return result;
 }
 
 function buildSoftwareUpdateResponse() {
