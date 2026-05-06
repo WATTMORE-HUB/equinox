@@ -303,6 +303,10 @@ function generateFallbackResponse(question) {
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
 
+  if (isModelDownloadQuestion(question)) {
+    return buildModelDownloadResponse();
+  }
+
   if (isSystemHealthQuestion(question)) {
     return buildSystemHealthResponse();
   }
@@ -521,6 +525,11 @@ Answer:`;
 
     if (!response.ok) {
       console.warn('[LLM Client] Ollama API error:', response.status);
+      // If model not found (404), trigger automatic model download
+      if (response.status === 404 && isModelDownloadQuestion(question)) {
+        console.log('[LLM Client] Model not found and user is asking about model, returning download marker');
+        return buildModelDownloadResponse();
+      }
       return null;
     }
 
