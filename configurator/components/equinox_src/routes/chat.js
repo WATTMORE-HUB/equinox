@@ -5,6 +5,8 @@ const systemReportGenerator = require('../services/systemReportGenerator');
 const awsIotPublisher = require('../services/awsIotPublisher');
 const BalenaApiHelper = require('../services/balenaApiHelper');
 const balenaTokenManager = require('../services/balenaTokenManager');
+const ollamaModelManager = require('../services/ollamaModelManager');
+const redeployHelper = require('../services/redeployHelper');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -34,6 +36,44 @@ router.post('/', async (req, res) => {
         setTimeout(() => reject(new Error('Query timeout')), 35000);
       })
     ]);
+    
+    // Check for model download request
+    if (answer && answer.includes('__EQUINOX_DOWNLOAD_MODEL__')) {
+      console.log('[Chat API] Model download request detected, pulling mistral...');
+      try {
+        const pullResult = await ollamaModelManager.pullModel('mistral');
+        return res.json({
+          answer: pullResult.message,
+          model: {
+            triggered: pullResult.success,
+            modelName: 'mistral',
+            status: pullResult.success ? 'completed' : 'failed'
+          }
+        });
+      } catch (error) {
+        console.error('[Chat API] Error pulling model:', error.message);
+        return res.status(500).json({ error: `Failed to pull model: ${error.message}` });
+      }
+    }
+
+    // Check for redeploy request
+    if (answer && answer.includes('__EQUINOX_REDEPLOY__')) {
+      console.log('[Chat API] Redeploy request detected, initiating deployment...');
+      try {
+        const deployResult = await redeployHelper.triggerRedeploy();
+        return res.json({
+          answer: deployResult.message,
+          deployment: {
+            triggered: deployResult.success,
+            deploymentId: deployResult.deploymentId,
+            commandId: deployResult.commandId
+          }
+        });
+      } catch (error) {
+        console.error('[Chat API] Error triggering redeploy:', error.message);
+        return res.status(500).json({ error: `Failed to trigger redeploy: ${error.message}` });
+      }
+    }
     
     // If LLM detected a system health query, fetch and return the actual report
     if (answer && answer.includes('__EQUINOX_SYSTEM_REPORT__')) {
