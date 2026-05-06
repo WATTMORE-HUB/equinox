@@ -7,6 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Startup log to verify this module is loaded
+console.log('[LLM Client] Module loading: Full Ollama integration version with model download detection');
+
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
@@ -117,7 +120,7 @@ function parseRequestedDirectory(question) {
 
 function isLatestFileQuestion(question) {
   const lower = question.toLowerCase();
-  const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents');
+  const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents') || lower.includes('data');
   const asksForLatest = lower.includes('latest') || lower.includes('recent') || lower.includes('newest') || lower.includes('most recent');
   const requestedDirectory = parseRequestedDirectory(question);
 
@@ -164,6 +167,61 @@ function isEnvironmentVariablesQuestion(question) {
     'change env'
   ];
   return envKeywords.some(keyword => lower.includes(keyword));
+}
+
+function isModelDownloadQuestion(question) {
+  const lower = question.toLowerCase();
+  const modelKeywords = [
+    'download model',
+    'pull model',
+    'get model',
+    'fetch model',
+    'download ollama',
+    'pull ollama',
+    'install model',
+    'load model',
+    'download mistral',
+    'pull mistral'
+  ];
+  const result = modelKeywords.some(keyword => lower.includes(keyword));
+  console.log(`[isModelDownloadQuestion] question="${question}" lower="${lower}" result=${result}`);
+  return result;
+}
+
+function isSoftwareUpdateQuestion(question) {
+  const lower = question.toLowerCase();
+  const updateKeywords = [
+    'pull latest software',
+    'update software',
+    'deploy latest',
+    'redeploy',
+    'new deployment',
+    'push latest',
+    'fetch latest code',
+    'reload code',
+    'restart deployment',
+    'deploy new version'
+  ];
+  const result = updateKeywords.some(keyword => lower.includes(keyword));
+  console.log(`[isSoftwareUpdateQuestion] question="${question}" lower="${lower}" keywords=${JSON.stringify(updateKeywords)} result=${result}`);
+  return result;
+}
+
+function buildSoftwareUpdateResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'trigger_redeploy',
+    description: 'Pull latest software and trigger Balena deployment'
+  });
+  return `__EQUINOX_REDEPLOY__\n${metadata}`;
+}
+
+function buildModelDownloadResponse() {
+  const metadata = JSON.stringify({
+    instruction: 'download_ollama_model',
+    description: 'Download and cache the Ollama mistral model',
+    timestamp: new Date().toISOString()
+  });
+  return `__EQUINOX_DOWNLOAD_MODEL__\n[DETECTION_WORKING_v2]\n${metadata}`;
 }
 
 function buildEnvironmentVariablesResponse() {
@@ -480,10 +538,32 @@ Answer:`;
 
 async function query(question) {
   try {
-    // Check for environment variables questions first (these always use fallback)
+    console.log(`[LLM Client] query() called with: "${question}"`);
+    console.log(`[LLM Client] isSoftwareUpdateQuestion result: ${isSoftwareUpdateQuestion(question)}`);
+    console.log(`[LLM Client] isModelDownloadQuestion result: ${isModelDownloadQuestion(question)}`);
+    
+    // Check for software update requests (highest priority)
+    if (isSoftwareUpdateQuestion(question)) {
+      console.log('[LLM Client] Software update/redeploy request detected');
+      return buildSoftwareUpdateResponse();
+    }
+
+    // Check for model download requests (second priority)
+    if (isModelDownloadQuestion(question)) {
+      console.log('[LLM Client] Model download request detected');
+      return buildModelDownloadResponse();
+    }
+
+    // Check for environment variables questions (these always use fallback)
     if (isEnvironmentVariablesQuestion(question)) {
       console.log('[LLM Client] Using fallback for environment variables question');
       return generateFallbackResponse(question);
+    }
+
+    // Check for system health questions
+    if (isSystemHealthQuestion(question)) {
+      console.log('[LLM Client] System health question detected');
+      return buildSystemHealthResponse();
     }
 
     if (isSimpleQuestion(question)) {
