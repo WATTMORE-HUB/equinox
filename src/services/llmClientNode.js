@@ -120,7 +120,7 @@ function parseRequestedDirectory(question) {
 
 function isLatestFileQuestion(question) {
   const lower = question.toLowerCase();
-  const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents');
+  const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents') || lower.includes('data');
   const asksForLatest = lower.includes('latest') || lower.includes('recent') || lower.includes('newest') || lower.includes('most recent');
   const requestedDirectory = parseRequestedDirectory(question);
 
