@@ -2,9 +2,12 @@
  * Ollama Model Manager
  * Handles pulling models from Ollama registry and verifying availability
  */
+console.log('[OllamaModelManager] Module loaded');
 
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
 const OLLAMA_PULL_TIMEOUT = 120000; // 2 minutes for model pull
+
+console.log(`[OllamaModelManager] Using Ollama host: ${OLLAMA_HOST}`);
 
 /**
  * Check if a model is available in Ollama
@@ -57,6 +60,8 @@ async function pullModel(modelName) {
 
     clearTimeout(timeout);
 
+    console.log(`[OllamaModelManager] Pull request sent for ${modelName}, response status: ${response.status}`);
+
     if (!response.ok) {
       console.error(`[OllamaModelManager] Pull failed with status ${response.status}`);
       return {
@@ -82,6 +87,9 @@ async function pullModel(modelName) {
         try {
           const data = JSON.parse(line);
           lastMessage = data.status || '';
+          if (lastMessage) {
+            console.log(`[OllamaModelManager] Pull status for ${modelName}: ${lastMessage}`);
+          }
           if (data.digest) {
             console.log(`[OllamaModelManager] Pull progress: ${lastMessage}`);
           }
@@ -92,15 +100,18 @@ async function pullModel(modelName) {
     }
 
     console.log(`[OllamaModelManager] Pull complete for ${modelName}`);
+    console.log(`[OllamaModelManager] Verifying pulled model: ${modelName}`);
 
     // Verify model was actually pulled
     const isAvailable = await isModelAvailable(modelName);
     if (isAvailable) {
+      console.log(`[OllamaModelManager] Verification succeeded for ${modelName}`);
       return {
         success: true,
         message: `Successfully pulled and verified '${modelName}' model`
       };
     } else {
+      console.warn(`[OllamaModelManager] Verification failed for ${modelName}`);
       return {
         success: false,
         message: `Model '${modelName}' was pulled but verification failed`
