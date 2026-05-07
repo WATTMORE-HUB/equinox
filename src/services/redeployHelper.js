@@ -88,19 +88,17 @@ class RedeployHelper {
       const deploymentConfig = await configGenerator.generateConfig(projectData);
       console.log(`[RedeployHelper] ✓ Generated config with services: ${deploymentConfig.services.join(', ')}`);
 
-      // In Monitor mode, we trigger cloud redeployment directly without creating a local project
-      // The EC2/Lambda will handle the project creation on the deployment server
-      console.log('[RedeployHelper] Initiating cloud redeployment...');
+      // Trigger cloud deployment (same as Configure deployment route)
+      // This ensures redeploy uses the exact same EC2/Lambda flow as initial configuration
+      console.log('[RedeployHelper] Initiating cloud redeployment (Configure flow)...');
       
-      // For Monitor mode redeploy, we just need to trigger a new balena push via cloud
-      // This is handled by sending the deployment request to the cloud API
       const deployResult = await deployServices({
         balenaToken,
         deviceId: deviceInfo.deviceUuid,
         fleetName: deviceInfo.fleetName,
         services: deploymentConfig.services,
         environmentVariables: deploymentConfig.environmentVariables,
-        skipLocalProjectCreation: true  // Skip local project creation in Monitor mode
+        cloudOnly: true  // Force cloud deployment for monitor mode redeploy
       });
 
       if (!deployResult.success) {

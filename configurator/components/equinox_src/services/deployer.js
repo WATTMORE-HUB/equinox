@@ -104,11 +104,11 @@ async function deployViaCloud(options) {
 
 /**
  * Deploy services to a device via Balena
- * @param {Object} options - { balenaToken, deviceId, services, environmentVariables }
+ * @param {Object} options - { balenaToken, deviceId, services, environmentVariables, cloudOnly }
  * @returns {Promise<{success: boolean, error?: string, projectPath?: string}>}
  */
 async function deployServices(options) {
-  const { balenaToken, deviceId, fleetName, services, environmentVariables } = options;
+  const { balenaToken, deviceId, fleetName, services, environmentVariables, cloudOnly } = options;
 
   try {
     // Validate inputs
@@ -119,9 +119,21 @@ async function deployServices(options) {
       };
     }
 
+    // If cloudOnly flag is set (e.g., from monitor mode redeploy), force cloud deployment
+    if (cloudOnly) {
+      if (!CLOUD_API_URL) {
+        return {
+          success: false,
+          error: 'Cloud deployment requested but CLOUD_API_URL not configured'
+        };
+      }
+      console.log('[DEPLOYER] Cloud-only deployment (Monitor mode redeploy)...');
+      return await deployViaCloud(options);
+    }
+
     // If cloud API is configured, use cloud-based deployment
     if (USE_CLOUD && CLOUD_API_URL) {
-      console.log('Using cloud-based deployment (EC2 + SSM)...');
+      console.log('[DEPLOYER] Using cloud-based deployment (EC2 + SSM)...');
       return await deployViaCloud(options);
     }
 

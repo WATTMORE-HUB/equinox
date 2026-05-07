@@ -95,7 +95,8 @@ class RedeployHelper {
         deviceId: deviceInfo.deviceUuid,
         fleetName: deviceInfo.fleetName,
         services: deploymentConfig.services,
-        environmentVariables: deploymentConfig.environmentVariables
+        environmentVariables: deploymentConfig.environmentVariables,
+        cloudOnly: true  // Force cloud deployment for monitor mode redeploy
       });
 
       if (!deployResult.success) {

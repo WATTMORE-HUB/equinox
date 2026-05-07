@@ -5,7 +5,35 @@ const path = require('path');
 
 class ProjectCreator {
     constructor() {
-        this.componentsPath = path.join(__dirname, 'components');
+        // Find components directory in multiple possible locations
+        // Docker container: /app/configurator/components
+        // Source directory: ./configurator/components
+        // When bundled with src: ../configurator/components
+        const possiblePaths = [
+            path.join(__dirname, 'components'),  // Local to src (backup)
+            path.join(__dirname, '..', 'configurator', 'components'),  // Parent/configurator/components
+            '/app/configurator/components',  // Docker absolute path
+            path.join(process.cwd(), 'configurator', 'components')  // CWD-relative
+        ];
+
+        this.componentsPath = null;
+        for (const p of possiblePaths) {
+            try {
+                if (require('fs').existsSync(path.join(p, 'docker-compose.yml'))) {
+                    this.componentsPath = p;
+                    console.log(`[ProjectCreator] Found components at: ${p}`);
+                    break;
+                }
+            } catch (e) {
+                // Continue searching
+            }
+        }
+
+        if (!this.componentsPath) {
+            console.warn('[ProjectCreator] Could not find components directory, defaulting to:', possiblePaths[0]);
+            this.componentsPath = possiblePaths[0];
+        }
+
         this.finishedProjectsPath = path.join(__dirname, '..', 'finished_projects');
     }
 
