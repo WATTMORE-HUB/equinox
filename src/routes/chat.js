@@ -38,20 +38,33 @@ router.post('/', async (req, res) => {
       const checker = new TimestreamChecker();
       const thresholdMs = checker.parseTimespan(trimmedQuestion);
       
+      console.log(`[Chat API] Parsed timespan "${trimmedQuestion}" => ${thresholdMs}ms`);
+      
       if (!thresholdMs) {
+        console.log('[Chat API] Failed to parse timespan, clearing state and re-asking');
+        // Clear state so they can try again from scratch
+        timestreamCheckState.delete(sessionKey);
         return res.json({
           answer: `I couldn't parse that timespan. Please try: "5 minutes", "10 minutes", "30 minutes", or "1 hour".`
         });
       }
       
-      // Clean up state and run the check
+      // Clean up state before running the check
       timestreamCheckState.delete(sessionKey);
       
       console.log(`[Chat API] Running Timestream check with ${checker.formatAge(thresholdMs)} threshold`);
-      const checkResults = await checker.checkAllTables(thresholdMs);
-      const formattedResults = checker.formatResults(checkResults);
-      
-      return res.json({ answer: formattedResults });
+      try {
+        const checkResults = await checker.checkAllTables(thresholdMs);
+        console.log('[Chat API] Timestream check results:', JSON.stringify(checkResults, null, 2));
+        const formattedResults = checker.formatResults(checkResults);
+        console.log('[Chat API] Formatted results:', formattedResults);
+        return res.json({ answer: formattedResults });
+      } catch (err) {
+        console.error('[Chat API] Timestream check failed:', err.message, err.stack);
+        return res.json({
+          answer: `Error checking data freshness: ${err.message}`
+        });
+      }
     }
 
     const answer = await Promise.race([
