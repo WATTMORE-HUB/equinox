@@ -253,23 +253,53 @@ class TimestreamChecker {
     }
 
     const { results } = checkResults;
-    const lines = [];
+    const freshCount = results.filter((result) => result.status === 'fresh').length;
+    const staleCount = results.filter((result) => result.status === 'stale').length;
+    const missingCount = results.filter((result) => result.status === 'missing').length;
+    const blankCount = results.filter((result) => result.status === 'blank').length;
+    const errorCount = results.filter((result) => result.status === 'error').length;
+    const totalTables = results.length;
+    const tableNames = {
+      electric_metering: 'Electric metering',
+      recloser_monitoring: 'Recloser monitoring',
+      'single-axis-tracker': 'Single-axis tracker',
+      solar_inverters: 'Solar inverters',
+      tracker_monitoring: 'Tracker monitoring',
+      weather_stations: 'Weather stations'
+    };
+
+    const response = [
+      `I checked ${totalTables} data source${totalTables === 1 ? '' : 's'}. ${freshCount} ${freshCount === 1 ? 'is' : 'are'} current.`
+    ];
+
+    if (staleCount > 0 || missingCount > 0 || blankCount > 0 || errorCount > 0) {
+      const issues = [];
+      if (staleCount > 0) issues.push(`${staleCount} stale`);
+      if (missingCount > 0) issues.push(`${missingCount} missing`);
+      if (blankCount > 0) issues.push(`${blankCount} empty`);
+      if (errorCount > 0) issues.push(`${errorCount} error${errorCount === 1 ? '' : 's'}`);
+      response.push(`Issues found: ${issues.join(', ')}.`);
+    }
+
+    response.push('');
 
     for (const result of results) {
+      const displayName = tableNames[result.tableName] || result.tableName;
+
       if (result.status === 'fresh') {
-        lines.push(`${result.tableName}: Last upload is ${this.formatAge(result.age)} ago.`);
+        response.push(`- ${displayName}: current, last upload ${this.formatAge(result.age)} ago.`);
       } else if (result.status === 'stale') {
-        lines.push(`${result.tableName}: Last upload is ${this.formatAge(result.age)} ago (outside threshold).`);
+        response.push(`- ${displayName}: stale, last upload ${this.formatAge(result.age)} ago.`);
       } else if (result.status === 'blank') {
-        lines.push(`${result.tableName}: Data received but contains only null values.`);
+        response.push(`- ${displayName}: data exists, but the latest row is empty.`);
       } else if (result.status === 'missing') {
-        lines.push(`${result.tableName}: No data found for this site.`);
+        response.push(`- ${displayName}: no data found for this site.`);
       } else if (result.status === 'error') {
-        lines.push(`${result.tableName}: Error - ${result.message}`);
+        response.push(`- ${displayName}: unable to check right now.`);
       }
     }
 
-    return lines.join('\n');
+    return response.join('\n');
   }
 }
 
