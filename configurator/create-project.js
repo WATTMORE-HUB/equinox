@@ -151,7 +151,7 @@ class ProjectCreator {
         }
     }
 
-    findLiveSrcPath() {
+    async findLiveSrcPath() {
         // Try to find the live src directory (single source of truth for services)
         const possiblePaths = [
             // Relative path from configurator/create-project.js
@@ -164,7 +164,7 @@ class ProjectCreator {
         
         for (const p of possiblePaths) {
             try {
-                const stats = require('fs').statSync(p);
+                const stats = await fs.stat(p);
                 if (stats.isDirectory()) {
                     console.log(`[INFO] Found live src directory at: ${p}`);
                     return p;
@@ -174,8 +174,10 @@ class ProjectCreator {
             }
         }
         
-        // If not found, return the most likely path and let copyEquinoxFiles handle the error
-        console.warn(`[WARN] Could not locate live src directory, will use template as fallback`);
+        // If not found, log warning and return null - will use template as fallback
+        console.warn(`[WARN] Could not locate live src directory at any of these paths:`);
+        possiblePaths.forEach(p => console.warn(`  - ${p}`));
+        console.warn(`[WARN] Will use template as fallback`);
         return null;
     }
 
@@ -208,7 +210,7 @@ class ProjectCreator {
             console.log(`  [OK] Copied equinox_src/ from template`);
             
             // Override critical service files with live src (single source of truth)
-            const liveSrcPath = this.findLiveSrcPath();
+            const liveSrcPath = await this.findLiveSrcPath();
             if (liveSrcPath) {
                 await this.copyLiveServices(liveSrcPath, srcDestPath);
             }
@@ -238,11 +240,16 @@ class ProjectCreator {
             const destDir = path.join(destPath, dir);
             
             try {
-                const stats = require('fs').statSync(liveDir);
+                const stats = await fs.stat(liveDir);
                 if (stats.isDirectory()) {
                     // Clear the template version first
-                    if (require('fs').existsSync(destDir)) {
+                    try {
+                        await fs.stat(destDir);
                         await this.removeDirectory(destDir);
+                    } catch (error) {
+                        if (error.code !== 'ENOENT') {
+                            throw error;
+                        }
                     }
                     // Copy live version
                     await this.copyDirectory(liveDir, destDir);
