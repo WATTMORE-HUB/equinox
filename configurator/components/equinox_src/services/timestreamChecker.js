@@ -25,9 +25,7 @@ class TimestreamChecker {
       this.client = new TimestreamQueryClient({
         region,
         // Use explicit endpoint to bypass discovery
-        endpoint: `https://timestream-query.${region}.amazonaws.com`,
-        // Disable endpoint discovery to avoid network/DNS issues
-        endpointDiscoveryEnabled: false
+        endpoint: `https://timestream-query.${region}.amazonaws.com`
       });
     }
     return this.client;
