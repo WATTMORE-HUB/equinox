@@ -143,11 +143,60 @@ function isSystemHealthQuestion(question) {
 }
 
 function buildSystemHealthResponse() {
-  const metadata = JSON.stringify({
-    instruction: 'system_health_report',
-    description: 'Generate comprehensive system health report'
-  });
-  return `__EQUINOX_SYSTEM_REPORT__\n${metadata}`;
+  const cache = loadMonitoringCache();
+  const containers = cache.containers || {};
+  const errors = cache.errors_recent || [];
+  const warnings = cache.warnings_recent || [];
+  const fileActivity = cache.file_activity || {};
+  const containerCount = Object.keys(containers).length;
+
+  const lines = [
+    '=== SYSTEM HEALTH REPORT ===',
+    '',
+    `Containers Running: ${containerCount}`,
+    `Recent Errors: ${errors.length}`,
+    `Recent Warnings: ${warnings.length}`,
+    ''
+  ];
+
+  if (containerCount > 0) {
+    lines.push('Container Details:');
+    Object.entries(containers).forEach(([name, data]) => {
+      const status = data.status || 'unknown';
+      const cpu = data.cpu_percent || 'N/A';
+      const mem = data.memory_percent || 'N/A';
+      lines.push(`  ${name}: ${status} (CPU: ${cpu}, Mem: ${mem})`);
+    });
+    lines.push('');
+  }
+
+  if (errors.length > 0) {
+    lines.push('Recent Errors:');
+    errors.slice(-5).forEach((err) => {
+      lines.push(`  - ${err}`);
+    });
+    lines.push('');
+  }
+
+  if (warnings.length > 0) {
+    lines.push('Recent Warnings:');
+    warnings.slice(-5).forEach((warn) => {
+      lines.push(`  - ${warn}`);
+    });
+    lines.push('');
+  }
+
+  const activeFiles = Object.entries(fileActivity).filter(([, info]) => info.status === 'writing');
+  if (activeFiles.length > 0) {
+    lines.push('Active File Writers:');
+    activeFiles.forEach(([service, info]) => {
+      lines.push(`  ${service}: ${info.count} new of ${info.total_files} files`);
+    });
+    lines.push('');
+  }
+
+  lines.push('=== END REPORT ===');
+  return lines.join('\n');
 }
 
 function isEnvironmentVariablesQuestion(question) {
