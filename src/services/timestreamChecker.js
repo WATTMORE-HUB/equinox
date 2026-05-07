@@ -23,7 +23,11 @@ class TimestreamChecker {
     if (!this.client) {
       const region = process.env.AWS_REGION || 'us-east-1';
       this.client = new TimestreamQueryClient({
-        region
+        region,
+        // Use explicit endpoint to bypass discovery
+        endpoint: `https://timestream-query.${region}.amazonaws.com`,
+        // Disable endpoint discovery to avoid network/DNS issues
+        endpointDiscoveryEnabled: false
       });
     }
     return this.client;
