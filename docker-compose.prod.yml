@@ -88,6 +88,13 @@ services:
       # This puts the downloaded models at /collect_data/ollama where everything else lives
       - collect_data:/collect_data
       - collect_data:/root/.ollama
+    entrypoint: >
+      /bin/bash -c "
+      echo 'Pulling TinyLlama model at startup...' &&
+      timeout 300 ollama pull tinyllama || echo 'TinyLlama pull completed (may already exist)' &&
+      echo 'Starting Ollama service...' &&
+      ollama serve
+      "
     networks:
       - default
     logging:
