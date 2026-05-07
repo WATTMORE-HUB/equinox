@@ -14,12 +14,14 @@ class ProjectCreator {
   constructor() {
     // Paths where create-project.js might be located
     this.configuratorPaths = [
+      // Docker container path (COPY . . copies entire repo to /app)
+      '/app/configurator',
       // Local development path (relative to this project)
       path.join(__dirname, '../../configurator'),
-      // Production path on CM4
-      '/app/configurator',
       // Alternative paths
-      path.join(process.cwd(), 'configurator')
+      path.join(process.cwd(), 'configurator'),
+      // Fallback: absolute path from repo root
+      path.join(__dirname, '../../', 'configurator')
     ];
     
     this.finishedProjectsPath = this.findFinishedProjectsPath();
