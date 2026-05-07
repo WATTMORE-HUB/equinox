@@ -194,7 +194,7 @@ class TimestreamChecker {
     }
   }
 
-  /**
+/**
    * Check all tables for data freshness
    */
   async checkAllTables(thresholdMs) {
@@ -202,6 +202,24 @@ class TimestreamChecker {
       return {
         success: false,
         error: 'SITE_ID environment variable not set. Cannot query Timestream.',
+        results: []
+      };
+    }
+
+    // Check for AWS credentials
+    const hasAwsCredentials = Boolean(
+      (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+      process.env.AWS_SESSION_TOKEN ||
+      process.env.AWS_WEB_IDENTITY_TOKEN_FILE ||
+      process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI ||
+      process.env.AWS_CONTAINER_CREDENTIALS_FULL_URI ||
+      process.env.AWS_PROFILE
+    );
+
+    if (!hasAwsCredentials) {
+      return {
+        success: false,
+        error: 'AWS credentials not configured. To enable Timestream queries, set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION environment variables. See docs/TIMESTREAM_IAM_POLICY.md for policy requirements.',
         results: []
       };
     }
