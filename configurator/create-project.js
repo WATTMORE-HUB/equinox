@@ -234,30 +234,45 @@ class ProjectCreator {
     async copyLiveServices(liveSrcPath, destPath) {
         // Copy live service files to override template versions (single source of truth)
         const criticalServices = ['services', 'routes'];
+        console.log(`[DEBUG] copyLiveServices: liveSrcPath=${liveSrcPath}, destPath=${destPath}`);
         
         for (const dir of criticalServices) {
             const liveDir = path.join(liveSrcPath, dir);
             const destDir = path.join(destPath, dir);
+            console.log(`[DEBUG] Attempting to copy ${dir}: from ${liveDir} to ${destDir}`);
             
             try {
                 const stats = await fs.stat(liveDir);
-                if (stats.isDirectory()) {
-                    // Clear the template version first
-                    try {
-                        await fs.stat(destDir);
-                        await this.removeDirectory(destDir);
-                    } catch (error) {
-                        if (error.code !== 'ENOENT') {
-                            throw error;
-                        }
-                    }
-                    // Copy live version
-                    await this.copyDirectory(liveDir, destDir);
-                    console.log(`  [OK] Copied live ${dir}/ from src (single source of truth)`);
+                if (!stats.isDirectory()) {
+                    console.warn(`  [WARN] ${liveDir} exists but is not a directory`);
+                    continue;
                 }
+                console.log(`[DEBUG] Source directory ${liveDir} exists`);
+                
+                // Clear the template version first
+                try {
+                    await fs.stat(destDir);
+                    console.log(`[DEBUG] Removing old ${destDir}`);
+                    await this.removeDirectory(destDir);
+                    console.log(`[DEBUG] Successfully removed ${destDir}`);
+                } catch (error) {
+                    if (error.code !== 'ENOENT') {
+                        throw error;
+                    }
+                    console.log(`[DEBUG] Destination ${destDir} did not exist, no need to remove`);
+                }
+                
+                // Copy live version
+                console.log(`[DEBUG] Copying from ${liveDir} to ${destDir}`);
+                await this.copyDirectory(liveDir, destDir);
+                console.log(`  [OK] Copied live ${dir}/ from src (single source of truth)`);
             } catch (error) {
-                if (error.code !== 'ENOENT') {
-                    console.warn(`  [WARN] Could not copy live ${dir}: ${error.message}`);
+                if (error.code === 'ENOENT') {
+                    console.warn(`  [WARN] Source directory ${liveDir} not found`);
+                } else {
+                    console.error(`  [ERROR] Failed to copy live ${dir}: ${error.message}`);
+                    console.error(error.stack);
+                    throw new Error(`Critical: Could not copy live ${dir} from ${liveDir}`);
                 }
             }
         }
