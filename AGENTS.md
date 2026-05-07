@@ -2,6 +2,12 @@
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
+## Critical Rules
+
+**IMPORTANT: Never run `git push` or `balena push` commands. The user will do these themselves.**
+
+These commands must always be executed by the user manually. Do not combine them with other commands in a single shell invocation. Always leave these as the user's responsibility.
+
 ## Overview
 
 Equinox is a location-aware device deployment system for Balena devices with automatic geolocation detection, hardware discovery, and one-click deployment. It includes a chat interface for system monitoring and operational insights.
@@ -92,6 +98,8 @@ Equinox runs in two distinct modes controlled by `EQUINOX_MODE` environment vari
 - `src/routes/chat.js` — Chat API endpoints (POST /api/chat/*)
 - `src/services/hardwareConfigLoader.js` — Loads hardware profiles from JSON manifests
 - `src/services/monitor.py` — Separate Python service for system metrics collection and AWS IoT publishing
+- `src/services/timestreamChecker.js` — Queries AWS Timestream for data freshness checks
+- `src/services/redeployHelper.js` — Triggers redeploy from Monitor mode chat
 
 **API Routes:**
 - `src/routes/status.js` — GET endpoints for deployment/error status
@@ -113,6 +121,7 @@ src/services/deployer.js checks USE_CLOUD env var
 Container logs (hourly) → src/services/logAnalyzer.js → state.json
 JSON files (30s interval, 10-min window) → src/services/dataValidator.js → state.json
 Chat query → src/routes/chat.js → src/services/llmClientNode.js → Response
+Timestream check → src/services/timestreamChecker.js → table freshness status
 ```
 
 ## Environment Variables
@@ -122,6 +131,7 @@ Chat query → src/routes/chat.js → src/services/llmClientNode.js → Response
 - `NODE_ENV` — Environment (default: production)
 - `EQUINOX_MODE` — "config" or "monitor" (defaults to config if unset)
 - `STATE_FILE_PATH` — State file location (default: /collect_data/state.json)
+- `SITE_ID` — Device site identifier for Timestream queries
 
 ### Data Paths
 - `COLLECT_DATA_PATH` — Data volume path (default: /collect_data)
@@ -189,13 +199,30 @@ Always use `src/stateManager.js` for reading/writing state.json. It handles atom
 - EC2 runner executes, publishes completion status back to CM4
 - CM4 updates deployment status from callback webhook
 
+## Chat Features (Monitor Mode)
+
+### System Status Queries
+Ask about containers, errors, warnings, memory, CPU, health status.
+
+### File Data Queries
+View latest JSON files from monitored directories (/meter, /tracker, /inverter, /weather, /recloser).
+
+### Data Flow Checks
+Ask "is data being uploaded?" to check Timestream freshness. Follow-up with a timespan (5 minutes, 10 minutes, etc.) to get table-by-table status.
+
+### Redeploy
+Ask "redeploy" to trigger a new deployment using the current device configuration.
+
+### Environment Variables
+Ask about updating environment variables to trigger the env upload interface.
+
 ## Testing Focus Areas
 
 Per `docs/TESTING.md`:
 1. **Feature 1 (Deployment):** Form submission, state persistence, error handling
 2. **Feature 2 (Data Validation):** JSON file detection, freshness checks, 10-min window expiry
 3. **Feature 3 (Log Analysis):** ERROR/WARNING filtering, hourly scheduling, error recording
-4. **Monitor Mode:** Chat interface, system reports, AWS IoT publishing
+4. **Monitor Mode:** Chat interface, system reports, Timestream data checks, redeploy, AWS IoT publishing
 
 See `docs/TESTING.md` for complete test scenarios and troubleshooting.
 
@@ -205,97 +232,6 @@ See `docs/TESTING.md` for complete test scenarios and troubleshooting.
 **Deployment not working:** Verify configurator exists; check `src/start.js` warnings.
 **Log analysis failing:** Docker socket must be mounted with `-v /var/run/docker.sock:/var/run/docker.sock:ro`.
 **State file missing:** System recreates on next restart (uses atomic writes).
+**Timestream checks failing:** Verify IAM policy includes timestream:Select permissions on operateSolarDB-prod. See `docs/TIMESTREAM_IAM_POLICY.md`.
 
 See `docs/TESTING.md` for feature-specific troubleshooting.
-
-## Ollama Model Management
-
-Equinox Monitor mode includes automated Ollama model management for the mistral LLM. When users request model downloads via chat (e.g., "pull mistral"), the system automatically pulls and verifies the model.
-
-### Model Download Detection
-The `src/services/llmClientNode.js` detects model-related questions with patterns like:
-- "pull mistral"
-- "download model"
-- "pull ollama"
-- "load model"
-
-When detected, it returns a `__EQUINOX_DOWNLOAD_MODEL__` marker.
-
-### Model Pull Process
-**Location:** `src/services/ollamaModelManager.js`
-**Triggered by:** Chat API when `__EQUINOX_DOWNLOAD_MODEL__` marker is detected
-
-1. Chat request received (e.g., "pull mistral")
-2. LLM client detects model download pattern
-3. Chat route receives `__EQUINOX_DOWNLOAD_MODEL__` marker
-4. OllamaModelManager.pullModel('mistral') is called
-5. Model pull via `POST /api/pull` to Ollama (2-minute timeout)
-6. Stream response and log progress
-7. Verify model availability with `/api/tags`
-8. Return success/failure to user
-
-### API Endpoints
-
-**Chat Query (existing)**
-```
-POST /api/chat
-Body: { question: string }
-Response: { answer: string, model?: {...}, deployment?: {...} }
-```
-
-**Pull Specific Model**
-```
-POST /api/chat/model/pull
-Body: { modelName: string }
-Response: { success: boolean, modelName: string, message: string }
-```
-
-**List Available Models**
-```
-GET /api/chat/models
-Response: { models: Array<{name, family, modifiedAt, size}>, error?: string }
-```
-
-**Check Model Availability**
-```
-GET /api/chat/model/:modelName/available
-Response: { modelName: string, available: boolean }
-```
-
-**Ollama Service Health**
-```
-GET /api/chat/ollama/health
-Response: { healthy: boolean, message: string }
-```
-
-### Common Issues
-
-**404 Error on /api/generate:** Mistral model not pulled yet
-- Fix: Send chat message with "pull mistral" or POST to `/api/chat/model/pull` with `{"modelName": "mistral"}`
-- Check status: `GET /api/chat/model/mistral/available`
-
-**Model pull timeout:** 2-minute timeout may be too short on slow connections
-- Logs will show pull progress and final status
-- Check device disk space: `df -h`
-
-**Ollama not responding:** Service may not be running
-- Check health: `GET /api/chat/ollama/health`
-- Check docker-compose: ollama service must be running
-- Verify port 11434 is accessible from Node service
-
-### Implementation Notes
-
-**Why separate service?**
-- Model operations are independent of chat queries
-- Reusable across multiple routes
-- Clear separation of concerns (pull, verify, check availability)
-
-**Stream handling:**
-- OllamaModelManager reads response streams to track pull progress
-- Streams are JSON newline-delimited (one JSON object per line)
-- Progress logged to console for monitoring
-
-**Timeout configuration:**
-- Chat queries: 5 second Ollama timeout (fast fail)
-- Model pulls: 120 second timeout (full pull with retry)
-- Overall query: 35 second cap to prevent client hangs

@@ -1,21 +1,14 @@
 /**
- * Two-tier chat client for Equinox
- * Tier 1: Fast fallback for simple questions (< 100ms)
- * Tier 2: Ollama LLM for complex questions
+ * Chat client for Equinox Monitor mode
+ * Rule-based intent detection for system health, deployment, and data flow queries
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Startup log to verify this module is loaded
-console.log('[LLM Client] Module loading: Full Ollama integration version with model download detection');
+console.log('[LLM Client] Module loading: Rule-based intent detection');
 
-// Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
-
-// Intent detection is now purely rule-based (no Ollama)
-// Users can optionally download TinyLlama via chat for enhanced responses,
-// but the system works fine without it in text-only mode
 
 // Supported data directories for file viewing (Equinox Monitor)
 const SUPPORTED_DIRECTORIES = {
@@ -250,6 +243,29 @@ function buildEnvironmentVariablesResponse() {
     description: 'Upload a CSV file with environment variables to update'
   });
   return `${ENV_UPLOAD_MARKER}\n${metadata}`;
+}
+
+function isDataFlowQuestion(question) {
+  const lower = question.toLowerCase();
+  const dataFlowKeywords = [
+    'is data being',
+    'is data being pushed',
+    'is data being uploaded',
+    'data flowing',
+    'data reaching',
+    'data getting to',
+    'check timestream',
+    'cloud data',
+    'cloud upload',
+    'uploading to cloud',
+    'being sent to cloud',
+    'making it to cloud'
+  ];
+  return dataFlowKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildDataFlowPrompt() {
+  return `Within what time span should the data be fresh? Please specify: 5 minutes, 10 minutes, 30 minutes, or 1 hour.`;
 }
 
 function getLatestFileInfo(directoryPath) {
@@ -487,8 +503,53 @@ function constructContext() {
   }
 
   context += `\nSupported latest-file directories: ${Object.keys(SUPPORTED_DIRECTORIES).map((dir) => `/${dir}`).join(', ')}\n`;
-
   return context;
+}
+
+function buildGuideResponse() {
+  return `I'm Equinox Monitor. Here are things you can ask me:
+
+**System Status:**
+  - "how is my system?" → full system health report
+  - "what containers are running?" → list active services
+  - "what's my system status?" → containers, errors, warnings
+
+**Errors & Warnings:**
+  - "show me errors" → recent error log
+  - "any warnings?" → recent warnings
+  - "what went wrong?" → errors and warnings summary
+
+**Resource Usage:**
+  - "how much memory?" → memory usage by container
+  - "CPU usage?" → CPU usage by container
+  - "what's eating resources?" → highest usage containers
+
+**File Data:**
+  - "show me latest /meter" → latest meter data
+  - "latest /tracker data" → latest tracker file
+  - "what's in /inverter?" → latest inverter file
+
+**Data Flow:**
+  - "is data being uploaded?" → check Timestream freshness
+
+**Deployment:**
+  - "redeploy" → pull latest code and deploy
+
+Or just type your question naturally!`;
+}
+
+function isGuideQuestion(question) {
+  const lower = question.toLowerCase();
+  const guideKeywords = [
+    'help',
+    'what can you do',
+    'what can i ask',
+    'commands',
+    'how do i',
+    'guide',
+    'tutorial'
+  ];
+  return guideKeywords.some(keyword => lower.includes(keyword));
 }
 
 async function query(question) {
@@ -499,6 +560,12 @@ async function query(question) {
     if (isSoftwareUpdateQuestion(question)) {
       console.log('[LLM Client] Software update/redeploy request detected');
       return buildSoftwareUpdateResponse();
+    }
+
+    // Check for data flow questions
+    if (isDataFlowQuestion(question)) {
+      console.log('[LLM Client] Data flow question detected');
+      return buildDataFlowPrompt();
     }
 
     // Check for environment variables questions

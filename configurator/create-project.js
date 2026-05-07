@@ -151,6 +151,34 @@ class ProjectCreator {
         }
     }
 
+    findLiveSrcPath() {
+        // Try to find the live src directory (single source of truth for services)
+        const possiblePaths = [
+            // Relative path from configurator/create-project.js
+            path.join(__dirname, '..', 'src'),
+            // Docker container path
+            '/app/src',
+            // Alternative relative path
+            path.join(process.cwd(), 'src')
+        ];
+        
+        for (const p of possiblePaths) {
+            try {
+                const stats = require('fs').statSync(p);
+                if (stats.isDirectory()) {
+                    console.log(`[INFO] Found live src directory at: ${p}`);
+                    return p;
+                }
+            } catch (e) {
+                // Continue to next path
+            }
+        }
+        
+        // If not found, return the most likely path and let copyEquinoxFiles handle the error
+        console.warn(`[WARN] Could not locate live src directory, will use template as fallback`);
+        return null;
+    }
+
     async copyEquinoxFiles(projectPath, srcPath) {
         console.log(`[TOOL] Processing service: equinox`);
         
@@ -173,11 +201,17 @@ class ProjectCreator {
             await fs.copyFile(lockSrc, lockDest);
             console.log(`  [OK] Copied equinox_package-lock.json`);
             
-            // Copy equinox_src directory
+            // Copy equinox_src directory (template base)
             const srcSourcePath = path.join(this.componentsPath, 'equinox_src');
             const srcDestPath = path.join(projectPath, 'equinox_src');
             await this.copyDirectory(srcSourcePath, srcDestPath);
-            console.log(`  [OK] Copied equinox_src/`);
+            console.log(`  [OK] Copied equinox_src/ from template`);
+            
+            // Override critical service files with live src (single source of truth)
+            const liveSrcPath = this.findLiveSrcPath();
+            if (liveSrcPath) {
+                await this.copyLiveServices(liveSrcPath, srcDestPath);
+            }
             
             // Copy equinox_public directory
             const publicSourcePath = path.join(this.componentsPath, 'equinox_public');
@@ -193,6 +227,49 @@ class ProjectCreator {
                 throw error;
             }
         }
+    }
+
+    async copyLiveServices(liveSrcPath, destPath) {
+        // Copy live service files to override template versions (single source of truth)
+        const criticalServices = ['services', 'routes'];
+        
+        for (const dir of criticalServices) {
+            const liveDir = path.join(liveSrcPath, dir);
+            const destDir = path.join(destPath, dir);
+            
+            try {
+                const stats = require('fs').statSync(liveDir);
+                if (stats.isDirectory()) {
+                    // Clear the template version first
+                    if (require('fs').existsSync(destDir)) {
+                        await this.removeDirectory(destDir);
+                    }
+                    // Copy live version
+                    await this.copyDirectory(liveDir, destDir);
+                    console.log(`  [OK] Copied live ${dir}/ from src (single source of truth)`);
+                }
+            } catch (error) {
+                if (error.code !== 'ENOENT') {
+                    console.warn(`  [WARN] Could not copy live ${dir}: ${error.message}`);
+                }
+            }
+        }
+    }
+
+    async removeDirectory(dirPath) {
+        // Recursively remove a directory
+        const files = await fs.readdir(dirPath, { withFileTypes: true });
+        
+        for (const file of files) {
+            const filePath = path.join(dirPath, file.name);
+            if (file.isDirectory()) {
+                await this.removeDirectory(filePath);
+            } else {
+                await fs.unlink(filePath);
+            }
+        }
+        
+        await fs.rmdir(dirPath);
     }
 
     async copyDirectory(source, destination) {
