@@ -151,36 +151,6 @@ class ProjectCreator {
         }
     }
 
-    async findLiveSrcPath() {
-        // Try to find the live src directory (single source of truth for services)
-        const possiblePaths = [
-            // Relative path from configurator/create-project.js
-            path.join(__dirname, '..', 'src'),
-            // Docker container path
-            '/app/src',
-            // Alternative relative path
-            path.join(process.cwd(), 'src')
-        ];
-        
-        for (const p of possiblePaths) {
-            try {
-                const stats = await fs.stat(p);
-                if (stats.isDirectory()) {
-                    console.log(`[INFO] Found live src directory at: ${p}`);
-                    return p;
-                }
-            } catch (e) {
-                // Continue to next path
-            }
-        }
-        
-        // If not found, log warning and return null - will use template as fallback
-        console.warn(`[WARN] Could not locate live src directory at any of these paths:`);
-        possiblePaths.forEach(p => console.warn(`  - ${p}`));
-        console.warn(`[WARN] Will use template as fallback`);
-        return null;
-    }
-
     async copyEquinoxFiles(projectPath, srcPath) {
         console.log(`[TOOL] Processing service: equinox`);
         
@@ -203,17 +173,11 @@ class ProjectCreator {
             await fs.copyFile(lockSrc, lockDest);
             console.log(`  [OK] Copied equinox_package-lock.json`);
             
-            // Copy equinox_src directory (template base)
+            // Copy equinox_src directory
             const srcSourcePath = path.join(this.componentsPath, 'equinox_src');
             const srcDestPath = path.join(projectPath, 'equinox_src');
             await this.copyDirectory(srcSourcePath, srcDestPath);
-            console.log(`  [OK] Copied equinox_src/ from template`);
-            
-            // Override critical service files with live src (single source of truth)
-            const liveSrcPath = await this.findLiveSrcPath();
-            if (liveSrcPath) {
-                await this.copyLiveServices(liveSrcPath, srcDestPath);
-            }
+            console.log(`  [OK] Copied equinox_src/`);
             
             // Copy equinox_public directory
             const publicSourcePath = path.join(this.componentsPath, 'equinox_public');
@@ -229,69 +193,6 @@ class ProjectCreator {
                 throw error;
             }
         }
-    }
-
-    async copyLiveServices(liveSrcPath, destPath) {
-        // Copy live service files to override template versions (single source of truth)
-        const criticalServices = ['services', 'routes'];
-        console.log(`[DEBUG] copyLiveServices: liveSrcPath=${liveSrcPath}, destPath=${destPath}`);
-        
-        for (const dir of criticalServices) {
-            const liveDir = path.join(liveSrcPath, dir);
-            const destDir = path.join(destPath, dir);
-            console.log(`[DEBUG] Attempting to copy ${dir}: from ${liveDir} to ${destDir}`);
-            
-            try {
-                const stats = await fs.stat(liveDir);
-                if (!stats.isDirectory()) {
-                    console.warn(`  [WARN] ${liveDir} exists but is not a directory`);
-                    continue;
-                }
-                console.log(`[DEBUG] Source directory ${liveDir} exists`);
-                
-                // Clear the template version first
-                try {
-                    await fs.stat(destDir);
-                    console.log(`[DEBUG] Removing old ${destDir}`);
-                    await this.removeDirectory(destDir);
-                    console.log(`[DEBUG] Successfully removed ${destDir}`);
-                } catch (error) {
-                    if (error.code !== 'ENOENT') {
-                        throw error;
-                    }
-                    console.log(`[DEBUG] Destination ${destDir} did not exist, no need to remove`);
-                }
-                
-                // Copy live version
-                console.log(`[DEBUG] Copying from ${liveDir} to ${destDir}`);
-                await this.copyDirectory(liveDir, destDir);
-                console.log(`  [OK] Copied live ${dir}/ from src (single source of truth)`);
-            } catch (error) {
-                if (error.code === 'ENOENT') {
-                    console.warn(`  [WARN] Source directory ${liveDir} not found`);
-                } else {
-                    console.error(`  [ERROR] Failed to copy live ${dir}: ${error.message}`);
-                    console.error(error.stack);
-                    throw new Error(`Critical: Could not copy live ${dir} from ${liveDir}`);
-                }
-            }
-        }
-    }
-
-    async removeDirectory(dirPath) {
-        // Recursively remove a directory
-        const files = await fs.readdir(dirPath, { withFileTypes: true });
-        
-        for (const file of files) {
-            const filePath = path.join(dirPath, file.name);
-            if (file.isDirectory()) {
-                await this.removeDirectory(filePath);
-            } else {
-                await fs.unlink(filePath);
-            }
-        }
-        
-        await fs.rmdir(dirPath);
     }
 
     async copyDirectory(source, destination) {
