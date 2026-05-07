@@ -39,7 +39,6 @@ services:
       - collect_data:/collect_data
     depends_on:
       - monitor
-      - ollama
     networks:
       - default
 
@@ -77,40 +76,8 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: equinox-ollama
-    restart: always
-    environment:
-      - OLLAMA_HOST=0.0.0.0:11434
-      - S3_BUCKET=enform-deployment-archives-211125775433
-      - AWS_REGION=us-east-2
-    volumes:
-      # Store Ollama data in collect_data alongside the rest of the monitor state
-      - collect_data:/collect_data
-      - collect_data:/root/.ollama
-    networks:
-      - default
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    init: true
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
-  # Include all other services (combine, heartbeat, etc.)
-  # Add your existing services here
-
 volumes:
   collect_data:
-    driver: local
-  ollama_data:
     driver: local
 
 networks:
