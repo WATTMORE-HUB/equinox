@@ -174,15 +174,24 @@ router.post('/deploy', upload.single('csvFile'), async (req, res) => {
     // Generate deployment config with environment variables
     const deploymentConfig = await configGenerator.generateConfig(projectData);
     
-    // Set EQUINOX_MODE to monitor mode BEFORE deployment (so container picks it up on restart)
+    // Persist runtime deployment configuration to device env vars
+    // so monitor mode redeploy can use the same cloud/local settings.
     try {
-      console.log('[DEPLOYMENT ROUTE] Setting EQUINOX_MODE=monitor on device...');
+      console.log('[DEPLOYMENT ROUTE] Persisting deployment configuration to device...');
       const balenaHelper = new BalenaApiHelper(balenaToken);
-      await balenaHelper.setDeviceEnvVar(deviceId, 'EQUINOX_MODE', 'monitor');
-      console.log('[DEPLOYMENT ROUTE] ✓ EQUINOX_MODE set to monitor');
+      const persistentConfigVars = {
+        EQUINOX_MODE: 'monitor',
+        USE_CLOUD: process.env.USE_CLOUD === 'true' ? 'true' : 'false',
+        CLOUD_API_URL: process.env.CLOUD_API_URL || ''
+      };
+
+      for (const [key, value] of Object.entries(persistentConfigVars)) {
+        await balenaHelper.setDeviceEnvVar(deviceId, key, value);
+        console.log(`[DEPLOYMENT ROUTE] ✓ ${key} set on device`);
+      }
     } catch (modeErr) {
-      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to set EQUINOX_MODE: ${modeErr.message}`);
-      // Don't fail the deployment if mode setting fails - it's a fallback mechanism
+      console.warn(`[DEPLOYMENT ROUTE] Warning: Failed to persist deployment config: ${modeErr.message}`);
+      // Don't fail the deployment if config var setting fails - it's a fallback mechanism
     }
     
     // Call deployer service to set environment variables on device
