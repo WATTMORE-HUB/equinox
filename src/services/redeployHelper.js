@@ -1,8 +1,7 @@
+const axios = require('axios');
 const balenaTokenManager = require('./balenaTokenManager');
 const wattmoreClient = require('./wattmoreClient');
 const configGenerator = require('./configGenerator');
-const { deployServices } = require('./deployer');
-const BalenaApiHelper = require('./balenaApiHelper');
 
 /**
  * Helper to trigger redeploy from chat using the same flow as Configure
@@ -35,8 +34,9 @@ class RedeployHelper {
   }
 
   /**
-   * Trigger a redeploy using the same cloud deployment flow as Configure
-   * Returns { success: boolean, deploymentId?: string, commandId?: string, message: string }
+   * Trigger a redeploy using the same flow as Configure
+   * Calls /api/deployment/deploy endpoint to ensure proper env var handling
+   * Returns { success: boolean, deploymentId?: string, message: string }
    */
   static async triggerRedeploy() {
     try {
@@ -88,39 +88,60 @@ class RedeployHelper {
       const deploymentConfig = await configGenerator.generateConfig(projectData);
       console.log(`[RedeployHelper] ✓ Generated config with services: ${deploymentConfig.services.join(', ')}`);
 
-      // Trigger cloud deployment (same as Configure deployment route)
-      // This ensures redeploy uses the exact same EC2/Lambda flow as initial configuration
-      console.log('[RedeployHelper] Initiating cloud redeployment (Configure flow)...');
+      // Call /api/deployment/deploy endpoint (same as Configure frontend does)
+      // This ensures redeploy uses the EXACT same flow as initial configuration
+      // and reads env vars that were set during initial deployment
+      console.log('[RedeployHelper] Calling /api/deployment/deploy endpoint...');
       
-      const deployResult = await deployServices({
-        balenaToken,
-        deviceId: deviceInfo.deviceUuid,
-        fleetName: deviceInfo.fleetName,
-        services: deploymentConfig.services,
-        environmentVariables: deploymentConfig.environmentVariables,
-        cloudOnly: true  // Force cloud deployment for monitor mode redeploy
-      });
-
-      if (!deployResult.success) {
-        console.error(`[RedeployHelper] Deployment failed: ${deployResult.error}`);
+      // Convert services to CSV
+      const csvHeader = 'name,service\n';
+      const csvRows = deploymentConfig.services.map(s => {
+        const name = typeof s === 'string' ? s : (s.name || s.service);
+        const service = typeof s === 'string' ? s : (s.service || s.name);
+        return `${name},${service}`;
+      }).join('\n');
+      const csvData = csvHeader + csvRows;
+      
+      // Create FormData with CSV file
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('deviceId', deviceInfo.deviceUuid);
+      form.append('fleetName', deviceInfo.fleetName);
+      form.append('csvFile', Buffer.from(csvData), 'services.csv');
+      
+      try {
+        const deployResult = await axios.post(
+          'http://localhost:3000/api/deployment/deploy',
+          form,
+          {
+            headers: form.getHeaders()
+          }
+        );
+        
+        console.log('[RedeployHelper] ✓ Redeploy triggered successfully');
+        return {
+          success: true,
+          deploymentId: deployResult.data.deploymentId,
+          message: deployResult.data.message || 'Redeploy initiated. The latest software will be deployed to your device. This typically takes 10-15 minutes.'
+        };
+      } catch (deployErr) {
+        console.error(`[RedeployHelper] Deployment API error: ${deployErr.message}`);
+        if (deployErr.response?.data?.error) {
+          return {
+            success: false,
+            message: `Deployment failed: ${deployErr.response.data.error}`
+          };
+        }
         return {
           success: false,
-          message: `Deployment failed: ${deployResult.error}`
+          message: `Deployment failed: ${deployErr.message}`
         };
       }
-
-      console.log('[RedeployHelper] ✓ Redeploy triggered successfully');
-      return {
-        success: true,
-        deploymentId: deployResult.deploymentId,
-        commandId: deployResult.commandId,
-        message: deployResult.message || 'Redeploy initiated. The latest software will be pulled from EC2 and deployed to your device. This typically takes 10-15 minutes.'
-      };
     } catch (error) {
-      console.error(`[RedeployHelper] Error triggering redeploy: ${error.message}`);
+      console.error(`[RedeployHelper] Error: ${error.message}`);
       return {
         success: false,
-        message: `Error triggering redeploy: ${error.message}`
+        message: `Error: ${error.message}`
       };
     }
   }
