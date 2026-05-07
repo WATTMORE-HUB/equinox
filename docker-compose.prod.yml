@@ -83,18 +83,15 @@ services:
     restart: always
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
+      - S3_BUCKET=enform-deployment-archives-211125775433
+      - AWS_REGION=us-east-2
     volumes:
       # Store Ollama data in collect_data alongside the rest of the monitor state
-      # This puts the downloaded models at /collect_data/ollama where everything else lives
       - collect_data:/collect_data
       - collect_data:/root/.ollama
-    entrypoint: >
-      /bin/bash -c "
-      echo 'Pulling TinyLlama model at startup...' &&
-      timeout 300 ollama pull tinyllama || echo 'TinyLlama pull completed (may already exist)' &&
-      echo 'Starting Ollama service...' &&
-      ollama serve
-      "
+      # Copy setup script into container
+      - ./ollama-setup.sh:/ollama-setup.sh:ro
+    entrypoint: ["/bin/bash", "/ollama-setup.sh"]
     networks:
       - default
     logging:
