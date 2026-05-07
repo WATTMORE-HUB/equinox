@@ -15,7 +15,7 @@ const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
 // Ollama configuration
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
-const OLLAMA_MODEL = 'mistral';
+const OLLAMA_MODEL = 'tinyllama'; // Lightweight 1.1B model suitable for CM4
 const OLLAMA_TIMEOUT = 5000;
 
 // Supported data directories for file viewing (Equinox Monitor)

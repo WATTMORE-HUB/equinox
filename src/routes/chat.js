@@ -35,12 +35,12 @@ router.post('/', async (req, res) => {
     if (answer && answer.includes('__EQUINOX_DOWNLOAD_MODEL__')) {
       console.log('[Chat API] Model download request detected, pulling mistral...');
       try {
-        const pullResult = await ollamaModelManager.pullModel('mistral');
+        const pullResult = await ollamaModelManager.pullModel('tinyllama');
         return res.json({
           answer: pullResult.message,
           model: {
             triggered: pullResult.success,
-            modelName: 'mistral',
+            modelName: 'tinyllama',
             status: pullResult.success ? 'completed' : 'failed'
           }
         });
