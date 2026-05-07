@@ -1,23 +1,15 @@
 /**
- * Two-tier chat client for Equinox
- * Tier 1: Fast fallback for simple questions (< 100ms)
- * Tier 2: Ollama LLM for complex questions
+ * Chat client for Equinox Monitor mode
+ * Rule-based intent detection for system health, deployment, and data flow queries
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Startup log to verify this module is loaded
-console.log('[LLM Client] Module loading: Full Ollama integration version with model download detection');
+console.log('[LLM Client] Module loading: Rule-based intent detection');
 
-// Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
-// Intent detection is now purely rule-based (no Ollama)
-// Users can optionally download TinyLlama via chat for enhanced responses,
-// but the system works fine without it in text-only mode
-
-// Supported data directories for file viewing (Equinox Monitor)
 const SUPPORTED_DIRECTORIES = {
   'tracker': '/collect_data/tracker',
   'meter': '/collect_data/meter',
@@ -26,11 +18,8 @@ const SUPPORTED_DIRECTORIES = {
   'recloser': '/collect_data/recloser'
 };
 
-// Special marker to indicate file content response
 const FILE_CONTENT_MARKER = '__EQUINOX_FILE_CONTENT__';
 const FILE_BODY_MARKER = '__EQUINOX_FILE_BODY__';
-
-// Special marker to indicate environment variables upload needed
 const ENV_UPLOAD_MARKER = '__EQUINOX_ENV_UPLOAD__';
 
 function loadMonitoringCache() {
@@ -42,7 +31,6 @@ function loadMonitoringCache() {
   } catch (error) {
     console.error('[LLM Client] Error loading cache:', error);
   }
-
   return {
     containers: {},
     errors_recent: [],
@@ -73,27 +61,22 @@ function pluralize(count, singular, plural = null) {
 
 function groupMessagesByContainer(messages, fallbackLabel) {
   const grouped = {};
-
   messages.forEach((message) => {
     const text = String(message || '').trim();
     const containerMatch = text.match(/^\[([^\]]+)\]\s*(.*)$/);
     const container = containerMatch ? containerMatch[1] : fallbackLabel;
     const body = containerMatch ? containerMatch[2].trim() : text;
-
     if (!grouped[container]) {
       grouped[container] = [];
     }
-
     grouped[container].push(body || text);
   });
-
   return grouped;
 }
 
 function formatGroupedMessages(intro, messages, fallbackLabel) {
   const grouped = groupMessagesByContainer(messages, fallbackLabel);
   const sections = [intro];
-
   Object.entries(grouped).forEach(([container, entries]) => {
     sections.push('');
     sections.push(`${container}:`);
@@ -101,19 +84,16 @@ function formatGroupedMessages(intro, messages, fallbackLabel) {
       sections.push(`  - ${entry}`);
     });
   });
-
   return sections.join('\n').trim();
 }
 
 function parseRequestedDirectory(question) {
   const lower = question.toLowerCase();
-
   for (const directoryName of Object.keys(SUPPORTED_DIRECTORIES)) {
     if (lower.includes(`/${directoryName}`) || lower.includes(` ${directoryName}`) || lower.endsWith(directoryName)) {
       return directoryName;
     }
   }
-
   return null;
 }
 
@@ -122,7 +102,6 @@ function isLatestFileQuestion(question) {
   const asksForFile = lower.includes('file') || lower.includes('payload') || lower.includes('json') || lower.includes('contents') || lower.includes('data');
   const asksForLatest = lower.includes('latest') || lower.includes('recent') || lower.includes('newest') || lower.includes('most recent');
   const requestedDirectory = parseRequestedDirectory(question);
-
   return Boolean(requestedDirectory && asksForFile && asksForLatest);
 }
 
@@ -231,9 +210,7 @@ function isSoftwareUpdateQuestion(question) {
     'restart deployment',
     'deploy new version'
   ];
-  const result = updateKeywords.some(keyword => lower.includes(keyword));
-  console.log(`[isSoftwareUpdateQuestion] question="${question}" lower="${lower}" keywords=${JSON.stringify(updateKeywords)} result=${result}`);
-  return result;
+  return updateKeywords.some(keyword => lower.includes(keyword));
 }
 
 function isDataFlowQuestion(question) {
@@ -464,7 +441,6 @@ function generateFallbackResponse(question) {
 
 function constructContext() {
   const cache = loadMonitoringCache();
-
   let context = 'Current System Status:\n';
   const containers = cache.containers || {};
   context += `Containers Running: ${Object.keys(containers).length}\n`;
@@ -510,7 +486,6 @@ function constructContext() {
   }
 
   context += `\nSupported latest-file directories: ${Object.keys(SUPPORTED_DIRECTORIES).map((dir) => `/${dir}`).join(', ')}\n`;
-
   return context;
 }
 
@@ -537,9 +512,11 @@ function buildGuideResponse() {
   - "latest /tracker data" → latest tracker file
   - "what's in /inverter?" → latest inverter file
 
+**Data Flow:**
+  - "is data being uploaded?" → check Timestream freshness
+
 **Deployment:**
   - "redeploy" → pull latest code and deploy
-  - "pull model" → download tinyllama for enhanced responses
 
 Or just type your question naturally!`;
 }
@@ -561,32 +538,27 @@ function isGuideQuestion(question) {
 async function query(question) {
   try {
     console.log(`[LLM Client] query() called with: "${question}"`);
-    
-    // Check for software update requests (highest priority)
+
     if (isSoftwareUpdateQuestion(question)) {
       console.log('[LLM Client] Software update/redeploy request detected');
       return buildSoftwareUpdateResponse();
     }
 
-    // Check for data flow questions (cloud upload status)
     if (isDataFlowQuestion(question)) {
       console.log('[LLM Client] Data flow question detected');
       return buildDataFlowPrompt();
     }
 
-    // Check for environment variables questions
     if (isEnvironmentVariablesQuestion(question)) {
       console.log('[LLM Client] Environment variables question detected');
       return buildEnvironmentVariablesResponse();
     }
 
-    // Check for system health questions
     if (isSystemHealthQuestion(question)) {
       console.log('[LLM Client] System health question detected');
       return buildSystemHealthResponse();
     }
 
-    // Check for latest file questions
     if (isLatestFileQuestion(question)) {
       console.log('[LLM Client] Latest file question detected');
       const dir = parseRequestedDirectory(question);
@@ -595,31 +567,27 @@ async function query(question) {
       }
     }
 
-    // Check for help/guide requests
     if (isGuideQuestion(question)) {
       console.log('[LLM Client] Guide request detected');
       return buildGuideResponse();
     }
 
-    // Try pattern-based fallback for simple/status questions
     if (isSimpleQuestion(question)) {
       console.log('[LLM Client] Simple question detected, using fallback response');
       return generateFallbackResponse(question);
     }
 
-    // For unknown inputs, check if they match any fallback patterns
     const fallbackResult = generateFallbackResponse(question);
-    
-    // If fallback gives a generic response, suggest the guide instead
+
     const cache = loadMonitoringCache();
     const containers = Object.keys(cache.containers || {}).length;
     const errors = (cache.errors_recent || []).length;
     const warnings = (cache.warnings_recent || []).length;
     const genericResponse = `I see ${containers} container${containers === 1 ? '' : 's'} running with ${errors} error${errors === 1 ? '' : 's'} and ${warnings} warning${warnings === 1 ? '' : 's'} in recent activity.`;
-    
+
     if (fallbackResult === genericResponse) {
       console.log('[LLM Client] Unknown intent, returning guide');
-      return `I'm not sure what you're asking. Try "help" for a guide, or ask about system status, errors, warnings, CPU, memory, or deployment.`;
+      return `I'm not sure what you're asking. Try "help" for a guide, or ask about system status, errors, warnings, CPU, memory, data flow, or deployment.`;
     }
 
     console.log('[LLM Client] Returning fallback response');
