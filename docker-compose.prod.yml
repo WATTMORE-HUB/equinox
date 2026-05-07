@@ -89,9 +89,6 @@ services:
       # Store Ollama data in collect_data alongside the rest of the monitor state
       - collect_data:/collect_data
       - collect_data:/root/.ollama
-      # Copy setup script into container
-      - ./ollama-setup.sh:/ollama-setup.sh:ro
-    entrypoint: ["/bin/bash", "/ollama-setup.sh"]
     networks:
       - default
     logging:
