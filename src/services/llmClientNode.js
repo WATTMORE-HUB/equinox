@@ -236,6 +236,29 @@ function isSoftwareUpdateQuestion(question) {
   return result;
 }
 
+function isDataFlowQuestion(question) {
+  const lower = question.toLowerCase();
+  const dataFlowKeywords = [
+    'is data being',
+    'is data being pushed',
+    'is data being uploaded',
+    'data flowing',
+    'data reaching',
+    'data getting to',
+    'check timestream',
+    'cloud data',
+    'cloud upload',
+    'uploading to cloud',
+    'being sent to cloud',
+    'making it to cloud'
+  ];
+  return dataFlowKeywords.some(keyword => lower.includes(keyword));
+}
+
+function buildDataFlowPrompt() {
+  return `Within what time span should the data be fresh? Please specify: 5 minutes, 10 minutes, 30 minutes, or 1 hour.`;
+}
+
 function buildSoftwareUpdateResponse() {
   const metadata = JSON.stringify({
     instruction: 'trigger_redeploy',
@@ -545,10 +568,10 @@ async function query(question) {
       return buildSoftwareUpdateResponse();
     }
 
-    // Check for model download requests (second priority)
-    if (isModelDownloadQuestion(question)) {
-      console.log('[LLM Client] Model download request detected');
-      return buildModelDownloadResponse();
+    // Check for data flow questions (cloud upload status)
+    if (isDataFlowQuestion(question)) {
+      console.log('[LLM Client] Data flow question detected');
+      return buildDataFlowPrompt();
     }
 
     // Check for environment variables questions

@@ -1,0 +1,296 @@
+const { TimestreamQueryClient, QueryCommand } = require('@aws-sdk/client-timestream-query');
+
+const DB_NAME = 'operateSolarDB-prod';
+const TABLES = [
+  'electric_metering',
+  'recloser_monitoring',
+  'single-axis-tracker',
+  'solar_inverters',
+  'tracker_monitoring',
+  'weather_stations'
+];
+
+class TimestreamChecker {
+  constructor() {
+    this.client = null;
+    this.siteId = process.env.SITE_ID;
+  }
+
+  /**
+   * Initialize Timestream client
+   */
+  ensureClient() {
+    if (!this.client) {
+      this.client = new TimestreamQueryClient({});
+    }
+    return this.client;
+  }
+
+  /**
+   * Check if a row is effectively blank (all non-key values are null)
+   */
+  isBlankRow(row, keyColumns = ['site_id', 'time', 'measure_name', 'measure_value']) {
+    if (!row || Object.keys(row).length === 0) {
+      return true;
+    }
+
+    // Check if all non-key values are null or empty
+    for (const [key, value] of Object.entries(row)) {
+      if (!keyColumns.includes(key.toLowerCase())) {
+        // If any non-key column has a non-null value, row is not blank
+        if (value !== null && value !== undefined && value !== '') {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Parse timespan string to milliseconds
+   * Accepts: "5 minutes", "10 mins", "30min", "1 hour", etc.
+   */
+  parseTimespan(timespanStr) {
+    const normalized = timespanStr.toLowerCase().trim();
+
+    // Extract number and unit
+    const match = normalized.match(/(\d+)\s*(minute|min|hour|h|second|sec|day|d)?/);
+    if (!match) {
+      return null;
+    }
+
+    const value = parseInt(match[1], 10);
+    const unit = match[2] || 'minute';
+
+    const multipliers = {
+      second: 1000,
+      sec: 1000,
+      minute: 60 * 1000,
+      min: 60 * 1000,
+      hour: 60 * 60 * 1000,
+      h: 60 * 60 * 1000,
+      day: 24 * 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000
+    };
+
+    const multiplier = multipliers[unit];
+    return multiplier ? value * multiplier : null;
+  }
+
+  /**
+   * Query Timestream for the most recent data point for a single table
+   */
+  async checkTableData(tableName, thresholdMs) {
+    try {
+      const query = `
+        SELECT * FROM "${DB_NAME}"."${tableName}"
+        WHERE site_id = '${this.siteId}'
+        ORDER BY time DESC
+        LIMIT 1
+      `;
+
+      const client = this.ensureClient();
+      const command = new QueryCommand({ QueryString: query });
+      const response = await client.send(command);
+
+      if (!response.Rows || response.Rows.length === 0) {
+        return {
+          tableName,
+          status: 'missing',
+          message: 'No data found for this site',
+          timestamp: null,
+          age: null
+        };
+      }
+
+      // Parse the response row
+      const row = response.Rows[0];
+      const cells = row.Data || [];
+
+      // Extract timestamp and data
+      let timestamp = null;
+      const rowData = {};
+
+      if (response.ColumnInfo) {
+        response.ColumnInfo.forEach((col, idx) => {
+          const value = cells[idx]?.ScalarValue;
+          const colName = col.Name.toLowerCase();
+          rowData[colName] = value;
+
+          if (colName === 'time') {
+            timestamp = value;
+          }
+        });
+      }
+
+      // Check if row is effectively blank
+      if (this.isBlankRow(rowData)) {
+        return {
+          tableName,
+          status: 'blank',
+          message: 'Data received but contains only null values',
+          timestamp,
+          age: null
+        };
+      }
+
+      // Check freshness
+      if (!timestamp) {
+        return {
+          tableName,
+          status: 'error',
+          message: 'Could not determine timestamp',
+          timestamp: null,
+          age: null
+        };
+      }
+
+      const timestampMs = new Date(timestamp).getTime();
+      const nowMs = Date.now();
+      const ageMs = nowMs - timestampMs;
+
+      if (ageMs <= thresholdMs) {
+        return {
+          tableName,
+          status: 'fresh',
+          message: `Data is current (${this.formatAge(ageMs)} old)`,
+          timestamp,
+          age: ageMs
+        };
+      } else {
+        return {
+          tableName,
+          status: 'stale',
+          message: `Data is stale (${this.formatAge(ageMs)} old)`,
+          timestamp,
+          age: ageMs
+        };
+      }
+    } catch (err) {
+      console.error(`[TimestreamChecker] Error checking ${tableName}:`, err.message);
+      return {
+        tableName,
+        status: 'error',
+        message: `Error querying Timestream: ${err.message}`,
+        timestamp: null,
+        age: null
+      };
+    }
+  }
+
+  /**
+   * Format age in milliseconds to human-readable string
+   */
+  formatAge(ageMs) {
+    if (ageMs < 60000) {
+      return `${Math.round(ageMs / 1000)} seconds`;
+    } else if (ageMs < 3600000) {
+      return `${Math.round(ageMs / 60000)} minutes`;
+    } else {
+      return `${Math.round(ageMs / 3600000)} hours`;
+    }
+  }
+
+  /**
+   * Check all tables for data freshness
+   */
+  async checkAllTables(thresholdMs) {
+    if (!this.siteId) {
+      return {
+        success: false,
+        error: 'SITE_ID environment variable not set. Cannot query Timestream.',
+        results: []
+      };
+    }
+
+    console.log(`[TimestreamChecker] Checking data freshness for site: ${this.siteId}`);
+
+    const results = [];
+
+    for (const tableName of TABLES) {
+      const result = await this.checkTableData(tableName, thresholdMs);
+      results.push(result);
+    }
+
+    return {
+      success: true,
+      siteId: this.siteId,
+      thresholdMs,
+      results
+    };
+  }
+
+  /**
+   * Format results for chat response
+   */
+  formatResults(checkResults) {
+    if (!checkResults.success) {
+      return `Unable to check data flow: ${checkResults.error}`;
+    }
+
+    const { results } = checkResults;
+
+    // Group results by status
+    const statusGroups = {
+      fresh: [],
+      stale: [],
+      blank: [],
+      missing: [],
+      error: []
+    };
+
+    for (const result of results) {
+      statusGroups[result.status].push(result);
+    }
+
+    // Build response
+    let response = `\n📊 **Data Flow Status** (checked ${new Date().toLocaleTimeString()})\n`;
+    response += `Site: ${checkResults.siteId}\n`;
+    response += `Freshness threshold: ${this.formatAge(checkResults.thresholdMs)}\n\n`;
+
+    if (statusGroups.fresh.length > 0) {
+      response += `✅ **Fresh** (${statusGroups.fresh.length}):\n`;
+      for (const r of statusGroups.fresh) {
+        response += `  • ${r.tableName}: ${r.message}\n`;
+      }
+      response += '\n';
+    }
+
+    if (statusGroups.stale.length > 0) {
+      response += `⚠️ **Stale** (${statusGroups.stale.length}):\n`;
+      for (const r of statusGroups.stale) {
+        response += `  • ${r.tableName}: ${r.message}\n`;
+      }
+      response += '\n';
+    }
+
+    if (statusGroups.blank.length > 0) {
+      response += `❌ **Blank** (${statusGroups.blank.length}):\n`;
+      for (const r of statusGroups.blank) {
+        response += `  • ${r.tableName}: ${r.message}\n`;
+      }
+      response += '\n';
+    }
+
+    if (statusGroups.missing.length > 0) {
+      response += `🚫 **Missing** (${statusGroups.missing.length}):\n`;
+      for (const r of statusGroups.missing) {
+        response += `  • ${r.tableName}: ${r.message}\n`;
+      }
+      response += '\n';
+    }
+
+    if (statusGroups.error.length > 0) {
+      response += `⚠️ **Errors** (${statusGroups.error.length}):\n`;
+      for (const r of statusGroups.error) {
+        response += `  • ${r.tableName}: ${r.message}\n`;
+      }
+      response += '\n';
+    }
+
+    return response;
+  }
+}
+
+module.exports = TimestreamChecker;

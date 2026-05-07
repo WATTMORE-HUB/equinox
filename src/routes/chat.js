@@ -1,8 +1,12 @@
 const express = require('express');
 const llmClient = require('../services/llmClientNode');
 const redeployHelper = require('../services/redeployHelper');
+const TimestreamChecker = require('../services/timestreamChecker');
 
 const router = express.Router();
+
+// Track Timestream check state for follow-up responses
+const timestreamCheckState = new Map(); // sessionId -> { awaitingTimespan: true, expiresAt: timestamp }
 
 /**
  * Query the LLM with a question about system health
@@ -11,7 +15,7 @@ const router = express.Router();
  * Response: { answer: string }
  */
 router.post('/', async (req, res) => {
-  const { question } = req.body;
+  const { question, sessionId } = req.body;
 
   if (!question || typeof question !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid question' });
@@ -23,12 +27,50 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    // Check if we're waiting for Timestream timespan from this session
+    const sessionKey = sessionId || 'default';
+    const checkState = timestreamCheckState.get(sessionKey);
+    
+    if (checkState && checkState.awaitingTimespan && Date.now() < checkState.expiresAt) {
+      console.log('[Chat API] Processing Timestream timespan response...');
+      
+      // Parse the timespan from user response
+      const checker = new TimestreamChecker();
+      const thresholdMs = checker.parseTimespan(trimmedQuestion);
+      
+      if (!thresholdMs) {
+        return res.json({
+          answer: `I couldn't parse that timespan. Please try: "5 minutes", "10 minutes", "30 minutes", or "1 hour".`
+        });
+      }
+      
+      // Clean up state and run the check
+      timestreamCheckState.delete(sessionKey);
+      
+      console.log(`[Chat API] Running Timestream check with ${checker.formatAge(thresholdMs)} threshold`);
+      const checkResults = await checker.checkAllTables(thresholdMs);
+      const formattedResults = checker.formatResults(checkResults);
+      
+      return res.json({ answer: formattedResults });
+    }
+
     const answer = await Promise.race([
       llmClient.query(trimmedQuestion),
       new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Query timeout')), 35000);
       })
     ]);
+
+    // Check for data flow question (ask for timespan)
+    if (answer && answer.includes('Within what time span')) {
+      console.log('[Chat API] Data flow question detected, awaiting timespan response');
+      // Set state to expect timespan in next message (expires in 5 minutes)
+      timestreamCheckState.set(sessionKey, {
+        awaitingTimespan: true,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
+      return res.json({ answer });
+    }
 
     // Check for redeploy request
     if (answer && answer.includes('__EQUINOX_REDEPLOY__')) {
