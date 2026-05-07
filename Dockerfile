@@ -11,10 +11,9 @@ RUN npm ci --only=production
 # Copy application code
 COPY . .
 
-# NOTE: This Dockerfile assumes the following directory structure:
-# When deployed via balena, the full enform repo should be available
-# If deploying standalone, uncomment the COPY line below and adjust path
-# COPY ../../../configurator ./configurator
+# Copy configurator for Monitor mode redeploy feature
+# This ensures create-project.js and components are available in the container
+COPY configurator ./configurator
 
 # Expose port (80 for balena tunnel)
 EXPOSE 80
