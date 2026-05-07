@@ -14,6 +14,8 @@ class ProjectCreator {
   constructor() {
     // Paths where create-project.js might be located
     this.configuratorPaths = [
+      // Source directory (bundled with Docker image)
+      path.join(__dirname, '../'),
       // Docker container path (COPY . . copies entire repo to /app)
       '/app/configurator',
       // Local development path (relative to this project)
