@@ -13,10 +13,9 @@ console.log('[LLM Client] Module loading: Full Ollama integration version with m
 // Cache path for monitoring data
 const MONITORING_CACHE_PATH = '/collect_data/monitoring_cache.json';
 
-// Ollama configuration
-const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
-const OLLAMA_MODEL = 'tinyllama'; // Lightweight 1.1B model suitable for CM4
-const OLLAMA_TIMEOUT = 15000; // 15 seconds for TinyLlama response generation
+// Intent detection is now purely rule-based (no Ollama)
+// Users can optionally download TinyLlama via chat for enhanced responses,
+// but the system works fine without it in text-only mode
 
 // Supported data directories for file viewing (Equinox Monitor)
 const SUPPORTED_DIRECTORIES = {
@@ -218,25 +217,6 @@ function isEnvironmentVariablesQuestion(question) {
   return envKeywords.some(keyword => lower.includes(keyword));
 }
 
-function isModelDownloadQuestion(question) {
-  const lower = question.toLowerCase();
-  const modelKeywords = [
-    'download model',
-    'pull model',
-    'get model',
-    'fetch model',
-    'download ollama',
-    'pull ollama',
-    'install model',
-    'load model',
-    'download mistral',
-    'pull mistral'
-  ];
-  const result = modelKeywords.some(keyword => lower.includes(keyword));
-  console.log(`[isModelDownloadQuestion] question="${question}" lower="${lower}" result=${result}`);
-  return result;
-}
-
 function isSoftwareUpdateQuestion(question) {
   const lower = question.toLowerCase();
   const updateKeywords = [
@@ -262,15 +242,6 @@ function buildSoftwareUpdateResponse() {
     description: 'Pull latest software and trigger Balena deployment'
   });
   return `__EQUINOX_REDEPLOY__\n${metadata}`;
-}
-
-function buildModelDownloadResponse() {
-  const metadata = JSON.stringify({
-    instruction: 'download_ollama_model',
-    description: 'Download and cache the Ollama mistral model',
-    timestamp: new Date().toISOString()
-  });
-  return `__EQUINOX_DOWNLOAD_MODEL__\n[DETECTION_WORKING_v2]\n${metadata}`;
 }
 
 function buildEnvironmentVariablesResponse() {
@@ -351,10 +322,6 @@ function generateFallbackResponse(question) {
   const errors = cache.errors_recent || [];
   const warnings = cache.warnings_recent || [];
   const containerCount = Object.keys(containers).length;
-
-  if (isModelDownloadQuestion(question)) {
-    return buildModelDownloadResponse();
-  }
 
   if (isSystemHealthQuestion(question)) {
     return buildSystemHealthResponse();
@@ -524,81 +491,9 @@ function constructContext() {
   return context;
 }
 
-async function queryOllama(question, context) {
-  try {
-    console.log('[LLM Client] Querying Ollama...');
-
-    const prompt = `You are a direct system monitoring assistant for Equinox.
-Answer strictly from the provided system data.
-Use a calm, human, operational tone.
-Do not use filler or pleasantries such as "Good question", "Great question", "Happy to help", or "Let me check".
-Do not sound like a generic chatbot.
-Lead with the finding, not with commentary.
-If there are multiple errors or warnings, group them by container when possible.
-Prefer formats like:
-- "I found 3 errors. Here they are, grouped by container:"
-- "5 containers are running. The highest memory usage is ..."
-- "No recent errors. I did find 2 warnings:"
-Keep the response concise, specific, and tied to the data below.
-If the user asks for something outside the available data, say so plainly and briefly redirect them to the kinds of questions you can answer, such as:
-- container status
-- recent errors or warnings
-- CPU and memory usage
-- file activity in monitored directories
-- latest JSON/file contents from supported directories
-- full system health reports
-
-System Status:
-${context}
-
-User Question: ${question}
-
-Answer:`;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
-
-    const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt: prompt,
-        stream: false,
-        temperature: 0.4
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.warn('[LLM Client] Ollama API error:', response.status);
-      // If model not found (404), trigger automatic model download
-      if (response.status === 404 && isModelDownloadQuestion(question)) {
-        console.log('[LLM Client] Model not found and user is asking about model, returning download marker');
-        return buildModelDownloadResponse();
-      }
-      return null;
-    }
-
-    const data = await response.json();
-    return data.response || null;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.warn('[LLM Client] Ollama query timed out');
-    } else {
-      console.warn('[LLM Client] Ollama query failed:', error.message);
-    }
-    return null;
-  }
-}
-
 async function query(question) {
   try {
     console.log(`[LLM Client] query() called with: "${question}"`);
-    console.log(`[LLM Client] isSoftwareUpdateQuestion result: ${isSoftwareUpdateQuestion(question)}`);
-    console.log(`[LLM Client] isModelDownloadQuestion result: ${isModelDownloadQuestion(question)}`);
     
     // Check for software update requests (highest priority)
     if (isSoftwareUpdateQuestion(question)) {
@@ -606,16 +501,10 @@ async function query(question) {
       return buildSoftwareUpdateResponse();
     }
 
-    // Check for model download requests (second priority)
-    if (isModelDownloadQuestion(question)) {
-      console.log('[LLM Client] Model download request detected');
-      return buildModelDownloadResponse();
-    }
-
-    // Check for environment variables questions (these always use fallback)
+    // Check for environment variables questions
     if (isEnvironmentVariablesQuestion(question)) {
-      console.log('[LLM Client] Using fallback for environment variables question');
-      return generateFallbackResponse(question);
+      console.log('[LLM Client] Environment variables question detected');
+      return buildEnvironmentVariablesResponse();
     }
 
     // Check for system health questions
@@ -624,21 +513,44 @@ async function query(question) {
       return buildSystemHealthResponse();
     }
 
+    // Check for latest file questions
+    if (isLatestFileQuestion(question)) {
+      console.log('[LLM Client] Latest file question detected');
+      const dir = parseRequestedDirectory(question);
+      if (dir) {
+        return buildFileContentResponse(dir);
+      }
+    }
+
+    // Check for help/guide requests
+    if (isGuideQuestion(question)) {
+      console.log('[LLM Client] Guide request detected');
+      return buildGuideResponse();
+    }
+
+    // Try pattern-based fallback for simple/status questions
     if (isSimpleQuestion(question)) {
-      console.log('[LLM Client] Using fallback for simple question');
+      console.log('[LLM Client] Simple question detected, using fallback response');
       return generateFallbackResponse(question);
     }
 
-    console.log('[LLM Client] Using Ollama for complex question');
-    const context = constructContext();
-    const ollamaResponse = await queryOllama(question, context);
-
-    if (ollamaResponse) {
-      return ollamaResponse.trim();
+    // For unknown inputs, check if they match any fallback patterns
+    const fallbackResult = generateFallbackResponse(question);
+    
+    // If fallback gives a generic response, suggest the guide instead
+    const cache = loadMonitoringCache();
+    const containers = Object.keys(cache.containers || {}).length;
+    const errors = (cache.errors_recent || []).length;
+    const warnings = (cache.warnings_recent || []).length;
+    const genericResponse = `I see ${containers} container${containers === 1 ? '' : 's'} running with ${errors} error${errors === 1 ? '' : 's'} and ${warnings} warning${warnings === 1 ? '' : 's'} in recent activity.`;
+    
+    if (fallbackResult === genericResponse) {
+      console.log('[LLM Client] Unknown intent, returning guide');
+      return `I'm not sure what you're asking. Try "help" for a guide, or ask about system status, errors, warnings, CPU, memory, or deployment.`;
     }
 
-    console.log('[LLM Client] Ollama unavailable, using fallback');
-    return generateFallbackResponse(question);
+    console.log('[LLM Client] Returning fallback response');
+    return fallbackResult;
   } catch (error) {
     console.error('[LLM Client] Error:', error);
     return generateFallbackResponse(question);

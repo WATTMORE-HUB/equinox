@@ -1244,6 +1244,18 @@
       }
     }
 
+    function downloadJsonFile(content, filename) {
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     function renderFileContentMessage(text, messageEl, bubbleEl) {
       const parsed = parseFileContentMessage(text);
       if (!parsed) {
@@ -1259,6 +1271,9 @@
             <div class="text-xs text-slate-400 mt-1">${escapeHtml(metadata.fileName)} · ${escapeHtml(metadata.modified)}</div>
             <div class="text-xs text-slate-500 mt-1 break-all">${escapeHtml(metadata.filePath)}</div>
           </div>
+          <div class="flex gap-2 mt-3">
+            <button class="downloadJsonBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition">Download JSON</button>
+          </div>
           <details class="rounded-xl border border-white/10 bg-black/20" open>
             <summary class="cursor-pointer px-4 py-3 text-slate-300 select-none">View JSON payload</summary>
             <div class="border-t border-white/10 px-4 py-4">
@@ -1268,6 +1283,14 @@
         </div>
       `;
       messageEl.appendChild(bubbleEl);
+      
+      const downloadBtn = bubbleEl.querySelector('.downloadJsonBtn');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+          downloadJsonFile(content, metadata.fileName || 'data.json');
+        });
+      }
+      
       return true;
     }
 
