@@ -120,25 +120,34 @@ async function deployServices(options) {
     }
 
     // If cloudOnly flag is set (e.g., from monitor mode redeploy), force cloud deployment
+    // CRITICAL: Cloud-only deployments must not fall through to local creation
     if (cloudOnly) {
       if (!CLOUD_API_URL) {
+        console.error('[DEPLOYER] Cloud-only deployment requested but CLOUD_API_URL not configured');
         return {
           success: false,
           error: 'Cloud deployment requested but CLOUD_API_URL not configured'
         };
       }
       console.log('[DEPLOYER] Cloud-only deployment (Monitor mode redeploy)...');
-      return await deployViaCloud(options);
+      const cloudResult = await deployViaCloud(options);
+      // IMPORTANT: Do not fall through to local deployment if cloud fails
+      return cloudResult;
     }
 
     // If cloud API is configured, use cloud-based deployment
     if (USE_CLOUD && CLOUD_API_URL) {
       console.log('[DEPLOYER] Using cloud-based deployment (EC2 + SSM)...');
-      return await deployViaCloud(options);
+      const cloudResult = await deployViaCloud(options);
+      // Fall through to local deployment only if cloud deployment fails and cloudOnly is NOT set
+      if (cloudResult.success) {
+        return cloudResult;
+      }
+      console.warn('[DEPLOYER] Cloud deployment failed, attempting local deployment fallback...');
     }
 
     // Otherwise, use local deployment
-    console.log('Using local deployment...');
+    console.log('[DEPLOYER] Using local deployment...');
     
     // First, set environment variables on the device via Balena API
     if (environmentVariables && Object.keys(environmentVariables).length > 0) {
