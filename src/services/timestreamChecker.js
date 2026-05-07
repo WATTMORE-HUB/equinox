@@ -230,66 +230,23 @@ class TimestreamChecker {
     }
 
     const { results } = checkResults;
-
-    // Group results by status
-    const statusGroups = {
-      fresh: [],
-      stale: [],
-      blank: [],
-      missing: [],
-      error: []
-    };
+    const lines = [];
 
     for (const result of results) {
-      statusGroups[result.status].push(result);
-    }
-
-    // Build response
-    let response = `\n📊 **Data Flow Status** (checked ${new Date().toLocaleTimeString()})\n`;
-    response += `Site: ${checkResults.siteId}\n`;
-    response += `Freshness threshold: ${this.formatAge(checkResults.thresholdMs)}\n\n`;
-
-    if (statusGroups.fresh.length > 0) {
-      response += `✅ **Fresh** (${statusGroups.fresh.length}):\n`;
-      for (const r of statusGroups.fresh) {
-        response += `  • ${r.tableName}: ${r.message}\n`;
+      if (result.status === 'fresh') {
+        lines.push(`${result.tableName}: Last upload is ${this.formatAge(result.age)} ago.`);
+      } else if (result.status === 'stale') {
+        lines.push(`${result.tableName}: Last upload is ${this.formatAge(result.age)} ago (outside threshold).`);
+      } else if (result.status === 'blank') {
+        lines.push(`${result.tableName}: Data received but contains only null values.`);
+      } else if (result.status === 'missing') {
+        lines.push(`${result.tableName}: No data found for this site.`);
+      } else if (result.status === 'error') {
+        lines.push(`${result.tableName}: Error - ${result.message}`);
       }
-      response += '\n';
     }
 
-    if (statusGroups.stale.length > 0) {
-      response += `⚠️ **Stale** (${statusGroups.stale.length}):\n`;
-      for (const r of statusGroups.stale) {
-        response += `  • ${r.tableName}: ${r.message}\n`;
-      }
-      response += '\n';
-    }
-
-    if (statusGroups.blank.length > 0) {
-      response += `❌ **Blank** (${statusGroups.blank.length}):\n`;
-      for (const r of statusGroups.blank) {
-        response += `  • ${r.tableName}: ${r.message}\n`;
-      }
-      response += '\n';
-    }
-
-    if (statusGroups.missing.length > 0) {
-      response += `🚫 **Missing** (${statusGroups.missing.length}):\n`;
-      for (const r of statusGroups.missing) {
-        response += `  • ${r.tableName}: ${r.message}\n`;
-      }
-      response += '\n';
-    }
-
-    if (statusGroups.error.length > 0) {
-      response += `⚠️ **Errors** (${statusGroups.error.length}):\n`;
-      for (const r of statusGroups.error) {
-        response += `  • ${r.tableName}: ${r.message}\n`;
-      }
-      response += '\n';
-    }
-
-    return response;
+    return lines.join('\n');
   }
 }
 
