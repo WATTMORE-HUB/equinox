@@ -21,7 +21,9 @@ class TimestreamChecker {
    */
   ensureClient() {
     if (!this.client) {
-      this.client = new TimestreamQueryClient({});
+      this.client = new TimestreamQueryClient({
+        region: process.env.AWS_REGION || 'us-east-1'
+      });
     }
     return this.client;
   }
