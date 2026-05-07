@@ -62,7 +62,8 @@ router.post('/', async (req, res) => {
     ]);
 
     // Check for data flow question (ask for timespan)
-    if (answer && answer.includes('Within what time span')) {
+    const isDataFlowPrompt = answer && typeof answer === 'string' && answer.includes('Within what time span');
+    if (isDataFlowPrompt) {
       console.log('[Chat API] Data flow question detected, awaiting timespan response');
       // Set state to expect timespan in next message (expires in 5 minutes)
       timestreamCheckState.set(sessionKey, {
