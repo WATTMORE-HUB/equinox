@@ -2,14 +2,34 @@
 
 To enable Equinox devices to query AWS Timestream for data freshness checks, add the following permissions to the IAM policy attached to your device credentials.
 
-## Policy Statement
+## Full Policy Statement
 
-Add this statement to your existing device IAM policy (usually the policy attached to the role used for IoT publishing):
+Replace your device IAM policy with this complete policy that includes existing IoT permissions plus Timestream query access:
 
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "iot:Connect",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Publish",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Receive",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Subscribe",
+      "Resource": "*"
+    },
     {
       "Sid": "TimestreamQueryAccess",
       "Effect": "Allow",
