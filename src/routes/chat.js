@@ -1,7 +1,6 @@
 const express = require('express');
 const llmClient = require('../services/llmClientNode');
 const redeployHelper = require('../services/redeployHelper');
-const TimestreamChecker = require('../services/timestreamChecker');
 
 const router = express.Router();
 
@@ -34,7 +33,8 @@ router.post('/', async (req, res) => {
     if (checkState && checkState.awaitingTimespan && Date.now() < checkState.expiresAt) {
       console.log('[Chat API] Processing Timestream timespan response...');
       
-      // Parse the timespan from user response
+      // Lazy-load TimestreamChecker only when needed (Monitor mode)
+      const TimestreamChecker = require('../services/timestreamChecker');
       const checker = new TimestreamChecker();
       const thresholdMs = checker.parseTimespan(trimmedQuestion);
       
