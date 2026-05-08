@@ -54,33 +54,12 @@ class TimestreamChecker {
 
   /**
    * Parse timespan string to milliseconds
-   * Accepts: "5 minutes", "10 mins", "30min", "1 hour", etc.
+   * Delegates to intentMatcher for flexible parsing
+   * Accepts: "5 minutes", "10 mins", "30min", "1 hour", "half hour", etc.
    */
   parseTimespan(timespanStr) {
-    const normalized = timespanStr.toLowerCase().trim();
-
-    // Extract number and unit
-    const match = normalized.match(/(\d+)\s*(minute|min|hour|h|second|sec|day|d)?/);
-    if (!match) {
-      return null;
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2] || 'minute';
-
-    const multipliers = {
-      second: 1000,
-      sec: 1000,
-      minute: 60 * 1000,
-      min: 60 * 1000,
-      hour: 60 * 60 * 1000,
-      h: 60 * 60 * 1000,
-      day: 24 * 60 * 60 * 1000,
-      d: 24 * 60 * 60 * 1000
-    };
-
-    const multiplier = multipliers[unit];
-    return multiplier ? value * multiplier : null;
+    const intentMatcher = require('./intentMatcher');
+    return intentMatcher.parseTimespan(timespanStr);
   }
 
   /**
