@@ -1279,7 +1279,7 @@
       return true;
     }
 
-    function addChatMessage(text, isUser) {
+    function addChatMessage(text, isUser, suggestions = null) {
       const messageEl = document.createElement('div');
       messageEl.className = isUser ? 'text-right' : 'text-left';
       
@@ -1295,11 +1295,35 @@
       }
       
       bubbleEl.textContent = text;
-      
       messageEl.appendChild(bubbleEl);
       chatMessages.appendChild(messageEl);
+
+      // Render suggestion buttons if provided
+      if (!isUser && suggestions && suggestions.length > 0) {
+        renderSuggestionButtons(suggestions);
+      }
       
       // Auto-scroll to bottom
+      chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+    }
+
+    function renderSuggestionButtons(suggestions) {
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'mt-4 flex flex-wrap gap-2';
+      
+      suggestions.forEach((suggestion) => {
+        const btn = document.createElement('button');
+        btn.className = 'secondary-button rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition';
+        btn.textContent = suggestion.label;
+        btn.addEventListener('click', () => {
+          // Send the action as a new question
+          chatInput.value = suggestion.action;
+          sendChatMessage();
+        });
+        buttonContainer.appendChild(btn);
+      });
+      
+      chatMessages.appendChild(buttonContainer);
       chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
     }
 
@@ -1335,7 +1359,7 @@
         }
         
         const data = await response.json();
-        addChatMessage(data.answer || 'Unable to process question', false);
+        addChatMessage(data.answer || 'Unable to process question', false, data.suggestions);
         chatHistorySession.push({ question, answer: data.answer });
       } catch (error) {
         console.error('Chat error:', error);
