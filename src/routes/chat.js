@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
     // If high confidence match, route to handler
     if (intentResult.confidence >= 0.95 && intentResult.intent) {
       failedAttempts.delete(sessionKey); // Clear failed attempts on success
-      return handleIntent(intentResult, sessionKey, res);
+      return handleIntent(intentResult, sessionKey, res, trimmedQuestion);
     }
 
     // If medium confidence, show suggestion
@@ -130,87 +130,87 @@ router.post('/', async (req, res) => {
     }
     res.status(500).json({ error: 'Failed to process question' });
   }
+});
 
-  /**
-   * Route intent to appropriate handler
-   */
-  async function handleIntent(intentResult, sessionKey, res) {
-    const intent = intentResult.intent;
-    console.log(`[Chat API] Handling intent: ${intent}`);
+/**
+ * Route intent to appropriate handler
+ */
+async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
+  const intent = intentResult.intent;
+  console.log(`[Chat API] Handling intent: ${intent}`);
 
-    // Help/capabilities request
-    if (intent === 'help') {
-      const response = responseFormatter.buildCapabilitiesMenu();
-      return res.json(response);
-    }
+  // Help/capabilities request
+  if (intent === 'help') {
+    const response = responseFormatter.buildCapabilitiesMenu();
+    return res.json(response);
+  }
 
-    // For data flow, ask for timespan if not provided in entities
-    if (intent === 'check_data_flow') {
-      if (intentResult.entities.timespan) {
-        // Has timespan - execute directly
-        const TimestreamChecker = require('../services/timestreamChecker');
-        const checker = new TimestreamChecker();
-        const checkResults = await checker.checkAllTables(intentResult.entities.timespan);
-        const formattedResults = checker.formatResults(checkResults);
-        conversationContext.set(sessionKey, {
-          lastIntent: intent,
-          priorResponses: [formattedResults],
-          expiresAt: Date.now() + 10 * 60 * 1000
-        });
-        return res.json({ answer: formattedResults });
-      } else {
-        // No timespan - ask for it
-        timestreamCheckState.set(sessionKey, {
-          awaitingTimespan: true,
-          expiresAt: Date.now() + 5 * 60 * 1000
-        });
-        return res.json({
-          answer: `Within what time span should the data be fresh? Please specify: 5 minutes, 10 minutes, 30 minutes, or 1 hour.`
-        });
-      }
-    }
-
-    // For file requests with directory specified
-    if (intent === 'get_latest_file' && intentResult.entities.directory) {
-      const dir = intentResult.entities.directory;
-      const answer = await llmClient.query(`show me latest /${dir}`);
+  // For data flow, ask for timespan if not provided in entities
+  if (intent === 'check_data_flow') {
+    if (intentResult.entities.timespan) {
+      // Has timespan - execute directly
+      const TimestreamChecker = require('../services/timestreamChecker');
+      const checker = new TimestreamChecker();
+      const checkResults = await checker.checkAllTables(intentResult.entities.timespan);
+      const formattedResults = checker.formatResults(checkResults);
       conversationContext.set(sessionKey, {
         lastIntent: intent,
-        priorResponses: [answer],
+        priorResponses: [formattedResults],
         expiresAt: Date.now() + 10 * 60 * 1000
       });
-      return res.json({ answer });
+      return res.json({ answer: formattedResults });
+    } else {
+      // No timespan - ask for it
+      timestreamCheckState.set(sessionKey, {
+        awaitingTimespan: true,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
+      return res.json({
+        answer: `Within what time span should the data be fresh? Please specify: 5 minutes, 10 minutes, 30 minutes, or 1 hour.`
+      });
     }
+  }
 
-    // Route other intents through llmClient
-    const answer = await llmClient.query(trimmedQuestion);
+  // For file requests with directory specified
+  if (intent === 'get_latest_file' && intentResult.entities.directory) {
+    const dir = intentResult.entities.directory;
+    const answer = await llmClient.query(`show me latest /${dir}`);
     conversationContext.set(sessionKey, {
       lastIntent: intent,
       priorResponses: [answer],
       expiresAt: Date.now() + 10 * 60 * 1000
     });
-
-    // Check for special markers
-    if (answer && answer.includes('__EQUINOX_REDEPLOY__')) {
-      console.log('[Chat API] Redeploy request detected');
-      try {
-        const deployResult = await redeployHelper.triggerRedeploy();
-        return res.json({
-          answer: deployResult.message,
-          deployment: {
-            triggered: deployResult.success,
-            deploymentId: deployResult.deploymentId,
-            commandId: deployResult.commandId
-          }
-        });
-      } catch (error) {
-        console.error('[Chat API] Error triggering redeploy:', error.message);
-        return res.status(500).json({ error: `Failed to trigger redeploy: ${error.message}` });
-      }
-    }
-
     return res.json({ answer });
   }
-});
+
+  // Route other intents through llmClient
+  const answer = await llmClient.query(trimmedQuestion);
+  conversationContext.set(sessionKey, {
+    lastIntent: intent,
+    priorResponses: [answer],
+    expiresAt: Date.now() + 10 * 60 * 1000
+  });
+
+  // Check for special markers
+  if (answer && answer.includes('__EQUINOX_REDEPLOY__')) {
+    console.log('[Chat API] Redeploy request detected');
+    try {
+      const deployResult = await redeployHelper.triggerRedeploy();
+      return res.json({
+        answer: deployResult.message,
+        deployment: {
+          triggered: deployResult.success,
+          deploymentId: deployResult.deploymentId,
+          commandId: deployResult.commandId
+        }
+      });
+    } catch (error) {
+      console.error('[Chat API] Error triggering redeploy:', error.message);
+      return res.status(500).json({ error: `Failed to trigger redeploy: ${error.message}` });
+    }
+  }
+
+  return res.json({ answer });
+}
 
 module.exports = router;
