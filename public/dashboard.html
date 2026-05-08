@@ -1310,12 +1310,21 @@
     function renderSuggestionButtons(suggestions) {
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'mt-4 flex flex-wrap gap-2';
+      buttonContainer.style.pointerEvents = 'auto';
+      buttonContainer.style.userSelect = 'auto';
       
       suggestions.forEach((suggestion) => {
         const btn = document.createElement('button');
         btn.className = 'secondary-button rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition';
+        btn.style.cursor = 'pointer';
+        btn.style.userSelect = 'none';
+        btn.style.pointerEvents = 'auto';
         btn.textContent = suggestion.label;
-        btn.addEventListener('click', () => {
+        btn.type = 'button';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Button clicked:', suggestion.action);
           // Send the action as a new question
           chatInput.value = suggestion.action;
           sendChatMessage();
@@ -1325,6 +1334,7 @@
       
       chatMessages.appendChild(buttonContainer);
       chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+      console.log('Rendered', suggestions.length, 'suggestion buttons');
     }
 
     async function sendChatMessage() {
