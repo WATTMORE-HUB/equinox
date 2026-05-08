@@ -330,8 +330,9 @@ function parseEntities(question, intent) {
 }
 
 /**
- * Parse timespan from question (e.g., "5 minutes", "10 min", "half hour")
+ * Parse timespan from question (e.g., "5 minutes", "10 min", "half hour", "5")
  * Returns milliseconds or null
+ * Bare numbers default to minutes
  */
 function parseTimespan(timespanStr) {
   const normalized = timespanStr.toLowerCase().trim();
@@ -345,6 +346,7 @@ function parseTimespan(timespanStr) {
   if (!match) return null;
 
   const value = parseInt(match[1], 10);
+  // If no unit specified, default to minutes
   const unit = match[2] || 'minute';
 
   const multipliers = {
