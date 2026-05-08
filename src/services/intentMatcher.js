@@ -33,7 +33,9 @@ function levenshteinDistance(a, b) {
 
 // Calculate similarity score (0 to 1, where 1 is identical)
 function similarityScore(a, b) {
-  const maxLen = Math.max(a.length, b.length);\n  if (maxLen === 0) return 1;\n  const distance = levenshteinDistance(a, b);
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 1;
+  const distance = levenshteinDistance(a, b);
   return 1 - distance / maxLen;
 }
 
@@ -62,7 +64,11 @@ const INTENTS = {
       'system report',
       'holistic',
       'system status',
-      'health check'
+      'health check',
+      'give me a report',
+      'what is my status',
+      'how things looking',
+      'system overview'
     ]
   },
   list_containers: {
@@ -75,7 +81,11 @@ const INTENTS = {
       'active containers',
       'what services',
       'containers running',
-      'show containers'
+      'show containers',
+      'show me containers',
+      'what is running',
+      'show services',
+      'list services'
     ]
   },
   check_errors: {
@@ -89,7 +99,11 @@ const INTENTS = {
       'recent errors',
       'error log',
       'any errors',
-      'what failed'
+      'what failed',
+      'got any errors',
+      'show errors',
+      'did anything fail',
+      'something break'
     ]
   },
   check_warnings: {
@@ -101,7 +115,10 @@ const INTENTS = {
       'warnings',
       'check warnings',
       'recent warnings',
-      'warn'
+      'warn',
+      'got any warnings',
+      'show warnings',
+      'any issues'
     ]
   },
   check_memory: {
@@ -113,7 +130,10 @@ const INTENTS = {
       'ram usage',
       'memory stats',
       'what\'s using memory',
-      'memory consumption'
+      'memory consumption',
+      'memory report',
+      'how much ram',
+      'ram stats'
     ]
   },
   check_cpu: {
@@ -125,7 +145,10 @@ const INTENTS = {
       'cpu stats',
       'what\'s using cpu',
       'cpu consumption',
-      'cpu percent'
+      'cpu percent',
+      'cpu report',
+      'processor stats',
+      'how much cpu'
     ]
   },
   get_latest_file: {
@@ -135,7 +158,12 @@ const INTENTS = {
       'latest file',
       'latest data',
       'recent file',
-      'what\'s in'
+      'what\'s in',
+      'show latest',
+      'get latest',
+      'fetch latest',
+      'recent data',
+      'last file'
     ]
   },
   check_data_flow: {
@@ -143,6 +171,7 @@ const INTENTS = {
     aliases: [
       'is data being uploaded',
       'is data being pushed',
+      'is data being pushed up',
       'data flowing',
       'data reaching',
       'data getting to',
@@ -150,7 +179,13 @@ const INTENTS = {
       'is data uploaded',
       'data flow',
       'cloud upload',
-      'is stuff getting up there'
+      'is stuff getting up there',
+      'is data going up',
+      'is data making it',
+      'check if data',
+      'data freshness',
+      'when was data',
+      'last data'
     ]
   },
   redeploy: {
@@ -164,7 +199,13 @@ const INTENTS = {
       'push latest',
       'fetch latest code',
       'reload code',
-      'restart deployment'
+      'restart deployment',
+      'deploy',
+      'pull latest',
+      'update code',
+      'restart',
+      'reload',
+      'new code'
     ]
   },
   environment_variables: {
@@ -181,7 +222,10 @@ const INTENTS = {
       'update variable',
       'update env',
       'change variable',
-      'change env'
+      'change env',
+      'configure env',
+      'update config',
+      'env config'
     ]
   },
   help: {
@@ -196,7 +240,12 @@ const INTENTS = {
       'commands',
       'guide',
       'tutorial',
-      'how do i'
+      'how do i',
+      'help me',
+      'show help',
+      'available commands',
+      'what do you do',
+      'what can we do'
     ]
   }
 };
