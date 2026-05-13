@@ -198,6 +198,7 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     check_warnings: 'show me warnings',
     check_memory: 'how much memory',
     check_cpu: 'cpu usage',
+    check_data_flow: 'check data uploads',
     redeploy: 'redeploy',
     environment_variables: 'environment variables'
   };
