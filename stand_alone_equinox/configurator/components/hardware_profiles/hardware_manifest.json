@@ -1,0 +1,42 @@
+{
+  "Elkor Wattson Mk. 2": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor Wattson Mk 2": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor Wattson Mk II": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor Wattson": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor WattsOn II": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor Watts On II": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Elkor WattsON II": {
+    "type": "meter",
+    "csv_file": "meters/elkor_wattson.csv",
+    "services": ["meter"]
+  },
+  "Weather Station Generic": {
+    "type": "weather_station",
+    "csv_file": "weather_stations/weather_generic.csv",
+    "services": ["weather"]
+  }
+}

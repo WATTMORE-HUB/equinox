@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed Code - Video Server</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        h3 {
+            color: #ffffff;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .code-block {
+            background-color: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        pre {
+            margin: 0;
+            color: #a9dc76;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .copy-btn:active {
+            background-color: #3d8b40;
+        }
+        
+        .copy-btn.copied {
+            background-color: #2196F3;
+        }
+        
+        .method-option {
+            margin-bottom: 20px;
+        }
+        
+        ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+        
+        .note {
+            background-color: #2c3e50;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .note strong {
+            color: #3498db;
+        }
+        
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .preview {
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #444;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .back-link:hover {
+            background-color: #555;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Video Stream</a>
+        
+        <h1>Embed Video Stream</h1>
+        <p class="subtitle">Use these code snippets to embed the video stream on your website</p>
+        
+        <div class="section">
+            <h2>📺 Preview</h2>
+            <p>This is how the embedded video will look:</p>
+            <div class="preview">
+                <iframe src="/embed" width="640" height="480" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🔧 Embedding Options</h2>
+            
+            <div class="method-option">
+                <h3>Option 1: iFrame Embed (Recommended)</h3>
+                <p>The easiest way to embed the video stream. Just copy and paste this code into your HTML:</p>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this, 'iframe-code')">Copy</button>
+                    <pre id="iframe-code">&lt;iframe 
+  src="http://{{ host }}/embed" 
+  width="640" 
+  height="480" 
+  frameborder="0" 
+  allowfullscreen&gt;
+&lt;/iframe&gt;</pre>
+                </div>
+            </div>
+            
+            <div class="method-option">
+                <h3>Option 2: Direct Image Embed</h3>
+                <p>Embed the video feed as a direct image (works in most browsers):</p>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this, 'img-code')">Copy</button>
+                    <pre id="img-code">&lt;img 
+  src="http://{{ host }}/video_feed" 
+  alt="Live Video Stream" 
+  style="max-width: 100%; height: auto;"&gt;</pre>
+                </div>
+            </div>
+            
+            <div class="method-option">
+                <h3>Option 3: Responsive iFrame</h3>
+                <p>A responsive embed that maintains aspect ratio (16:9):</p>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this, 'responsive-code')">Copy</button>
+                    <pre id="responsive-code">&lt;div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;"&gt;
+  &lt;iframe 
+    src="http://{{ host }}/embed" 
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+    frameborder="0" 
+    allowfullscreen&gt;
+  &lt;/iframe&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+            
+            <div class="method-option">
+                <h3>Option 4: JavaScript/Fetch Integration</h3>
+                <p>For advanced use cases where you need to process frames in JavaScript:</p>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this, 'js-code')">Copy</button>
+                    <pre id="js-code">&lt;img id="video-stream" alt="Live Video Stream"&gt;
+
+&lt;script&gt;
+  // Simple image-based approach
+  document.getElementById('video-stream').src = 'http://{{ host }}/video_feed';
+&lt;/script&gt;</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⚙️ Customization</h2>
+            <p>You can customize the embed by adjusting these parameters:</p>
+            <ul>
+                <li><strong>width</strong> and <strong>height</strong>: Set the dimensions of the video player</li>
+                <li><strong>frameborder</strong>: Set to "0" for no border, or "1" for a border</li>
+                <li><strong>allowfullscreen</strong>: Allows the video to be viewed in fullscreen mode</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>📡 Direct Endpoints</h2>
+            <p>Use these endpoints directly in your application:</p>
+            <ul>
+                <li><strong>Video Feed:</strong> <code>http://{{ host }}/video_feed</code></li>
+                <li><strong>Embed Player:</strong> <code>http://{{ host }}/embed</code></li>
+                <li><strong>Main Page:</strong> <code>http://{{ host }}/</code></li>
+            </ul>
+        </div>
+        
+        <div class="note">
+            <strong>Note:</strong> Make sure to replace <code>{{ host }}</code> with your actual server address when deploying. 
+            If you're accessing from outside the Docker container, you may need to use your host machine's IP address instead of localhost.
+        </div>
+    </div>
+    
+    <script>
+        function copyCode(button, elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy code. Please copy manually.');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -6,11 +6,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
-COPY src/services/monitor-requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy monitoring service
-COPY src/services/monitor.py /app/monitor.py
+# Copy monitoring service (relative to root context)
+COPY equinox_src/services/monitor.py /app/monitor.py
 
 # Environment variables
 ENV MONITORING_INTERVAL=300

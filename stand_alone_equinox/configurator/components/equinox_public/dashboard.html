@@ -18,12 +18,11 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      user-select: auto;
-      -webkit-user-select: auto;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    
-    button {
+
+    /* Prevent selection on buttons and UI elements, but allow on chat */
+    button, input[type="file"], .ghost-button, .secondary-button {
       user-select: none;
       -webkit-user-select: none;
     }
@@ -102,12 +101,23 @@
       border-color: rgba(255, 255, 255, 0.2);
     }
 
+    /* Hide scrollbars while keeping scroll functionality */
     .hide-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
+    }
+
+    .dashboard-content {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      padding: 0 20px;
     }
   </style>
 </head>
@@ -129,7 +139,7 @@
         <canvas id="neural-network-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"></canvas>
       </div>
       <div id="dashboard-panel-container" class="w-full flex justify-center pb-4 md:pb-8" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; pointer-events: auto;">
-        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-3xl" style="pointer-events: auto;">
+        <div class="glass-panel rounded-[2rem] px-8 py-8 md:px-12 md:py-10 w-full max-w-6xl" style="pointer-events: auto;">
           <div id="locatingView" class="fade-in">
             <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Locating system</p>
             <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
@@ -192,13 +202,13 @@
           </div>
 
           <div id="chatView" class="hidden fade-in">
-            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">System monitoring</p>
+            <p class="text-xs uppercase tracking-[0.28em] text-slate-500 mb-5">Equinox Monitor</p>
             <h1 class="text-4xl md:text-6xl font-light tracking-tight leading-[1.05] text-slate-50">
               What's on your mind?
             </h1>
             <p class="mt-5 text-base md:text-lg text-slate-400">Ask about container health, memory usage, or any recent errors.</p>
             
-            <div class="mt-8 max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
+            <div class="mt-8 max-h-[32rem] overflow-y-scroll hide-scrollbar rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-6">
               <div id="chatMessages" class="space-y-4 flex flex-col">
                 <div class="text-sm text-slate-500">
                   <p>Chat interface ready. Ask your first question!</p>
@@ -1233,79 +1243,6 @@
         return null;
       }
     }
-    
-    function parseEnvironmentVariablesMessage(text) {
-      const marker = '__EQUINOX_ENV_UPLOAD__\n';
-      if (typeof text !== 'string' || !text.startsWith(marker)) {
-        return null;
-      }
-      
-      try {
-        const withoutMarker = text.slice(marker.length);
-        const metadata = JSON.parse(withoutMarker);
-        return metadata;
-      } catch (error) {
-        return null;
-      }
-    }
-    
-    function renderEnvironmentVariablesMessage(text, messageEl, bubbleEl) {
-      const metadata = parseEnvironmentVariablesMessage(text);
-      if (!metadata) {
-        return false;
-      }
-      
-      bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-4 w-full max-w-2xl text-sm';
-      bubbleEl.innerHTML = `
-        <div class="space-y-3">
-          <div>
-            <div class="text-slate-100 font-medium">Upload Environment Variables</div>
-            <div class="text-xs text-slate-400 mt-2">${escapeHtml(metadata.description)}</div>
-          </div>
-          <div class="flex gap-2 mt-3">
-            <input type="file" class="envVarUploadInput" accept=".csv" style="display: none;" />
-            <button class="envVarUploadBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition" style="cursor: pointer; user-select: none;">Choose CSV File</button>
-          </div>
-        </div>
-      `;
-      messageEl.appendChild(bubbleEl);
-      
-      const fileInput = bubbleEl.querySelector('.envVarUploadInput');
-      const uploadBtn = bubbleEl.querySelector('.envVarUploadBtn');
-      
-      if (uploadBtn && fileInput) {
-        uploadBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          fileInput.click();
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading...';
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            fetch('/api/environment/upload', {
-              method: 'POST',
-              body: formData
-            }).then(res => res.json()).then(data => {
-              addChatMessage('Environment variables uploaded successfully!', false);
-            }).catch(err => {
-              console.error('Upload failed:', err);
-              addChatMessage('Failed to upload environment variables', false);
-            }).finally(() => {
-              uploadBtn.disabled = false;
-              uploadBtn.textContent = 'Choose CSV File';
-            });
-          }
-        });
-      }
-      
-      return true;
-    }
 
     function downloadJsonFile(content, filename) {
       const blob = new Blob([content], { type: 'application/json' });
@@ -1335,12 +1272,12 @@
             <div class="text-xs text-slate-500 mt-1 break-all">${escapeHtml(metadata.filePath)}</div>
           </div>
           <div class="flex gap-2 mt-3">
-            <button class="downloadJsonBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition" style="cursor: pointer; user-select: none;">Download JSON</button>
+            <button class="downloadJsonBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition">Download JSON</button>
           </div>
           <details class="rounded-xl border border-white/10 bg-black/20" open>
-            <summary class="cursor-pointer px-4 py-3 text-slate-300" style="user-select: none;">View JSON payload</summary>
+            <summary class="cursor-pointer px-4 py-3 text-slate-300 select-none">View JSON payload</summary>
             <div class="border-t border-white/10 px-4 py-4">
-              <pre class="max-h-[28rem] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-200 hide-scrollbar" style="user-select: text; -webkit-user-select: text;">${escapeHtml(content)}</pre>
+              <pre class="max-h-[28rem] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-200 hide-scrollbar">${escapeHtml(content)}</pre>
             </div>
           </details>
         </div>
@@ -1349,9 +1286,7 @@
       
       const downloadBtn = bubbleEl.querySelector('.downloadJsonBtn');
       if (downloadBtn) {
-        downloadBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        downloadBtn.addEventListener('click', () => {
           downloadJsonFile(content, metadata.fileName || 'data.json');
         });
       }
@@ -1359,14 +1294,87 @@
       return true;
     }
 
-    function addChatMessage(text, isUser, suggestions = null) {
+    function renderEnvironmentVariablesMessage(text, messageEl, bubbleEl) {
+      const envMarker = '__EQUINOX_ENV_UPLOAD__';
+      if (!text.includes(envMarker)) {
+        return false;
+      }
+
+      bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-4 w-full max-w-4xl text-sm';
+      bubbleEl.innerHTML = `
+        <div class="space-y-3">
+          <div class="text-slate-100 font-medium">Update Environment Variables</div>
+          <div class="text-sm text-slate-300 mt-2">Upload a CSV file with environment variables to update. Format: KEY,VALUE on each line.</div>
+          <div class="mt-4">
+            <input type="file" class="envFileInput block w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600" accept=".csv" />
+          </div>
+          <button class="envUploadBtn mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Upload Variables</button>
+          <div class="envStatus text-xs text-slate-400 mt-2"></div>
+        </div>
+      `;
+      messageEl.appendChild(bubbleEl);
+      
+      // Find elements scoped to this bubble (not global getElementById)
+      const uploadBtn = bubbleEl.querySelector('.envUploadBtn');
+      const fileInput = bubbleEl.querySelector('.envFileInput');
+      const statusDiv = bubbleEl.querySelector('.envStatus');
+      
+      uploadBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          statusDiv.textContent = 'Please select a file';
+          statusDiv.className = 'text-xs text-red-400 mt-2';
+          return;
+        }
+        
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+        statusDiv.textContent = 'Processing...';
+        statusDiv.className = 'text-xs text-slate-400 mt-2';
+        
+        try {
+          const formData = new FormData();
+          formData.append('csvFile', file);
+          
+          const response = await fetch(`${API_BASE}/chat/upload-env-variables`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Upload failed');
+          }
+          
+          statusDiv.textContent = `Successfully updated ${data.variablesSet || 0} environment variable(s)`;
+          statusDiv.className = 'text-xs text-green-400 mt-2';
+          uploadBtn.textContent = 'Upload Complete';
+        } catch (error) {
+          statusDiv.textContent = `Error: ${error.message}`;
+          statusDiv.className = 'text-xs text-red-400 mt-2';
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'Upload Variables';
+        }
+      });
+      
+      return true;
+    }
+
+    function addChatMessage(text, isUser) {
       const messageEl = document.createElement('div');
       messageEl.className = isUser ? 'text-right' : 'text-left';
       
       const bubbleEl = document.createElement('div');
       bubbleEl.className = isUser
-        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-xs text-sm'
-        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-xs text-sm';
+        ? 'inline-block bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap'
+        : 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-2 max-w-2xl text-sm whitespace-pre-wrap';
+
+      if (!isUser && renderEnvironmentVariablesMessage(text, messageEl, bubbleEl)) {
+        chatMessages.appendChild(messageEl);
+        chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+        return;
+      }
 
       if (!isUser && renderFileContentMessage(text, messageEl, bubbleEl)) {
         chatMessages.appendChild(messageEl);
@@ -1374,62 +1382,15 @@
         return;
       }
       
-      if (!isUser && renderEnvironmentVariablesMessage(text, messageEl, bubbleEl)) {
-        chatMessages.appendChild(messageEl);
-        chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
-        return;
-      }
+      const escapedText = escapeHtml(text);
+      const htmlText = escapedText.replace(/\n/g, '<br>');
+      bubbleEl.innerHTML = htmlText;
       
-      bubbleEl.textContent = text;
       messageEl.appendChild(bubbleEl);
       chatMessages.appendChild(messageEl);
-
-      // Render suggestion buttons if provided
-      if (!isUser && suggestions && suggestions.length > 0) {
-        renderSuggestionButtons(suggestions);
-      }
       
       // Auto-scroll to bottom
       chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
-    }
-
-    function renderSuggestionButtons(suggestions) {
-      const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'mt-4 flex flex-wrap gap-2';
-      buttonContainer.style.pointerEvents = 'auto';
-      buttonContainer.style.userSelect = 'none';
-      
-      suggestions.forEach((suggestion) => {
-        const btn = document.createElement('button');
-        btn.className = 'secondary-button rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition';
-        btn.style.cursor = 'pointer';
-        btn.style.userSelect = 'none';
-        btn.style.pointerEvents = 'auto';
-        btn.textContent = suggestion.label;
-        btn.type = 'button';
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('Button clicked:', suggestion.action);
-          
-          // Handle special file actions like get_latest_file_meter
-          if (suggestion.action && suggestion.action.startsWith('get_latest_file_')) {
-            const dir = suggestion.action.replace('get_latest_file_', '');
-            chatInput.value = `show me latest /${dir}`;
-          } else if (suggestion.action) {
-            chatInput.value = suggestion.action;
-          } else {
-            chatInput.value = suggestion.label;
-          }
-          
-          sendChatMessage();
-        });
-        buttonContainer.appendChild(btn);
-      });
-      
-      chatMessages.appendChild(buttonContainer);
-      chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
-      console.log('Rendered', suggestions.length, 'suggestion buttons');
     }
 
     async function sendChatMessage() {
@@ -1464,13 +1425,13 @@
         }
         
         const data = await response.json();
-        addChatMessage(data.answer || 'Unable to process question', false, data.suggestions);
+        addChatMessage(data.answer || 'Unable to process question', false);
         chatHistorySession.push({ question, answer: data.answer });
       } catch (error) {
         console.error('Chat error:', error);
         const loadingEl = document.getElementById('chatLoading');
         if (loadingEl) loadingEl.remove();
-        addChatMessage('⚠ Unable to process question. Try again.', false);
+        addChatMessage('[WARN] Unable to process question. Try again.', false);
       } finally {
         chatLoading = false;
         chatSendBtn.disabled = false;
@@ -1479,45 +1440,31 @@
     }
 
     function detectAndInitializeMode() {
-      // Check if device is in monitor mode by querying the server
-      fetch('/api/status/mode')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data && data.isMonitor) {
-            // Device is in monitor mode, show chat interface
-            isMonitorMode = true;
-            setView('chatView');
-            initializeChatMode();
-          } else {
-            // Device is in config mode, run location detection
-            runDetection();
+      fetch(`${API_BASE}/status/mode`)
+        .then(async res => {
+          if (!res.ok) {
+            throw new Error('Mode check failed');
           }
+          return res.json();
         })
-        .catch(() => runDetection());
-    }
-
-    async function checkDeploymentStatus() {
-      try {
-        const response = await fetch(`${API_BASE}/deployment/status`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.state === 'completed') {
-            // Device is configured, show chat mode
+        .then(data => {
+          if (data.isMonitor) {
             isMonitorMode = true;
             setView('chatView');
             initializeChatMode();
             return;
           }
-        }
-      } catch (error) {
-        console.warn('Could not check deployment status');
-      }
-      // Fall back to configuration mode
-      runDetection();
+
+          runDetection();
+        })
+        .catch((error) => {
+          console.warn('Could not check mode status:', error);
+          runDetection();
+        });
     }
 
     function initializeChatMode() {
-      addChatMessage('System monitoring active. How can I help?', false);
+      addChatMessage('Equinox Monitor is active. What do you want to inspect?', false);
       chatInput.focus();
     }
 
@@ -1739,6 +1686,15 @@
         }
 
         deploySummaryEl.textContent = `Prepared ${services.length} service${services.length === 1 ? '' : 's'} for ${fleetName}. Deployment ID: ${deployData.deploymentId}`;
+        
+        // Deployment mode is set on server before EC2 runs
+        // Just inform user to wait for deployment to complete
+        deploySummaryEl.textContent = 'Deployment initiated. Services will be deployed and Equinox will switch to monitoring mode automatically. Please refresh the page in a moment.';
+        
+        // Set a timeout to suggest refresh after 5 seconds
+        setTimeout(() => {
+          deploySummaryEl.textContent = 'Ready to refresh. Click the refresh button or wait for automatic detection.';
+        }, 5000);
       } catch (error) {
         errorTextEl.textContent = `Deployment failed: ${error.message}`;
         setView('errorView');

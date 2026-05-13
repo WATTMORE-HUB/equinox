@@ -172,38 +172,19 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
   }
 
   // For file requests with directory specified
-  if (intent === 'get_latest_file') {
-    if (intentResult.entities.directory) {
-      const dir = intentResult.entities.directory;
-      const answer = await llmClient.query(`show me latest /${dir}`);
-      conversationContext.set(sessionKey, {
-        lastIntent: intent,
-        priorResponses: [answer],
-        expiresAt: Date.now() + 10 * 60 * 1000
-      });
-      return res.json({ answer });
-    } else {
-      // No directory specified - ask for it
-      return res.json({
-        answer: 'Which data would you like to see? (tracker, meter, inverter, weather, recloser)'
-      });
-    }
+  if (intent === 'get_latest_file' && intentResult.entities.directory) {
+    const dir = intentResult.entities.directory;
+    const answer = await llmClient.query(`show me latest /${dir}`);
+    conversationContext.set(sessionKey, {
+      lastIntent: intent,
+      priorResponses: [answer],
+      expiresAt: Date.now() + 10 * 60 * 1000
+    });
+    return res.json({ answer });
   }
 
-  // Route other intents through llmClient with keyword-rich questions
-  const intentToQuestion = {
-    system_health: 'how is my system',
-    list_containers: 'what containers are running',
-    check_errors: 'show me errors',
-    check_warnings: 'show me warnings',
-    check_memory: 'how much memory',
-    check_cpu: 'cpu usage',
-    redeploy: 'redeploy',
-    environment_variables: 'environment variables'
-  };
-  
-  const queryQuestion = intentToQuestion[intent] || trimmedQuestion;
-  const answer = await llmClient.query(queryQuestion);
+  // Route other intents through llmClient
+  const answer = await llmClient.query(trimmedQuestion);
   conversationContext.set(sessionKey, {
     lastIntent: intent,
     priorResponses: [answer],

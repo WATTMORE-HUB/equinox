@@ -319,8 +319,7 @@ function parseEntities(question, intent) {
   if (intent === 'get_latest_file') {
     const dirs = ['tracker', 'meter', 'inverter', 'weather', 'recloser'];
     for (const dir of dirs) {
-      // Match: /meter, meter, latest meter, etc.
-      if (lower.includes(`/${dir}`) || lower.includes(` ${dir}`) || lower.endsWith(dir) || lower.includes(`latest ${dir}`)) {
+      if (lower.includes(`/${dir}`) || lower.includes(` ${dir}`) || lower.endsWith(dir)) {
         entities.directory = dir;
         break;
       }
