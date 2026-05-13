@@ -77,6 +77,7 @@ const INTENTS = {
       'what containers are running',
       'list running containers',
       'list containers',
+      'list_containers',
       'running services',
       'active containers',
       'what services',
@@ -176,6 +177,7 @@ const INTENTS = {
       'data reaching',
       'data getting to',
       'check data',
+      'check_data_flow',
       'is data uploaded',
       'data flow',
       'cloud upload',
@@ -183,6 +185,7 @@ const INTENTS = {
       'is data going up',
       'is data making it',
       'check if data',
+      'check data uploads',
       'data freshness',
       'when was data',
       'last data'
