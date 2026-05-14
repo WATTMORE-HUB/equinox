@@ -27,7 +27,7 @@ logging.basicConfig(
 MONITORING_CACHE_PATH = "/collect_data/monitoring_cache.json"
 MONITORING_CONFIG_PATH = "/collect_data/monitoring_config.json"
 POLLING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "300"))  # 5 minutes default
-SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "600"))  # 10 minutes default
+SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "60"))  # 1 minute default
 LOG_RETENTION_DAYS = 7
 
 # AWS IoT Core configuration (mirrors combine/heartbeat pattern)
@@ -125,8 +125,8 @@ class MonitoringService:
         system_metrics = summary.get("system_metrics", {})
         
         message = {
-            "siteId": os.getenv("SITE"),
-            "deviceId": os.getenv("EDGE_ID"),
+            "siteId": os.getenv("SITE_ID"),
+            "deviceId": os.getenv("BALENA_DEVICE_UUID"),
             "edgeId": os.getenv("BALENA_DEVICE_UUID"),
             "reportType": report_type,
             "reportedAt": int(datetime.now().timestamp() * 1000),
