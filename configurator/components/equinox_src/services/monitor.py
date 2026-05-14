@@ -173,7 +173,7 @@ class MonitoringService:
             logger.debug("Connected to AWS IoT Core")
             
             message = self._build_iot_message(summary, severity, report_type)
-            topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
+            topic = f"{IOT_TOPIC}/{os.getenv('EDGE_ID')}"
             
             # Publish
             self.mqtt_connection.publish(

@@ -27,7 +27,7 @@ logging.basicConfig(
 MONITORING_CACHE_PATH = "/collect_data/monitoring_cache.json"
 MONITORING_CONFIG_PATH = "/collect_data/monitoring_config.json"
 POLLING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "300"))  # 5 minutes default
-SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "600"))  # 10 minutes default
+SYSTEM_REPORT_INTERVAL = int(os.getenv("SYSTEM_REPORT_INTERVAL", "60"))  # 1 minute default
 LOG_RETENTION_DAYS = 7
 
 # AWS IoT Core configuration (mirrors combine/heartbeat pattern)
@@ -172,7 +172,7 @@ class MonitoringService:
             connect_future.result(timeout=15)
             
             message = self._build_iot_message(summary, severity, report_type)
-            topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
+            topic = f"{IOT_TOPIC}/{os.getenv('EDGE_ID')}"
             
             # Publish with 15s timeout
             self.mqtt_connection.publish(

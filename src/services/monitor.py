@@ -40,9 +40,7 @@ KEY = os.getenv("KEY")
 CA_1_NAME = os.getenv("CA_1_NAME")
 CA_1 = os.getenv("CA_1")
 IOT_PUBLISH_ENABLED = os.getenv("IOT_PUBLISH_ENABLED", "false").lower() == "true"
-SITE_ID = os.getenv("SITE_ID")
-EDGE_ID = os.getenv("EDGE_ID")
-IOT_TOPIC_BASE = os.getenv("IOT_TOPIC", "operate/device_reports")
+IOT_TOPIC = os.getenv("IOT_TOPIC", "operate/device_reports")
 
 # Ensure collect_data directory exists
 Path("/collect_data").mkdir(parents=True, exist_ok=True)
@@ -127,9 +125,9 @@ class MonitoringService:
         system_metrics = summary.get("system_metrics", {})
         
         message = {
-            "siteId": SITE_ID,
-            "deviceId": EDGE_ID,
-            "edgeId": EDGE_ID,
+            "siteId": os.getenv("SITE"),
+            "deviceId": os.getenv("EDGE_ID"),
+            "edgeId": os.getenv("BALENA_DEVICE_UUID"),
             "reportType": report_type,
             "reportedAt": int(datetime.now().timestamp() * 1000),
             "severity": severity,
@@ -175,7 +173,7 @@ class MonitoringService:
             logger.debug("Connected to AWS IoT Core")
             
             message = self._build_iot_message(summary, severity, report_type)
-            topic = f"{IOT_TOPIC_BASE}/{SITE_ID}"
+            topic = f"{IOT_TOPIC}/{os.getenv('EDGE_ID')}"
             
             # Publish
             self.mqtt_connection.publish(
