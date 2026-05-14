@@ -167,35 +167,26 @@ class MonitoringService:
             return False
         
         try:
-            # Check if connection is already open before connecting
-            is_connected = False
-            try:
-                # Try to check connection state
-                is_connected = hasattr(self.mqtt_connection, 'is_connected') and self.mqtt_connection.is_connected()
-            except Exception as check_err:
-                logger.debug(f"Could not check connection state: {check_err}")
-                is_connected = False
-            
-            # Only connect if not already connected
-            if not is_connected:
-                try:
-                    connect_future = self.mqtt_connection.connect()
-                    connect_future.result(timeout=15)
-                    logger.debug("Connected to AWS IoT Core")
-                except Exception as connect_err:
-                    logger.error(f"Failed to connect to AWS IoT Core: {connect_err}")
-                    raise
+            # Connect
+            connect_future = self.mqtt_connection.connect()
+            connect_future.result(timeout=15)
+            logger.debug("Connected to AWS IoT Core")
             
             message = self._build_iot_message(summary, severity, report_type)
             topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
             
-            # Publish with 15s timeout
+            # Publish
             self.mqtt_connection.publish(
                 topic=topic,
                 payload=json.dumps(message),
                 qos=mqtt.QoS.AT_LEAST_ONCE
             )
             logger.info(f"Published {report_type} to '{topic}': {len(message)} bytes")
+            
+            # Disconnect
+            disconnect_future = self.mqtt_connection.disconnect()
+            disconnect_future.result(timeout=5)
+            
             return True
         except Exception as e:
             logger.error(f"Failed to publish to AWS IoT Core: {e}")
