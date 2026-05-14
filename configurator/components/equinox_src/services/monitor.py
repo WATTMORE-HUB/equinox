@@ -167,9 +167,24 @@ class MonitoringService:
             return False
         
         try:
-            # 15s timeout for connection
-            connect_future = self.mqtt_connection.connect()
-            connect_future.result(timeout=15)
+            # Check if connection is already open before connecting
+            is_connected = False
+            try:
+                # Try to check connection state
+                is_connected = hasattr(self.mqtt_connection, 'is_connected') and self.mqtt_connection.is_connected()
+            except Exception as check_err:
+                logger.debug(f"Could not check connection state: {check_err}")
+                is_connected = False
+            
+            # Only connect if not already connected
+            if not is_connected:
+                try:
+                    connect_future = self.mqtt_connection.connect()
+                    connect_future.result(timeout=15)
+                    logger.debug("Connected to AWS IoT Core")
+                except Exception as connect_err:
+                    logger.error(f"Failed to connect to AWS IoT Core: {connect_err}")
+                    raise
             
             message = self._build_iot_message(summary, severity, report_type)
             topic = f"{IOT_TOPIC}/{os.getenv('BALENA_DEVICE_UUID', THINGNAME)}"
@@ -181,10 +196,6 @@ class MonitoringService:
                 qos=mqtt.QoS.AT_LEAST_ONCE
             )
             logger.info(f"Published {report_type} to '{topic}': {len(message)} bytes")
-            
-            # Disconnect gracefully
-            disconnect_future = self.mqtt_connection.disconnect()
-            disconnect_future.result(timeout=5)
             return True
         except Exception as e:
             logger.error(f"Failed to publish to AWS IoT Core: {e}")
@@ -210,6 +221,7 @@ class MonitoringService:
             else:
                 severity = "healthy"
             
+            logger.info(f"Publishing system report: {severity} severity")
             return self._publish_to_iot(summary, severity, report_type="health_report")
         except Exception as e:
             logger.error(f"Error publishing system report: {e}")
@@ -671,11 +683,6 @@ class MonitoringService:
                    f"{summary['container_count']} containers, "
                    f"{len(summary['errors_recent'])} errors")
         
-        # Publish to AWS IoT Core if critical findings
-        if IOT_PUBLISH_ENABLED and (summary['errors_recent'] or summary['container_count'] == 0):
-            severity = "critical" if summary['errors_recent'] or summary['container_count'] == 0 else "warning"
-            self._publish_to_iot(summary, severity)
-        
         return summary
     
     def check_pending_on_demand_report(self):
@@ -689,8 +696,16 @@ class MonitoringService:
                 # Publish the on-demand report
                 if self.mqtt_connection and IOT_PUBLISH_ENABLED:
                     try:
-                        connect_future = self.mqtt_connection.connect()
-                        connect_future.result(timeout=15)
+                        # Check if already connected
+                        is_connected = False
+                        try:
+                            is_connected = hasattr(self.mqtt_connection, 'is_connected') and self.mqtt_connection.is_connected()
+                        except:
+                            is_connected = False
+                        
+                        if not is_connected:
+                            connect_future = self.mqtt_connection.connect()
+                            connect_future.result(timeout=15)
                         
                         self.mqtt_connection.publish(
                             topic=pending['topic'],
@@ -698,9 +713,6 @@ class MonitoringService:
                             qos=mqtt.QoS.AT_LEAST_ONCE
                         )
                         logger.info(f"Published on-demand report to {pending['topic']}")
-                        
-                        disconnect_future = self.mqtt_connection.disconnect()
-                        disconnect_future.result(timeout=5)
                     except Exception as e:
                         logger.error(f"Failed to publish on-demand report: {e}")
                 

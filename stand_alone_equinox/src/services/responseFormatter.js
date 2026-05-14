@@ -40,13 +40,8 @@ function buildCapabilitiesMenu() {
     { label: 'Check Warnings', action: 'check_warnings', category: 'Status' },
     { label: 'Check Memory Usage', action: 'check_memory', category: 'Resources' },
     { label: 'Check CPU Usage', action: 'check_cpu', category: 'Resources' },
-    { label: 'View Latest /tracker', action: 'get_latest_file_tracker', category: 'Data' },
-    { label: 'View Latest /meter', action: 'get_latest_file_meter', category: 'Data' },
-    { label: 'View Latest /inverter', action: 'get_latest_file_inverter', category: 'Data' },
-    { label: 'View Latest /weather', action: 'get_latest_file_weather', category: 'Data' },
-    { label: 'View Latest /recloser', action: 'get_latest_file_recloser', category: 'Data' },
+    { label: 'View Latest File', action: 'get_latest_file', category: 'Data' },
     { label: 'Check Data Uploads', action: 'check_data_flow', category: 'Data' },
-    { label: 'Redeploy', action: 'redeploy', category: 'Deployment' },
     { label: 'Update Environment Variables', action: 'environment_variables', category: 'Deployment' }
   ];
 

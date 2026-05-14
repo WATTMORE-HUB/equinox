@@ -145,6 +145,17 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     return res.json(response);
   }
 
+  // For system health, return full system report
+  if (intent === 'system_health') {
+    const answer = await llmClient.query('how is my system');
+    conversationContext.set(sessionKey, {
+      lastIntent: intent,
+      priorResponses: [answer],
+      expiresAt: Date.now() + 10 * 60 * 1000
+    });
+    return res.json({ answer });
+  }
+
   // For data flow, ask for timespan if not provided in entities
   if (intent === 'check_data_flow') {
     if (intentResult.entities.timespan) {

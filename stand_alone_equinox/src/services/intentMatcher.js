@@ -55,6 +55,7 @@ const INTENTS = {
   system_health: {
     name: 'system_health',
     aliases: [
+      'system_health',
       'how is my system',
       'system doing',
       'overall health',
