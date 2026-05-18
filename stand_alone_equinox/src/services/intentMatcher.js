@@ -251,6 +251,23 @@ const INTENTS = {
       'what do you do',
       'what can we do'
     ]
+  },
+  modbus_test: {
+    name: 'modbus_test',
+    aliases: [
+      'test register',
+      'test modbus',
+      'modbus test',
+      'read register',
+      'query register',
+      'test hex register',
+      'test modbus register',
+      'check register',
+      'poll register',
+      'read modbus',
+      'modbus read',
+      'modbus query'
+    ]
   }
 };
 
@@ -328,6 +345,49 @@ function parseEntities(question, intent) {
         entities.directory = dir;
         break;
       }
+    }
+  }
+
+  // Parse modbus test parameters
+  if (intent === 'modbus_test') {
+    // Extract serial port: /dev/ttyUSB0, ttyUSB0, etc.
+    const portMatch = question.match(/(?:\/dev\/)?tty\S+|(?:\/dev\/)?COM\d+/i);
+    if (portMatch) {
+      entities.port = portMatch[0].startsWith('/dev/') ? portMatch[0] : `/dev/${portMatch[0]}`;
+    }
+
+    // Extract register address (hex: 0x022E or decimal: 546)
+    const registerMatch = question.match(/0x[0-9a-fA-F]+|\breg(?:ister)?\s+(\d+|0x[0-9a-fA-F]+)/i);
+    if (registerMatch) {
+      entities.register = registerMatch[0].includes('x') ? registerMatch[0] : registerMatch[1] || registerMatch[0];
+    }
+
+    // Extract slave ID: "slave 1", "id 1", etc.
+    const slaveMatch = question.match(/(?:slave|id)\s+(\d+)/i);
+    if (slaveMatch) {
+      entities.slaveId = parseInt(slaveMatch[1], 10);
+    }
+
+    // Extract baud rate: "9600", "baud 9600", etc.
+    const baudMatch = question.match(/(?:baud\s+)?(\d{4,6})/i);
+    if (baudMatch) {
+      entities.baudRate = parseInt(baudMatch[1], 10);
+    }
+
+    // Extract data type: "float", "int", "long", "16-bit", "32-bit"
+    if (lower.includes('float') || lower.includes('32-bit float')) {
+      entities.dataType = 'float';
+    } else if (lower.includes('long') || lower.includes('32-bit int')) {
+      entities.dataType = 'long';
+    } else if (lower.includes('int') || lower.includes('16-bit')) {
+      entities.dataType = 'int';
+    }
+
+    // Extract signed vs unsigned
+    if (lower.includes('signed')) {
+      entities.signed = 1;
+    } else if (lower.includes('unsigned')) {
+      entities.signed = 0;
     }
   }
 

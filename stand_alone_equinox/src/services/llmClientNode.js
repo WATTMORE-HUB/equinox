@@ -535,6 +535,69 @@ function isGuideQuestion(question) {
   return guideKeywords.some(keyword => lower.includes(keyword));
 }
 
+function isModbusTestQuestion(question) {
+  const lower = question.toLowerCase();
+  const modbusKeywords = [
+    'test register',
+    'test modbus',
+    'modbus test',
+    'read register',
+    'query register',
+    'check register',
+    'poll register'
+  ];
+  return modbusKeywords.some(keyword => lower.includes(keyword));
+}
+
+function parseModbusParameters(question) {
+  const entities = {};
+  const lower = question.toLowerCase();
+
+  // Extract serial port: /dev/ttyUSB0, ttyUSB0, etc.
+  const portMatch = question.match(/(?:\/dev\/)?tty\S+|(?:\/dev\/)?COM\d+/i);
+  if (portMatch) {
+    entities.port = portMatch[0].startsWith('/dev/') ? portMatch[0] : `/dev/${portMatch[0]}`;
+  }
+
+  // Extract register address (hex: 0x022E or decimal: 546)
+  const registerMatch = question.match(/0x[0-9a-fA-F]+|\breg(?:ister)?\s+(\d+|0x[0-9a-fA-F]+)/i);
+  if (registerMatch) {
+    entities.register = registerMatch[0].includes('x') ? registerMatch[0] : registerMatch[1] || registerMatch[0];
+  }
+
+  // Extract slave ID: "slave 1", "id 1", etc.
+  const slaveMatch = question.match(/(?:slave|id)\s+(\d+)/i);
+  if (slaveMatch) {
+    entities.slaveId = parseInt(slaveMatch[1], 10);
+  }
+
+  // Extract baud rate: "9600", "baud 9600", etc.
+  const baudMatch = question.match(/(?:baud\s+)?(\d{4,6})/i);
+  if (baudMatch) {
+    entities.baudRate = parseInt(baudMatch[1], 10);
+  }
+
+  return entities;
+}
+
+function buildModbusTestResponse(question) {
+  const params = parseModbusParameters(question);
+  
+  // Check for missing required parameters
+  const missing = [];
+  if (!params.port) missing.push('serial port (e.g., /dev/ttyUSB0)');
+  if (!params.register) missing.push('register address (e.g., 0x022E or 546)');
+  if (!params.slaveId) missing.push('slave ID (e.g., 1)');
+  if (!params.baudRate) missing.push('baud rate (e.g., 9600)');
+
+  if (missing.length > 0) {
+    return `To test a Modbus register, I need the following information:\n\n${missing.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n\nExample: "test hex register 0x022E at /dev/ttyUSB0, slave ID 1, baud 9600"`;
+  }
+
+  // Return marker for chat.js to handle actual API call
+  return `__EQUINOX_MODBUS_TEST__${JSON.stringify(params)}`;
+}
+
 async function query(question) {
   try {
     console.log(`[LLM Client] query() called with: "${question}"`);
@@ -570,6 +633,11 @@ async function query(question) {
     if (isGuideQuestion(question)) {
       console.log('[LLM Client] Guide request detected');
       return buildGuideResponse();
+    }
+
+    if (isModbusTestQuestion(question)) {
+      console.log('[LLM Client] Modbus test request detected');
+      return buildModbusTestResponse(question);
     }
 
     if (isSimpleQuestion(question)) {
