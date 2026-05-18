@@ -261,6 +261,7 @@ const INTENTS = {
       'read register',
       'query register',
       'test hex register',
+      'test decimal register',
       'test modbus register',
       'check register',
       'poll register',
@@ -357,9 +358,17 @@ function parseEntities(question, intent) {
     }
 
     // Extract register address (hex: 0x022E or decimal: 546)
-    const registerMatch = question.match(/0x[0-9a-fA-F]+|\breg(?:ister)?\s+(\d+|0x[0-9a-fA-F]+)/i);
-    if (registerMatch) {
-      entities.register = registerMatch[0].includes('x') ? registerMatch[0] : registerMatch[1] || registerMatch[0];
+    // Check for hex first, then decimal
+    let hexMatch = question.match(/0x[0-9a-fA-F]+/i);
+    if (hexMatch) {
+      entities.register = hexMatch[0];
+    } else {
+      // Try to match decimal: "register 546" or "100" after register/decimal keyword
+      const registerMatch = question.match(/(?:register|decimal)\s+(\d+)/i) || 
+                            question.match(/\b(\d+)\b(?=.*(?:baud|slave|at|on|\/dev))/);
+      if (registerMatch && registerMatch[1]) {
+        entities.register = registerMatch[1];
+      }
     }
 
     // Extract slave ID: "slave 1", "id 1", etc.
