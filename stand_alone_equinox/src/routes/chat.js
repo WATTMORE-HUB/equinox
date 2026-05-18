@@ -201,6 +201,84 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     }
   }
 
+  // Handle modbus test with special marker
+  if (intent === 'modbus_test') {
+    if (!intentResult.entities.port || !intentResult.entities.register || !intentResult.entities.slaveId || !intentResult.entities.baudRate) {
+      // Missing parameters - return validation message from llmClient
+      const answer = await llmClient.query(trimmedQuestion);
+      conversationContext.set(sessionKey, {
+        lastIntent: intent,
+        priorResponses: [answer],
+        expiresAt: Date.now() + 10 * 60 * 1000
+      });
+      return res.json({ answer });
+    }
+
+    // All parameters present - call modbus test API
+    try {
+      const fetch = require('node-fetch');
+      const modbusParams = {
+        port: intentResult.entities.port,
+        slaveId: intentResult.entities.slaveId,
+        baudRate: intentResult.entities.baudRate,
+        register: intentResult.entities.register,
+        signed: intentResult.entities.signed || 0,
+        dataType: intentResult.entities.dataType
+      };
+
+      console.log('[Chat API] Calling modbus test endpoint with:', modbusParams);
+      const modbusResponse = await fetch('http://localhost/api/modbus/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(modbusParams),
+        timeout: 30000
+      });
+
+      if (!modbusResponse.ok) {
+        const errorData = await modbusResponse.json();
+        const errorMsg = errorData.error || `HTTP ${modbusResponse.status}`;
+        console.error('[Chat API] Modbus test failed:', errorMsg);
+        return res.json({ answer: `Modbus test failed: ${errorMsg}` });
+      }
+
+      const result = await modbusResponse.json();
+      if (!result.success) {
+        return res.json({ answer: `Modbus test failed: ${result.error || 'Unknown error'}` });
+      }
+
+      // Format results for display
+      let answer = `✅ **Modbus Test Results**\n\n`;
+      answer += `**Test Configuration:**\n`;
+      answer += `- Serial Port: ${modbusParams.port}\n`;
+      answer += `- Slave ID: ${modbusParams.slaveId}\n`;
+      answer += `- Baud Rate: ${modbusParams.baudRate}\n`;
+      answer += `- Register: ${result.metadata.register} (0x${result.metadata.register.toString(16).toUpperCase().padStart(4, '0')})\n\n`;
+      
+      if (result.data) {
+        answer += `**Register Values:**\n`;
+        answer += `- 16-bit Integer: ${result.data['16 bit int data']}\n`;
+        answer += `- 32-bit Float: ${result.data['32 bit float data']}\n`;
+        answer += `- 32-bit Integer: ${result.data['32 bit int data']}\n\n`;
+        answer += `**Raw Output:**\n\`\`\`\n${result.output}\n\`\`\`\n\n`;
+      }
+      
+      if (result.resultFile) {
+        answer += `📥 Full results saved to: ${result.resultFile}\n`;
+      }
+
+      conversationContext.set(sessionKey, {
+        lastIntent: intent,
+        priorResponses: [answer],
+        expiresAt: Date.now() + 10 * 60 * 1000
+      });
+      
+      return res.json({ answer });
+    } catch (error) {
+      console.error('[Chat API] Error calling modbus test:', error.message);
+      return res.json({ answer: `Error testing modbus register: ${error.message}` });
+    }
+  }
+
   // Route other intents through llmClient with keyword-rich questions
   const intentToQuestion = {
     system_health: 'how is my system',
@@ -210,6 +288,7 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     check_memory: 'how much memory',
     check_cpu: 'cpu usage',
     check_data_flow: 'check data uploads',
+    modbus_test: 'test register',
     redeploy: 'redeploy',
     environment_variables: 'environment variables'
   };
