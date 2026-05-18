@@ -55,6 +55,7 @@ const INTENTS = {
   system_health: {
     name: 'system_health',
     aliases: [
+      'system_health',
       'how is my system',
       'system doing',
       'overall health',
@@ -77,6 +78,7 @@ const INTENTS = {
       'what containers are running',
       'list running containers',
       'list containers',
+      'list_containers',
       'running services',
       'active containers',
       'what services',
@@ -176,6 +178,7 @@ const INTENTS = {
       'data reaching',
       'data getting to',
       'check data',
+      'check_data_flow',
       'is data uploaded',
       'data flow',
       'cloud upload',
@@ -183,6 +186,7 @@ const INTENTS = {
       'is data going up',
       'is data making it',
       'check if data',
+      'check data uploads',
       'data freshness',
       'when was data',
       'last data'
@@ -246,6 +250,24 @@ const INTENTS = {
       'available commands',
       'what do you do',
       'what can we do'
+    ]
+  },
+  modbus_test: {
+    name: 'modbus_test',
+    aliases: [
+      'test register',
+      'test modbus',
+      'modbus test',
+      'read register',
+      'query register',
+      'test hex register',
+      'test decimal register',
+      'test modbus register',
+      'check register',
+      'poll register',
+      'read modbus',
+      'modbus read',
+      'modbus query'
     ]
   }
 };
@@ -319,10 +341,62 @@ function parseEntities(question, intent) {
   if (intent === 'get_latest_file') {
     const dirs = ['tracker', 'meter', 'inverter', 'weather', 'recloser'];
     for (const dir of dirs) {
-      if (lower.includes(`/${dir}`) || lower.includes(` ${dir}`) || lower.endsWith(dir)) {
+      // Match: /meter, meter, latest meter, etc.
+      if (lower.includes(`/${dir}`) || lower.includes(` ${dir}`) || lower.endsWith(dir) || lower.includes(`latest ${dir}`)) {
         entities.directory = dir;
         break;
       }
+    }
+  }
+
+  // Parse modbus test parameters
+  if (intent === 'modbus_test') {
+    // Extract serial port: /dev/ttyUSB0, ttyUSB0, etc.
+    const portMatch = question.match(/(?:\/dev\/)?tty\S+|(?:\/dev\/)?COM\d+/i);
+    if (portMatch) {
+      entities.port = portMatch[0].startsWith('/dev/') ? portMatch[0] : `/dev/${portMatch[0]}`;
+    }
+
+    // Extract register address (hex: 0x022E or decimal: 546)
+    // Check for hex first, then decimal
+    let hexMatch = question.match(/0x[0-9a-fA-F]+/i);
+    if (hexMatch) {
+      entities.register = hexMatch[0];
+    } else {
+      // Try to match decimal: "register 546" or "100" after register/decimal keyword
+      const registerMatch = question.match(/(?:register|decimal)\s+(\d+)/i) || 
+                            question.match(/\b(\d+)\b(?=.*(?:baud|slave|at|on|\/dev))/);
+      if (registerMatch && registerMatch[1]) {
+        entities.register = registerMatch[1];
+      }
+    }
+
+    // Extract slave ID: "slave 1", "id 1", etc.
+    const slaveMatch = question.match(/(?:slave|id)\s+(\d+)/i);
+    if (slaveMatch) {
+      entities.slaveId = parseInt(slaveMatch[1], 10);
+    }
+
+    // Extract baud rate: "9600", "baud 9600", etc.
+    const baudMatch = question.match(/(?:baud\s+)?(\d{4,6})/i);
+    if (baudMatch) {
+      entities.baudRate = parseInt(baudMatch[1], 10);
+    }
+
+    // Extract data type: "float", "int", "long", "16-bit", "32-bit"
+    if (lower.includes('float') || lower.includes('32-bit float')) {
+      entities.dataType = 'float';
+    } else if (lower.includes('long') || lower.includes('32-bit int')) {
+      entities.dataType = 'long';
+    } else if (lower.includes('int') || lower.includes('16-bit')) {
+      entities.dataType = 'int';
+    }
+
+    // Extract signed vs unsigned
+    if (lower.includes('signed')) {
+      entities.signed = 1;
+    } else if (lower.includes('unsigned')) {
+      entities.signed = 0;
     }
   }
 
