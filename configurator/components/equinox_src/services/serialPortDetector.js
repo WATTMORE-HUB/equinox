@@ -25,6 +25,10 @@ async function getAvailablePorts() {
         device.startsWith('ttyACM') ||
         device.startsWith('cu.')
       );
+      console.log('[Serial Port Detector] Found devices:', serialDevices);
+      console.log('[Serial Port Detector] All /dev entries:', devices.filter(d => d.startsWith('tty')));
+      console.log('[Serial Port Detector] Looking for ttyUSB/ttyACM entries...');
+      devices.filter(d => d.startsWith('ttyUSB') || d.startsWith('ttyACM')).forEach(d => console.log('  -', d));
       
       serialDevices.forEach(device => {
         const fullPath = path.join(devPath, device);
