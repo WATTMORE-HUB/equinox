@@ -41,15 +41,26 @@ def write_register(register, value):
         # Write the register
         logger.info(f"Writing register {register} with value {value}")
         data = client.write_register(register, value, unit=1)
+        
+        # Log response details
+        logger.info(f"Write response: {data}")
+        logger.info(f"Response type: {type(data)}")
+        logger.info(f"Response attributes: {dir(data)}")
+        
         client.close()
         
         if data.isError():
-            logger.error("Error writing register")
+            logger.error(f"Error writing register: {data}")
             print(f"Write failed: {data}")
             return False
         
-        logger.info("Write successful")
-        print("Write successful")
+        # Check if response indicates success
+        if hasattr(data, 'register'):
+            logger.info(f"Write confirmed - register address: {data.register}")
+            print(f"Write successful")
+        else:
+            logger.info("Write completed")
+            print(f"Write successful")
         return True
     except Exception as e:
         logger.error(f"Write failed: {e}")
