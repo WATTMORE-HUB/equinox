@@ -1,8 +1,8 @@
 const express = require('express');
-const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const logger = require('../utils/logger');
+const { execSync, spawn } = require('child_process');
+const { getAvailablePorts } = require('../services/serialPortDetector');
 
 const router = express.Router();
 
@@ -131,7 +131,7 @@ router.post('/test', async (req, res) => {
       return res.status(400).json({ success: false, error: registerValidation.message });
     }
 
-    logger.info(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
+    console.log(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
     const registerTestPath = path.join(__dirname, '../../register_test.py');
@@ -197,7 +197,7 @@ router.post('/test', async (req, res) => {
               });
             }
           } catch (err) {
-            logger.error(`Failed to parse result file: ${err.message}`);
+            console.error(`Failed to parse result file: ${err.message}`);
           }
         }
 
@@ -213,7 +213,7 @@ router.post('/test', async (req, res) => {
           }
         });
       } else {
-        logger.error(`Modbus test failed: code=${code}, stderr=${stderr}`);
+        console.error(`Modbus test failed: code=${code}, stderr=${stderr}`);
         return res.status(400).json({
           success: false,
           error: `Modbus test failed: ${stderr || 'Unknown error'}`,
@@ -224,7 +224,180 @@ router.post('/test', async (req, res) => {
     });
 
   } catch (err) {
-    logger.error(`Modbus test error: ${err.message}`);
+    console.error(`Modbus test error: ${err.message}`);
+    res.status(500).json({
+      success: false,
+      error: `Internal server error: ${err.message}`
+    });
+  }
+});
+
+/**
+ * GET /api/modbus/ports
+ * Returns list of available serial ports
+ */
+router.get('/ports', async (req, res) => {
+  try {
+    const ports = await getAvailablePorts();
+    res.json({
+      success: true,
+      ports: ports,
+      count: ports.length
+    });
+  } catch (err) {
+    console.error(`Error listing serial ports: ${err.message}`);
+    res.status(500).json({
+      success: false,
+      error: `Failed to list serial ports: ${err.message}`,
+      ports: []
+    });
+  }
+});
+
+/**
+ * POST /api/modbus/test-form
+ * Form submission endpoint for modbus testing
+ * Same parameters as /test endpoint
+ */
+router.post('/test-form', async (req, res) => {
+  // Delegate to /test endpoint logic
+  try {
+    const {
+      port,
+      slaveId,
+      baudRate,
+      register,
+      signed = 0,
+      functionCode = 3,
+      functionCodeBase = 10
+    } = req.body;
+
+    // Validate required parameters
+    if (!port || slaveId === undefined || !baudRate || register === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters: port, slaveId, baudRate, register'
+      });
+    }
+
+    // Validate serial port
+    const portValidation = validateSerialPort(port);
+    if (!portValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: portValidation.message
+      });
+    }
+
+    // Validate other parameters
+    const baudValidation = validateBaudRate(baudRate);
+    if (!baudValidation.valid) {
+      return res.status(400).json({ success: false, error: baudValidation.message });
+    }
+
+    const slaveValidation = validateSlaveId(slaveId);
+    if (!slaveValidation.valid) {
+      return res.status(400).json({ success: false, error: slaveValidation.message });
+    }
+
+    const registerValidation = validateRegister(register);
+    if (!registerValidation.valid) {
+      return res.status(400).json({ success: false, error: registerValidation.message });
+    }
+
+    console.log(`Modbus form test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
+
+    // Prepare environment variables for register_test.py
+    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    
+    // Parse register - support both hex (0x) and decimal
+    let registerValue = parseInt(register);
+    if (typeof register === 'string' && register.startsWith('0x')) {
+      registerValue = parseInt(register, 16);
+    }
+
+    const env = {
+      ...process.env,
+      TEST_USB: port,
+      MODBUS_SLAVE_ID: slaveId.toString(),
+      INVERTER_BAUD_RATE: baudRate.toString(),
+      TEST_REG: registerValue.toString(),
+      TEST_BASE: '10',
+      SIGNED: signed.toString(),
+      INVERTER_FUNCTION_CODE: functionCode.toString(),
+      INVERTER_FUNCTION_CODE_BASE: functionCodeBase.toString()
+    };
+
+    // Spawn register_test.py
+    const python = spawn('python3', [registerTestPath], { env });
+    let stdout = '';
+    let stderr = '';
+
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    python.on('close', (code) => {
+      if (code === 0) {
+        // Find the most recent test result file
+        const testDataDir = '/collect_data/test';
+        if (fs.existsSync(testDataDir)) {
+          try {
+            const files = fs.readdirSync(testDataDir)
+              .filter(f => f.endsWith('.json'))
+              .sort()
+              .reverse();
+            
+            if (files.length > 0) {
+              const resultFile = path.join(testDataDir, files[0]);
+              const resultData = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
+              
+              return res.json({
+                success: true,
+                data: resultData.data,
+                output: stdout,
+                resultFile: resultFile,
+                timestamp: parseInt(files[0].replace('.json', '')),
+                metadata: {
+                  port,
+                  slaveId: parseInt(slaveId),
+                  baudRate: parseInt(baudRate),
+                  register: registerValue
+                }
+              });
+            }
+          } catch (err) {
+            console.error(`Failed to parse result file: ${err.message}`);
+          }
+        }
+
+        return res.json({
+          success: true,
+          output: stdout,
+          metadata: {
+            port,
+            slaveId: parseInt(slaveId),
+            baudRate: parseInt(baudRate),
+            register: registerValue
+          }
+        });
+      } else {
+        console.error(`Modbus form test failed: code=${code}, stderr=${stderr}`);
+        return res.status(400).json({
+          success: false,
+          error: `Modbus test failed: ${stderr || 'Unknown error'}`,
+          output: stdout,
+          code
+        });
+      }
+    });
+
+  } catch (err) {
+    console.error(`Modbus form test error: ${err.message}`);
     res.status(500).json({
       success: false,
       error: `Internal server error: ${err.message}`
