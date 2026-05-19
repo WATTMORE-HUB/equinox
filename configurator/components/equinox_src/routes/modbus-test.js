@@ -134,13 +134,26 @@ router.post('/test', async (req, res) => {
     console.log(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    // Try multiple locations where the script might exist
+    let registerTestPath = null;
+    const possiblePaths = [
+      path.join(__dirname, '../register_test.py'),      // Local dev in src
+      '/app/src/register_test.py',                       // Container src folder
+      path.join(process.cwd(), 'src/register_test.py'), // CWD/src
+      '/home/ec2-user/equinox/src/register_test.py'     // EC2 runner src
+    ];
     
-    // Check if script exists
-    if (!fs.existsSync(registerTestPath)) {
+    for (const possiblePath of possiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        registerTestPath = possiblePath;
+        break;
+      }
+    }
+    
+    if (!registerTestPath) {
       return res.status(400).json({
         success: false,
-        error: `Register test script not found at ${registerTestPath}`
+        error: `Register test script not found in any expected location: ${possiblePaths.join(', ')}`
       });
     }
     
@@ -334,13 +347,26 @@ router.post('/test-form', async (req, res) => {
     console.log(`Modbus form test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    // Try multiple locations where the script might exist
+    let registerTestPath = null;
+    const possiblePaths = [
+      path.join(__dirname, '../register_test.py'),      // Local dev in src
+      '/app/src/register_test.py',                       // Container src folder
+      path.join(process.cwd(), 'src/register_test.py'), // CWD/src
+      '/home/ec2-user/equinox/src/register_test.py'     // EC2 runner src
+    ];
     
-    // Check if script exists
-    if (!fs.existsSync(registerTestPath)) {
+    for (const possiblePath of possiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        registerTestPath = possiblePath;
+        break;
+      }
+    }
+    
+    if (!registerTestPath) {
       return res.status(400).json({
         success: false,
-        error: `Register test script not found at ${registerTestPath}`
+        error: `Register test script not found in any expected location: ${possiblePaths.join(', ')}`
       });
     }
     
