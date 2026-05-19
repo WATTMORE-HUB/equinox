@@ -1367,11 +1367,12 @@
       return true;
     }
 
-    async function renderModbusFormMessage(text, messageEl, bubbleEl) {
+    function renderModbusFormMessage(text, messageEl, bubbleEl) {
       if (!parseModbusFormMessage(text)) {
         return false;
       }
       
+      // Render form immediately
       bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-6 py-6 w-full max-w-2xl text-sm';
       bubbleEl.innerHTML = `
         <div class="space-y-4">
@@ -1426,7 +1427,7 @@
       `;
       messageEl.appendChild(bubbleEl);
       
-      // Load serial ports
+      // Load serial ports asynchronously (don't wait for this)
       const portSelect = bubbleEl.querySelector('.modbusPortSelect');
       const slaveIdInput = bubbleEl.querySelector('.modbusSlaveId');
       const baudRateSelect = bubbleEl.querySelector('.modbusBaudRate');
@@ -1435,31 +1436,33 @@
       const signedCheckbox = bubbleEl.querySelector('.modbusSignedCheckbox');
       const testBtn = bubbleEl.querySelector('.modbusTestBtn');
       
-      // Fetch available ports
-      try {
-        const portsResponse = await fetch(`${API_BASE}/modbus/ports`);
-        if (portsResponse.ok) {
-          const portsData = await portsResponse.json();
-          portSelect.innerHTML = '<option value="">Select a port...</option>';
-          if (portsData.ports && portsData.ports.length > 0) {
-            portsData.ports.forEach(port => {
-              const option = document.createElement('option');
-              option.value = port.path;
-              option.textContent = `${port.path} (${port.type})`;
-              portSelect.appendChild(option);
-            });
-            // Auto-select first port
-            if (portSelect.options.length > 1) {
-              portSelect.selectedIndex = 1;
+      // Fetch available ports asynchronously
+      (async () => {
+        try {
+          const portsResponse = await fetch(`${API_BASE}/modbus/ports`);
+          if (portsResponse.ok) {
+            const portsData = await portsResponse.json();
+            portSelect.innerHTML = '<option value="">Select a port...</option>';
+            if (portsData.ports && portsData.ports.length > 0) {
+              portsData.ports.forEach(port => {
+                const option = document.createElement('option');
+                option.value = port.path;
+                option.textContent = `${port.path} (${port.type})`;
+                portSelect.appendChild(option);
+              });
+              // Auto-select first port
+              if (portSelect.options.length > 1) {
+                portSelect.selectedIndex = 1;
+              }
+            } else {
+              portSelect.innerHTML = '<option value="">No serial ports found</option>';
             }
-          } else {
-            portSelect.innerHTML = '<option value="">No serial ports found</option>';
           }
+        } catch (err) {
+          console.error('Failed to load serial ports:', err);
+          portSelect.innerHTML = '<option value="">Error loading ports</option>';
         }
-      } catch (err) {
-        console.error('Failed to load serial ports:', err);
-        portSelect.innerHTML = '<option value="">Error loading ports</option>';
-      }
+      })()
       
       // Test button handler
       testBtn.addEventListener('click', async (e) => {
