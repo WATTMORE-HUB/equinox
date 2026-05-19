@@ -58,4 +58,4 @@ def write_register(register, value):
 
 
 if __name__ == "__main__":
-    write_register(int(os.getenv("TEST_REG"), int(os.getenv("TEST_BASE"))), int(os.getenv("TEST_VALUE")))
+    write_register(int(os.getenv("TEST_REG"), int(os.getenv("TEST_BASE", "10"))), int(os.getenv("TEST_VALUE")))
