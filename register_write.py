@@ -32,16 +32,29 @@ client = ModbusClient.ModbusSerialClient(
 )
 
 def write_register(register, value):
-        try:
-            data = client.write_register(register, value, unit=1)
-            if data.isError():
-                logger.error("Error writing register")
-                return None
-            logger.info("Write successful")
-            return True
-        except Exception as e:
-            logger.error(f"Write failed: {e}")
+    try:
+        # Connect to device
+        if not client.connect():
+            logger.error("Failed to connect to Modbus device")
+            print("Write failed: Could not connect to device")
             return False
+        
+        # Write the register
+        data = client.write_register(register, value, unit=1)
+        client.close()
+        
+        if data.isError():
+            logger.error("Error writing register")
+            print(f"Write failed: {data}")
+            return False
+        
+        logger.info("Write successful")
+        print("Write successful")
+        return True
+    except Exception as e:
+        logger.error(f"Write failed: {e}")
+        print(f"Write failed: {e}")
+        return False
 
 
 if __name__ == "__main__":
