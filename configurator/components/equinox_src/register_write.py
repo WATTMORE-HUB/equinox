@@ -18,11 +18,11 @@ consoleHandler = logging.StreamHandler(stdout)
 consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
 
-async def write_register_async(register, value, slave_id=1):
+async def write_register_async(register, value):
     """Use async client for better reliability with device writes."""
     try:
         # Initialize async Modbus client
-        print(f"Initializing async Modbus client for slave {slave_id}")
+        print(f"Initializing async Modbus client for register {register} with value {value}")
         pymodbus_apply_logging_config("DEBUG")
         
         client = ModbusClient.AsyncModbusSerialClient(
@@ -43,8 +43,8 @@ async def write_register_async(register, value, slave_id=1):
             return False
         
         # Write the register
-        logger.info(f"Writing register {register} with value {value} on slave {slave_id}")
-        write_response = await client.write_register(register, value, unit=slave_id)
+        logger.info(f"Writing register {register} with value {value}")
+        write_response = await client.write_register(register, value)
         
         # Log response details
         logger.info(f"Write response: {write_response}")
@@ -62,7 +62,7 @@ async def write_register_async(register, value, slave_id=1):
         
         # Verify the write by reading back the register
         logger.info(f"Verifying write by reading register {register} back from device")
-        read_response = await client.read_holding_registers(register, 1, unit=slave_id)
+        read_response = await client.read_holding_registers(register, 1)
         
         if read_response.isError():
             logger.error(f"Error reading back register for verification: {read_response}")
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         value = int(test_value)
         
         # Run async function
-        success = asyncio.run(write_register_async(register, value, modbus_slave_id))
+        success = asyncio.run(write_register_async(register, value))
         exit(0 if success else 1)
     except Exception as e:
         print(f"Write failed: {e}")

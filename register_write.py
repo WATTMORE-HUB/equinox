@@ -42,7 +42,7 @@ async def write_register_async(register, value):
             print("Write failed: Could not connect to device")
             return False
         
-        # Write the register (NO unit parameter, like config.py)
+        # Write the register
         logger.info(f"Writing register 0x{register:x} with value {value}")
         write_response = await client.write_register(register, value)
         
@@ -56,7 +56,7 @@ async def write_register_async(register, value):
             client.close()
             return False
         
-        # Wait for device to process (like config.py does with 2 second sleep)
+        # Wait for device to process
         logger.info(f"Waiting for device to process write...")
         time.sleep(2)
         
