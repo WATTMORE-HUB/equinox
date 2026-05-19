@@ -136,6 +136,14 @@ router.post('/test', async (req, res) => {
     // Prepare environment variables for register_test.py
     const registerTestPath = path.join(__dirname, '../../register_test.py');
     
+    // Check if script exists
+    if (!fs.existsSync(registerTestPath)) {
+      return res.status(400).json({
+        success: false,
+        error: `Register test script not found at ${registerTestPath}`
+      });
+    }
+    
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
     if (typeof register === 'string' && register.startsWith('0x')) {
@@ -154,80 +162,99 @@ router.post('/test', async (req, res) => {
       INVERTER_FUNCTION_CODE_BASE: functionCodeBase.toString()
     };
 
-    // Spawn register_test.py
-    const python = spawn('python3', [registerTestPath], { env });
-    let stdout = '';
-    let stderr = '';
+    // Wrap the spawn process in a Promise to properly handle async completion
+    const result = await new Promise((resolve, reject) => {
+      const python = spawn('python3', [registerTestPath], { env });
+      let stdout = '';
+      let stderr = '';
+      let responseSent = false;
 
-    python.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    python.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    python.on('close', (code) => {
-      if (code === 0) {
-        // Find the most recent test result file
-        const testDataDir = '/collect_data/test';
-        if (fs.existsSync(testDataDir)) {
-          try {
-            const files = fs.readdirSync(testDataDir)
-              .filter(f => f.endsWith('.json'))
-              .sort()
-              .reverse();
-            
-            if (files.length > 0) {
-              const resultFile = path.join(testDataDir, files[0]);
-              const resultData = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
-              
-              return res.json({
-                success: true,
-                data: resultData.data,
-                output: stdout,
-                resultFile: resultFile,
-                timestamp: parseInt(files[0].replace('.json', '')),
-                metadata: {
-                  port,
-                  slaveId: parseInt(slaveId),
-                  baudRate: parseInt(baudRate),
-                  register: registerValue
-                }
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to parse result file: ${err.message}`);
-          }
+      // Timeout after 30 seconds
+      const timeout = setTimeout(() => {
+        if (!responseSent) {
+          responseSent = true;
+          python.kill();
+          reject(new Error('Modbus test timed out after 30 seconds'));
         }
+      }, 30000);
 
-        // If we can't find result file, return stdout parsing
-        return res.json({
-          success: true,
-          output: stdout,
-          metadata: {
-            port,
-            slaveId: parseInt(slaveId),
-            baudRate: parseInt(baudRate),
-            register: registerValue
+      python.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      python.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      python.on('error', (err) => {
+        if (!responseSent) {
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+
+      python.on('close', (code) => {
+        clearTimeout(timeout);
+        if (responseSent) return;
+        
+        if (code === 0) {
+          // Find the most recent test result file
+          const testDataDir = '/collect_data/test';
+          if (fs.existsSync(testDataDir)) {
+            try {
+              const files = fs.readdirSync(testDataDir)
+                .filter(f => f.endsWith('.json'))
+                .sort()
+                .reverse();
+              
+              if (files.length > 0) {
+                const resultFile = path.join(testDataDir, files[0]);
+                const resultData = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
+                
+                resolve({
+                  success: true,
+                  data: resultData.data,
+                  output: stdout,
+                  resultFile: resultFile,
+                  timestamp: parseInt(files[0].replace('.json', '')),
+                  metadata: {
+                    port,
+                    slaveId: parseInt(slaveId),
+                    baudRate: parseInt(baudRate),
+                    register: registerValue
+                  }
+                });
+                return;
+              }
+            } catch (err) {
+              console.error(`Failed to parse result file: ${err.message}`);
+            }
           }
-        });
-      } else {
-        console.error(`Modbus test failed: code=${code}, stderr=${stderr}`);
-        return res.status(400).json({
-          success: false,
-          error: `Modbus test failed: ${stderr || 'Unknown error'}`,
-          output: stdout,
-          code
-        });
-      }
+
+          // If we can't find result file, return stdout
+          resolve({
+            success: true,
+            output: stdout,
+            metadata: {
+              port,
+              slaveId: parseInt(slaveId),
+              baudRate: parseInt(baudRate),
+              register: registerValue
+            }
+          });
+        } else {
+          reject(new Error(`Modbus test failed with code ${code}: ${stderr || 'Unknown error'}\nStdout: ${stdout}`));
+        }
+      });
     });
+
+    return res.json(result);
 
   } catch (err) {
     console.error(`Modbus test error: ${err.message}`);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      error: `Internal server error: ${err.message}`
+      error: err.message
     });
   }
 });
@@ -260,7 +287,6 @@ router.get('/ports', async (req, res) => {
  * Same parameters as /test endpoint
  */
 router.post('/test-form', async (req, res) => {
-  // Delegate to /test endpoint logic
   try {
     const {
       port,
@@ -310,6 +336,14 @@ router.post('/test-form', async (req, res) => {
     // Prepare environment variables for register_test.py
     const registerTestPath = path.join(__dirname, '../../register_test.py');
     
+    // Check if script exists
+    if (!fs.existsSync(registerTestPath)) {
+      return res.status(400).json({
+        success: false,
+        error: `Register test script not found at ${registerTestPath}`
+      });
+    }
+    
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
     if (typeof register === 'string' && register.startsWith('0x')) {
@@ -328,79 +362,99 @@ router.post('/test-form', async (req, res) => {
       INVERTER_FUNCTION_CODE_BASE: functionCodeBase.toString()
     };
 
-    // Spawn register_test.py
-    const python = spawn('python3', [registerTestPath], { env });
-    let stdout = '';
-    let stderr = '';
+    // Wrap the spawn process in a Promise to properly handle async completion
+    const result = await new Promise((resolve, reject) => {
+      const python = spawn('python3', [registerTestPath], { env });
+      let stdout = '';
+      let stderr = '';
+      let responseSent = false;
 
-    python.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    python.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    python.on('close', (code) => {
-      if (code === 0) {
-        // Find the most recent test result file
-        const testDataDir = '/collect_data/test';
-        if (fs.existsSync(testDataDir)) {
-          try {
-            const files = fs.readdirSync(testDataDir)
-              .filter(f => f.endsWith('.json'))
-              .sort()
-              .reverse();
-            
-            if (files.length > 0) {
-              const resultFile = path.join(testDataDir, files[0]);
-              const resultData = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
-              
-              return res.json({
-                success: true,
-                data: resultData.data,
-                output: stdout,
-                resultFile: resultFile,
-                timestamp: parseInt(files[0].replace('.json', '')),
-                metadata: {
-                  port,
-                  slaveId: parseInt(slaveId),
-                  baudRate: parseInt(baudRate),
-                  register: registerValue
-                }
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to parse result file: ${err.message}`);
-          }
+      // Timeout after 30 seconds
+      const timeout = setTimeout(() => {
+        if (!responseSent) {
+          responseSent = true;
+          python.kill();
+          reject(new Error('Modbus test timed out after 30 seconds'));
         }
+      }, 30000);
 
-        return res.json({
-          success: true,
-          output: stdout,
-          metadata: {
-            port,
-            slaveId: parseInt(slaveId),
-            baudRate: parseInt(baudRate),
-            register: registerValue
+      python.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      python.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      python.on('error', (err) => {
+        if (!responseSent) {
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+
+      python.on('close', (code) => {
+        clearTimeout(timeout);
+        if (responseSent) return;
+        
+        if (code === 0) {
+          // Find the most recent test result file
+          const testDataDir = '/collect_data/test';
+          if (fs.existsSync(testDataDir)) {
+            try {
+              const files = fs.readdirSync(testDataDir)
+                .filter(f => f.endsWith('.json'))
+                .sort()
+                .reverse();
+              
+              if (files.length > 0) {
+                const resultFile = path.join(testDataDir, files[0]);
+                const resultData = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
+                
+                resolve({
+                  success: true,
+                  data: resultData.data,
+                  output: stdout,
+                  resultFile: resultFile,
+                  timestamp: parseInt(files[0].replace('.json', '')),
+                  metadata: {
+                    port,
+                    slaveId: parseInt(slaveId),
+                    baudRate: parseInt(baudRate),
+                    register: registerValue
+                  }
+                });
+                return;
+              }
+            } catch (err) {
+              console.error(`Failed to parse result file: ${err.message}`);
+            }
           }
-        });
-      } else {
-        console.error(`Modbus form test failed: code=${code}, stderr=${stderr}`);
-        return res.status(400).json({
-          success: false,
-          error: `Modbus test failed: ${stderr || 'Unknown error'}`,
-          output: stdout,
-          code
-        });
-      }
+
+          // If we can't find result file, return stdout
+          resolve({
+            success: true,
+            output: stdout,
+            metadata: {
+              port,
+              slaveId: parseInt(slaveId),
+              baudRate: parseInt(baudRate),
+              register: registerValue
+            }
+          });
+        } else {
+          reject(new Error(`Modbus test failed with code ${code}: ${stderr || 'Unknown error'}\nStdout: ${stdout}`));
+        }
+      });
     });
+
+    return res.json(result);
 
   } catch (err) {
     console.error(`Modbus form test error: ${err.message}`);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      error: `Internal server error: ${err.message}`
+      error: err.message
     });
   }
 });
