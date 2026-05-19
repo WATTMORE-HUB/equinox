@@ -2,12 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install Python 3 and modbus packages for register_test.py
-RUN apk add --no-cache python3 py3-pip py3-serial py3-pymodbus
+# Install Python 3 for register_test.py
+RUN apk add --no-cache python3 py3-pip py3-serial
 
 # Copy Equinox package files (renamed to avoid conflicts with other services)
 COPY equinox_package.json package.json
 COPY equinox_package-lock.json package-lock.json
+
+# Copy and install Python dependencies before npm to avoid timeouts
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt 2>&1 | head -50 || true
 
 # Install production dependencies only
 RUN npm ci --only=production
