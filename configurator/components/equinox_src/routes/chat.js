@@ -215,6 +215,20 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     return res.json({ answer });
   }
 
+  // Handle modbus write - show form UI
+  if (intent === 'modbus_write') {
+    // Return marker that tells frontend to show modbus write form
+    const formMarker = '__EQUINOX_MODBUS_WRITE_FORM__';
+    const answer = formMarker;
+    conversationContext.set(sessionKey, {
+      lastIntent: intent,
+      priorResponses: [answer],
+      expiresAt: Date.now() + 10 * 60 * 1000
+    });
+    console.log('[Chat API] Returning modbus write form UI marker');
+    return res.json({ answer });
+  }
+
   // Route other intents through llmClient with keyword-rich questions
   const intentToQuestion = {
     system_health: 'how is my system',

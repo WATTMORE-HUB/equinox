@@ -269,6 +269,24 @@ const INTENTS = {
       'modbus read',
       'modbus query'
     ]
+  },
+  modbus_write: {
+    name: 'modbus_write',
+    aliases: [
+      'write register',
+      'write to register',
+      'write modbus',
+      'modbus write',
+      'set register',
+      'change register',
+      'update register',
+      'write hex register',
+      'write decimal register',
+      'write modbus register',
+      'change modbus',
+      'set modbus',
+      'update modbus'
+    ]
   }
 };
 

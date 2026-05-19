@@ -338,6 +338,175 @@ router.get('/ports', async (req, res) => {
 });
 
 /**
+ * POST /api/modbus/write-form
+ * Form submission endpoint for writing modbus registers
+ * Request body includes register address and value to write
+ */
+router.post('/write-form', async (req, res) => {
+  try {
+    const {
+      port,
+      slaveId,
+      baudRate,
+      register,
+      value,
+      functionCode = 16
+    } = req.body;
+
+    // Validate required parameters
+    if (!port || slaveId === undefined || !baudRate || register === undefined || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters: port, slaveId, baudRate, register, value'
+      });
+    }
+
+    // Validate serial port
+    const portValidation = validateSerialPort(port);
+    if (!portValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: portValidation.message
+      });
+    }
+
+    // Validate other parameters
+    const baudValidation = validateBaudRate(baudRate);
+    if (!baudValidation.valid) {
+      return res.status(400).json({ success: false, error: baudValidation.message });
+    }
+
+    const slaveValidation = validateSlaveId(slaveId);
+    if (!slaveValidation.valid) {
+      return res.status(400).json({ success: false, error: slaveValidation.message });
+    }
+
+    const registerValidation = validateRegister(register);
+    if (!registerValidation.valid) {
+      return res.status(400).json({ success: false, error: registerValidation.message });
+    }
+
+    const valueNum = parseInt(value);
+    if (isNaN(valueNum) || valueNum < 0 || valueNum > 65535) {
+      return res.status(400).json({ success: false, error: 'Invalid value. Must be 0-65535.' });
+    }
+
+    console.log(`Modbus write initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}, value=${value}`);
+
+    // Ensure Python is available (install if needed)
+    if (!ensurePythonAvailable()) {
+      return res.status(500).json({
+        success: false,
+        error: 'Python3 is not available and could not be installed. Modbus writing requires Python.'
+      });
+    }
+
+    // Find register_write.py script
+    let registerWritePath = null;
+    const possiblePaths = [
+      path.join(__dirname, '../register_write.py'),
+      '/app/src/register_write.py',
+      path.join(process.cwd(), 'src/register_write.py'),
+      '/home/ec2-user/equinox/src/register_write.py'
+    ];
+    
+    for (const possiblePath of possiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        registerWritePath = possiblePath;
+        break;
+      }
+    }
+    
+    if (!registerWritePath) {
+      return res.status(400).json({
+        success: false,
+        error: `Register write script not found in any expected location: ${possiblePaths.join(', ')}`
+      });
+    }
+    
+    // Parse register - support both hex (0x) and decimal
+    let registerValue = parseInt(register);
+    if (typeof register === 'string' && register.startsWith('0x')) {
+      registerValue = parseInt(register, 16);
+    }
+
+    const env = {
+      ...process.env,
+      TEST_USB: port,
+      MODBUS_SLAVE_ID: slaveId.toString(),
+      INVERTER_BAUD_RATE: baudRate.toString(),
+      TEST_REG: registerValue.toString(),
+      TEST_BASE: '10',
+      TEST_VALUE: valueNum.toString()
+    };
+
+    // Wrap the spawn process in a Promise to properly handle async completion
+    const result = await new Promise((resolve, reject) => {
+      const python = spawn('python3', [registerWritePath], { env });
+      let stdout = '';
+      let stderr = '';
+      let responseSent = false;
+
+      // Timeout after 30 seconds
+      const timeout = setTimeout(() => {
+        if (!responseSent) {
+          responseSent = true;
+          python.kill();
+          reject(new Error('Modbus write timed out after 30 seconds'));
+        }
+      }, 30000);
+
+      python.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      python.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      python.on('error', (err) => {
+        if (!responseSent) {
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+
+      python.on('close', (code) => {
+        clearTimeout(timeout);
+        if (responseSent) return;
+        
+        if (code === 0) {
+          // Check if write was successful by looking at logs
+          const wasSuccessful = stdout.includes('Write successful') || stdout.includes('INFO');
+          resolve({
+            success: wasSuccessful,
+            output: stdout,
+            metadata: {
+              port,
+              slaveId: parseInt(slaveId),
+              baudRate: parseInt(baudRate),
+              register: registerValue,
+              value: valueNum
+            }
+          });
+        } else {
+          reject(new Error(`Modbus write failed with code ${code}: ${stderr || 'Unknown error'}\nStdout: ${stdout}`));
+        }
+      });
+    });
+
+    return res.json(result);
+
+  } catch (err) {
+    console.error(`Modbus write form error: ${err.message}`);
+    res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/**
  * POST /api/modbus/test-form
  * Form submission endpoint for modbus testing
  * Same parameters as /test endpoint
