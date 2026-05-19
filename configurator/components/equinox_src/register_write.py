@@ -1,3 +1,4 @@
+import asyncio
 import pymodbus.client as ModbusClient
 from pymodbus import (
     FramerType,
@@ -7,6 +8,7 @@ from pymodbus import (
 import logging
 from sys import stdout
 import os
+import time
 
 # logger config
 logger = logging.getLogger(__name__)
@@ -16,52 +18,78 @@ consoleHandler = logging.StreamHandler(stdout)
 consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
 
-def write_register(register, value):
+async def write_register_async(register, value, slave_id=1):
+    """Use async client for better reliability with device writes."""
     try:
-        # Initialize Modbus client
-        print("Initializing Modbus client")
-        client = ModbusClient.ModbusSerialClient(
+        # Initialize async Modbus client
+        print(f"Initializing async Modbus client for slave {slave_id}")
+        pymodbus_apply_logging_config("DEBUG")
+        
+        client = ModbusClient.AsyncModbusSerialClient(
             port=os.getenv("TEST_USB"),
             framer=FramerType.RTU,
-            # timeout=10,
-            # retries=3,
             baudrate=int(os.getenv("INVERTER_BAUD_RATE", "9600")),
             bytesize=8,
             parity="N",
             stopbits=1,
-            # handle_local_echo=False,
         )
         
         # Connect to device
-        if not client.connect():
+        print("Connecting to device")
+        await client.connect()
+        if not client.connected:
             logger.error("Failed to connect to Modbus device")
             print("Write failed: Could not connect to device")
             return False
         
         # Write the register
-        logger.info(f"Writing register {register} with value {value}")
-        data = client.write_register(register, value, unit=1)
+        logger.info(f"Writing register {register} with value {value} on slave {slave_id}")
+        write_response = await client.write_register(register, value, unit=slave_id)
         
         # Log response details
-        logger.info(f"Write response: {data}")
-        logger.info(f"Response type: {type(data)}")
-        logger.info(f"Response attributes: {dir(data)}")
+        logger.info(f"Write response: {write_response}")
+        logger.info(f"Response type: {type(write_response)}")
         
-        client.close()
-        
-        if data.isError():
-            logger.error(f"Error writing register: {data}")
-            print(f"Write failed: {data}")
+        if write_response.isError():
+            logger.error(f"Error writing register: {write_response}")
+            print(f"Write failed: {write_response}")
+            client.close()
             return False
         
-        # Check if response indicates success
-        if hasattr(data, 'register'):
-            logger.info(f"Write confirmed - register address: {data.register}")
-            print(f"Write successful")
+        # Wait for device to process write
+        logger.info(f"Waiting for device to process write...")
+        time.sleep(2)
+        
+        # Verify the write by reading back the register
+        logger.info(f"Verifying write by reading register {register} back from device")
+        read_response = await client.read_holding_registers(register, 1, unit=slave_id)
+        
+        if read_response.isError():
+            logger.error(f"Error reading back register for verification: {read_response}")
+            client.close()
+            print(f"Write failed: Could not verify write - read error")
+            return False
+        
+        # Check if read-back value matches what we wrote
+        if hasattr(read_response, 'registers') and len(read_response.registers) > 0:
+            readback_value = read_response.registers[0]
+            logger.info(f"Read-back verification: wrote {value}, read back {readback_value}")
+            
+            if readback_value == value:
+                logger.info(f"Write verification PASSED - value persisted on device")
+                print(f"Write successful")
+                client.close()
+                return True
+            else:
+                logger.error(f"Write verification FAILED - value mismatch. Expected {value}, got {readback_value}")
+                print(f"Write failed: Value mismatch on verification. Wrote {value} but device has {readback_value}")
+                client.close()
+                return False
         else:
-            logger.info("Write completed")
-            print(f"Write successful")
-        return True
+            logger.error(f"Unexpected read response format: {read_response}")
+            client.close()
+            print(f"Write failed: Could not verify write - unexpected response")
+            return False
     except Exception as e:
         logger.error(f"Write failed: {e}")
         print(f"Write failed: {e}")
@@ -74,6 +102,7 @@ if __name__ == "__main__":
         test_reg = os.getenv("TEST_REG")
         test_base = os.getenv("TEST_BASE", "10")
         test_value = os.getenv("TEST_VALUE")
+        modbus_slave_id = int(os.getenv("MODBUS_SLAVE_ID", "1"))
         
         if not test_reg or not test_value:
             print(f"Write failed: Missing TEST_REG or TEST_VALUE")
@@ -82,7 +111,9 @@ if __name__ == "__main__":
         register = int(test_reg, int(test_base))
         value = int(test_value)
         
-        write_register(register, value)
+        # Run async function
+        success = asyncio.run(write_register_async(register, value, modbus_slave_id))
+        exit(0 if success else 1)
     except Exception as e:
         print(f"Write failed: {e}")
         exit(1)
