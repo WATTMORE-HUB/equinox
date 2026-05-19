@@ -1257,6 +1257,14 @@
       return true;  // Signal that this is a modbus form request
     }
     
+    function parseModbusWriteFormMessage(text) {
+      const marker = '__EQUINOX_MODBUS_WRITE_FORM__';
+      if (typeof text !== 'string' || !text.startsWith(marker)) {
+        return null;
+      }
+      return true;  // Signal that this is a modbus write form request
+    }
+    
     function renderEnvironmentVariablesMessage(text, messageEl, bubbleEl) {
       const metadata = parseEnvironmentVariablesMessage(text);
       if (!metadata) {
@@ -1363,6 +1371,176 @@
           downloadJsonFile(content, metadata.fileName || 'data.json');
         });
       }
+      
+      return true;
+    }
+
+    function renderModbusWriteFormMessage(text, messageEl, bubbleEl) {
+      if (!parseModbusWriteFormMessage(text)) {
+        return false;
+      }
+      
+      // Render form immediately
+      bubbleEl.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-6 py-6 w-full max-w-2xl text-sm';
+      bubbleEl.innerHTML = `
+        <div class="space-y-4">
+          <div>
+            <div class="text-slate-100 font-medium text-base">Write to Modbus Register</div>
+            <div class="text-xs text-slate-400 mt-1">Enter the register details and value to write</div>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-slate-400 block mb-2">Serial Port</label>
+              <select class="modbusWritePortSelect w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400" style="cursor: pointer;">
+                <option value="">-- Loading ports --</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-2">Slave ID (1-247)</label>
+                <input type="number" class="modbusWriteSlaveId w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400" min="1" max="247" value="1" />
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-2">Baud Rate</label>
+                <select class="modbusWriteBaudRate w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400" style="cursor: pointer;">
+                  <option value="9600" selected>9600</option>
+                  <option value="19200">19200</option>
+                  <option value="38400">38400</option>
+                  <option value="57600">57600</option>
+                  <option value="115200">115200</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-2">Register (0-65535)</label>
+                <input type="text" class="modbusWriteRegister w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400" placeholder="e.g., 546 or 0x022E" />
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-2">Value (0-65535)</label>
+                <input type="number" class="modbusWriteValue w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400" min="0" max="65535" />
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="modbusWriteBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition" style="cursor: pointer; user-select: none;">Write to Register</button>
+          </div>
+        </div>
+      `;
+      messageEl.appendChild(bubbleEl);
+      
+      // Load serial ports asynchronously (don't wait for this)
+      const portSelect = bubbleEl.querySelector('.modbusWritePortSelect');
+      const slaveIdInput = bubbleEl.querySelector('.modbusWriteSlaveId');
+      const baudRateSelect = bubbleEl.querySelector('.modbusWriteBaudRate');
+      const registerInput = bubbleEl.querySelector('.modbusWriteRegister');
+      const valueInput = bubbleEl.querySelector('.modbusWriteValue');
+      const writeBtn = bubbleEl.querySelector('.modbusWriteBtn');
+      
+      // Fetch available ports asynchronously
+      (async () => {
+        try {
+          const portsResponse = await fetch(`${API_BASE}/modbus/ports`);
+          if (portsResponse.ok) {
+            const portsData = await portsResponse.json();
+            portSelect.innerHTML = '<option value="">Select a port...</option>';
+            if (portsData.ports && portsData.ports.length > 0) {
+              portsData.ports.forEach(port => {
+                const option = document.createElement('option');
+                option.value = port.path;
+                option.textContent = `${port.path} (${port.type})`;
+                portSelect.appendChild(option);
+              });
+              // Auto-select first port
+              if (portSelect.options.length > 1) {
+                portSelect.selectedIndex = 1;
+              }
+            } else {
+              portSelect.innerHTML = '<option value="">No serial ports found</option>';
+            }
+          }
+        } catch (err) {
+          console.error('Failed to load serial ports:', err);
+          portSelect.innerHTML = '<option value="">Error loading ports</option>';
+        }
+      })()
+      
+      // Write button handler
+      writeBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const port = portSelect.value;
+        const slaveId = parseInt(slaveIdInput.value);
+        const baudRate = parseInt(baudRateSelect.value);
+        const register = registerInput.value.trim();
+        const value = parseInt(valueInput.value);
+        
+        if (!port || !register || valueInput.value === '') {
+          addChatMessage('[WARNING] Please fill all fields (port, register, and value)', false);
+          return;
+        }
+        
+        writeBtn.disabled = true;
+        writeBtn.textContent = 'Writing...';
+        
+        try {
+          const response = await fetch(`${API_BASE}/modbus/write-form`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              port,
+              slaveId,
+              baudRate,
+              register,
+              value
+            })
+          });
+          
+          if (!response.ok) {
+            let errMsg = 'Unknown error';
+            try {
+              const err = await response.json();
+              errMsg = err.error || 'Unknown error';
+            } catch (e) {
+              errMsg = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            addChatMessage(`[ERROR] Write failed: ${errMsg}`, false);
+            return;
+          }
+          
+          let result;
+          try {
+            result = await response.json();
+          } catch (e) {
+            console.error('Failed to parse response as JSON:', e);
+            addChatMessage(`[WARNING] Server returned invalid response`, false);
+            return;
+          }
+          
+          if (!result.success) {
+            addChatMessage(`[ERROR] Write failed: ${result.error || 'Unknown error'}`, false);
+            return;
+          }
+          
+          // Build success message
+          let resultMsg = `[OK] **Modbus Register Write Successful**\n\n`;
+          resultMsg += `**Configuration:**\n`;
+          resultMsg += `- Port: ${port}\n`;
+          resultMsg += `- Slave ID: ${slaveId}\n`;
+          resultMsg += `- Baud Rate: ${baudRate}\n`;
+          resultMsg += `- Register: ${register}\n`;
+          resultMsg += `- Value Written: ${value}\n`;
+          
+          addChatMessage(resultMsg, false);
+        } catch (err) {
+          console.error('Write error:', err);
+          addChatMessage(`[ERROR] Error writing to register: ${err.message}`, false);
+        } finally {
+          writeBtn.disabled = false;
+          writeBtn.textContent = 'Write to Register';
+        }
+      });
       
       return true;
     }
@@ -1562,6 +1740,12 @@
       }
       
       if (!isUser && renderModbusFormMessage(text, messageEl, bubbleEl)) {
+        chatMessages.appendChild(messageEl);
+        chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
+        return;
+      }
+      
+      if (!isUser && renderModbusWriteFormMessage(text, messageEl, bubbleEl)) {
         chatMessages.appendChild(messageEl);
         chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
         return;
