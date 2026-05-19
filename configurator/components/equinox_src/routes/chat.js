@@ -145,6 +145,17 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
     return res.json(response);
   }
 
+  // For system health, return full system report
+  if (intent === 'system_health') {
+    const answer = await llmClient.query('how is my system');
+    conversationContext.set(sessionKey, {
+      lastIntent: intent,
+      priorResponses: [answer],
+      expiresAt: Date.now() + 10 * 60 * 1000
+    });
+    return res.json({ answer });
+  }
+
   // For data flow, ask for timespan if not provided in entities
   if (intent === 'check_data_flow') {
     if (intentResult.entities.timespan) {
@@ -172,19 +183,54 @@ async function handleIntent(intentResult, sessionKey, res, trimmedQuestion) {
   }
 
   // For file requests with directory specified
-  if (intent === 'get_latest_file' && intentResult.entities.directory) {
-    const dir = intentResult.entities.directory;
-    const answer = await llmClient.query(`show me latest /${dir}`);
+  if (intent === 'get_latest_file') {
+    if (intentResult.entities.directory) {
+      const dir = intentResult.entities.directory;
+      const answer = await llmClient.query(`show me latest /${dir}`);
+      conversationContext.set(sessionKey, {
+        lastIntent: intent,
+        priorResponses: [answer],
+        expiresAt: Date.now() + 10 * 60 * 1000
+      });
+      return res.json({ answer });
+    } else {
+      // No directory specified - ask for it
+      return res.json({
+        answer: 'Which data would you like to see? (tracker, meter, inverter, weather, recloser)'
+      });
+    }
+  }
+
+  // Handle modbus test - show form UI
+  if (intent === 'modbus_test') {
+    // Return marker that tells frontend to show modbus test form
+    const formMarker = '__EQUINOX_MODBUS_FORM__';
+    const answer = formMarker;
     conversationContext.set(sessionKey, {
       lastIntent: intent,
       priorResponses: [answer],
       expiresAt: Date.now() + 10 * 60 * 1000
     });
+    console.log('[Chat API] Returning modbus form UI marker');
     return res.json({ answer });
   }
 
-  // Route other intents through llmClient
-  const answer = await llmClient.query(trimmedQuestion);
+  // Route other intents through llmClient with keyword-rich questions
+  const intentToQuestion = {
+    system_health: 'how is my system',
+    list_containers: 'what containers are running',
+    check_errors: 'show me errors',
+    check_warnings: 'show me warnings',
+    check_memory: 'how much memory',
+    check_cpu: 'cpu usage',
+    check_data_flow: 'check data uploads',
+    modbus_test: 'test register',
+    redeploy: 'redeploy',
+    environment_variables: 'environment variables'
+  };
+  
+  const queryQuestion = intentToQuestion[intent] || trimmedQuestion;
+  const answer = await llmClient.query(queryQuestion);
   conversationContext.set(sessionKey, {
     lastIntent: intent,
     priorResponses: [answer],
