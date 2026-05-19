@@ -19,6 +19,9 @@ COPY equinox_public public
 # Copy hardware profiles for configuration loader
 COPY hardware_profiles hardware_profiles
 
+# Copy register test script for modbus testing
+COPY register_test.py register_test.py
+
 # Expose port for web UI
 EXPOSE 80
 
