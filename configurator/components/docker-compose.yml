@@ -140,6 +140,10 @@ services:
       - IOT_TOPIC=${IOT_TOPIC:-operate/device_reports}
       - SITE=${SITE}
       - EDGE_ID=${EDGE_ID}
+    privileged: true
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - "/dev/ttyUSB1:/dev/ttyUSB1"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - collect_data:/collect_data
