@@ -9,10 +9,6 @@ RUN apk add --no-cache python3 py3-pip py3-serial
 COPY equinox_package.json package.json
 COPY equinox_package-lock.json package-lock.json
 
-# Copy and install Python dependencies before npm to avoid timeouts
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt 2>&1 | head -50 || true
-
 # Install production dependencies only
 RUN npm ci --only=production
 
