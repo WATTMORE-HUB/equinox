@@ -16,23 +16,22 @@ consoleHandler = logging.StreamHandler(stdout)
 consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
 
-# Modbus Client Object
-client: ModbusClient.ModbusBaseSyncClient
-print("Set serial client")
-client = ModbusClient.ModbusSerialClient(
-    port=os.getenv("TEST_USB"),
-    framer=FramerType.RTU,
-    # timeout=10,
-    # retries=3,
-    baudrate=int(os.getenv("INVERTER_BAUD_RATE")),
-    bytesize=8,
-    parity="N",
-    stopbits=1,
-    # handle_local_echo=False,
-)
-
 def write_register(register, value):
     try:
+        # Initialize Modbus client
+        print("Initializing Modbus client")
+        client = ModbusClient.ModbusSerialClient(
+            port=os.getenv("TEST_USB"),
+            framer=FramerType.RTU,
+            # timeout=10,
+            # retries=3,
+            baudrate=int(os.getenv("INVERTER_BAUD_RATE", "9600")),
+            bytesize=8,
+            parity="N",
+            stopbits=1,
+            # handle_local_echo=False,
+        )
+        
         # Connect to device
         if not client.connect():
             logger.error("Failed to connect to Modbus device")
@@ -40,6 +39,7 @@ def write_register(register, value):
             return False
         
         # Write the register
+        logger.info(f"Writing register {register} with value {value}")
         data = client.write_register(register, value, unit=1)
         client.close()
         
@@ -58,4 +58,20 @@ def write_register(register, value):
 
 
 if __name__ == "__main__":
-    write_register(int(os.getenv("TEST_REG"), int(os.getenv("TEST_BASE", "10"))), int(os.getenv("TEST_VALUE")))
+    try:
+        # Parse register and value from env vars
+        test_reg = os.getenv("TEST_REG")
+        test_base = os.getenv("TEST_BASE", "10")
+        test_value = os.getenv("TEST_VALUE")
+        
+        if not test_reg or not test_value:
+            print(f"Write failed: Missing TEST_REG or TEST_VALUE")
+            exit(1)
+        
+        register = int(test_reg, int(test_base))
+        value = int(test_value)
+        
+        write_register(register, value)
+    except Exception as e:
+        print(f"Write failed: {e}")
+        exit(1)
