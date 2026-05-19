@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install Python 3 for register_test.py
+RUN apk add --no-cache python3
+
 # Copy Equinox package files (renamed to avoid conflicts with other services)
 COPY equinox_package.json package.json
 COPY equinox_package-lock.json package-lock.json
