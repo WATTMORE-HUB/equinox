@@ -16,6 +16,9 @@ COPY equinox_public public
 # Copy hardware profiles for configuration loader
 COPY hardware_profiles hardware_profiles
 
+# Make Python dependency installer executable
+RUN chmod +x /app/src/install-python-deps.sh
+
 # Expose port for web UI
 EXPOSE 80
 
@@ -23,5 +26,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:80/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Start the server
-CMD ["node", "src/start.js"]
+# Install Python packages on startup before starting the server
+CMD ["/bin/sh", "-c", "/app/src/install-python-deps.sh && node src/start.js"]

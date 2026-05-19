@@ -6,6 +6,41 @@ const { getAvailablePorts } = require('../services/serialPortDetector');
 
 const router = express.Router();
 
+let pythonInstallAttempted = false;
+let pythonInstallAvailable = false;
+
+function ensurePythonAvailable() {
+  if (pythonInstallAttempted) {
+    return pythonInstallAvailable;
+  }
+
+  pythonInstallAttempted = true;
+
+  try {
+    execSync('command -v python3', { stdio: 'ignore', shell: '/bin/sh' });
+    pythonInstallAvailable = true;
+    return true;
+  } catch (checkErr) {
+    console.warn('[Modbus] python3 not found; attempting runtime install...');
+  }
+
+  try {
+    execSync('apk add --no-cache python3 py3-pip py3-serial', { stdio: 'inherit', shell: '/bin/sh' });
+    try {
+      execSync('pip3 install --break-system-packages --no-cache-dir minimalmodbus==2.1.1 pymodbus==3.9.2', { stdio: 'inherit', shell: '/bin/sh' });
+    } catch (pipErr) {
+      console.warn(`[Modbus] pip package install failed: ${pipErr.message}`);
+    }
+    execSync('command -v python3', { stdio: 'ignore', shell: '/bin/sh' });
+    pythonInstallAvailable = true;
+    return true;
+  } catch (installErr) {
+    console.error(`[Modbus] Failed to install python3: ${installErr.message}`);
+    pythonInstallAvailable = false;
+    return false;
+  }
+}
+
 /**
  * POST /api/modbus/test
  * Tests a Modbus register by spawning register_test.py with environment variables
@@ -132,6 +167,14 @@ router.post('/test', async (req, res) => {
     }
 
     console.log(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
+
+    // Ensure Python is available (install if needed)
+    if (!ensurePythonAvailable()) {
+      return res.status(500).json({
+        success: false,
+        error: 'Python3 is not available and could not be installed. Modbus testing requires Python.'
+      });
+    }
 
     // Prepare environment variables for register_test.py
     // Try multiple locations where the script might exist
@@ -345,6 +388,14 @@ router.post('/test-form', async (req, res) => {
     }
 
     console.log(`Modbus form test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
+
+    // Ensure Python is available (install if needed)
+    if (!ensurePythonAvailable()) {
+      return res.status(500).json({
+        success: false,
+        error: 'Python3 is not available and could not be installed. Modbus testing requires Python.'
+      });
+    }
 
     // Prepare environment variables for register_test.py
     // Try multiple locations where the script might exist
