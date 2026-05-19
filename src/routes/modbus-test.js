@@ -517,6 +517,10 @@ router.post('/write-form', async (req, res) => {
     });
 
     python.on('close', (code) => {
+      console.log(`[Write] Process closed with code ${code}`);
+      console.log(`[Write] stdout: ${stdout}`);
+      console.log(`[Write] stderr: ${stderr}`);
+      
       if (code === 0 && stdout.includes('Write successful')) {
         console.log(`Modbus write successful: register=${registerValue}, value=${val}`);
         return res.json({
@@ -532,9 +536,11 @@ router.post('/write-form', async (req, res) => {
         });
       } else {
         console.error(`Modbus write failed: code=${code}, stderr=${stderr}, stdout=${stdout}`);
+        const errorMsg = stderr || stdout || 'Unknown error';
+        console.log(`[Write] Returning error: ${errorMsg}`);
         return res.status(400).json({
           success: false,
-          error: `Modbus write failed: ${stderr || stdout || 'Unknown error'}`,
+          error: errorMsg,
           output: stdout,
           code
         });
