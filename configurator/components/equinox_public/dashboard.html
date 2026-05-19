@@ -1499,12 +1499,26 @@
           });
           
           if (!response.ok) {
-            const err = await response.json();
-            addChatMessage(`❌ Test failed: ${err.error || 'Unknown error'}`, false);
+            let errMsg = 'Unknown error';
+            try {
+              const err = await response.json();
+              errMsg = err.error || 'Unknown error';
+            } catch (e) {
+              errMsg = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            addChatMessage(`❌ Test failed: ${errMsg}`, false);
             return;
           }
           
-          const result = await response.json();
+          let result;
+          try {
+            result = await response.json();
+          } catch (e) {
+            console.error('Failed to parse response as JSON:', e);
+            addChatMessage(`⚠ Server returned invalid response`, false);
+            return;
+          }
+          
           if (!result.success) {
             addChatMessage(`❌ Test failed: ${result.error || 'Unknown error'}`, false);
             return;
