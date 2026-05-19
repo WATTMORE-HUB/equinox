@@ -431,6 +431,8 @@ router.post('/test-form', async (req, res) => {
  * }
  */
 router.post('/write-form', async (req, res) => {
+  console.log('[Write-Form] Endpoint hit!');
+  console.log('[Write-Form] Request body:', JSON.stringify(req.body));
   try {
     const {
       port,
