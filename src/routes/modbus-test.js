@@ -499,6 +499,7 @@ router.post('/write-form', async (req, res) => {
       MODBUS_SLAVE_ID: slaveId.toString(),
       INVERTER_BAUD_RATE: baudRate.toString(),
       TEST_REG: registerValue.toString(),
+      TEST_BASE: '10',
       TEST_VALUE: val.toString()
     };
 
