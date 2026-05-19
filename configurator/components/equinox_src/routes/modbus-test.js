@@ -25,9 +25,9 @@ function ensurePythonAvailable() {
   }
 
   try {
-    execSync('apk add --no-cache python3 py3-pip py3-serial', { stdio: 'inherit', shell: '/bin/sh' });
+    execSync('apk add --no-cache python3 py3-pip', { stdio: 'inherit', shell: '/bin/sh' });
     try {
-      execSync('pip3 install --break-system-packages --no-cache-dir minimalmodbus==2.1.1 pymodbus==3.9.2', { stdio: 'inherit', shell: '/bin/sh' });
+      execSync('pip3 install --break-system-packages --no-cache-dir minimalmodbus==2.1.1 pymodbus==3.9.2 pyserial==3.5', { stdio: 'inherit', shell: '/bin/sh' });
     } catch (pipErr) {
       console.warn(`[Modbus] pip package install failed: ${pipErr.message}`);
     }
