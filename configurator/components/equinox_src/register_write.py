@@ -62,7 +62,7 @@ async def write_register_async(register, value):
         
         # Verify the write by reading back the register
         logger.info(f"Verifying write by reading register {register} back from device")
-        read_response = await client.read_holding_registers(register, 1)
+        read_response = await client.read_holding_registers(address=register, count=1)
         
         if read_response.isError():
             logger.error(f"Error reading back register for verification: {read_response}")
