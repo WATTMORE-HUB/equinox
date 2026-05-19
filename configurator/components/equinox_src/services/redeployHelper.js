@@ -64,7 +64,7 @@ class RedeployHelper {
       try {
         console.log(`[RedeployHelper] Fetching project data for: ${deviceInfo.fleetName}`);
         projectData = await wattmoreClient.getProjectByName(deviceInfo.fleetName);
-        console.log(`[RedeployHelper] ✓ Project data loaded`);
+        console.log(`[RedeployHelper] [OK] Project data loaded`);
       } catch (err) {
         console.warn(`[RedeployHelper] Could not fetch project data from Wattmore: ${err.message}`);
         // Create minimal project data to proceed
@@ -86,7 +86,7 @@ class RedeployHelper {
       // Generate deployment config (services + environment variables)
       console.log('[RedeployHelper] Generating deployment configuration...');
       const deploymentConfig = await configGenerator.generateConfig(projectData);
-      console.log(`[RedeployHelper] ✓ Generated config with services: ${deploymentConfig.services.join(', ')}`);
+      console.log(`[RedeployHelper] [OK] Generated config with services: ${deploymentConfig.services.join(', ')}`);
 
       // Trigger deployment using the same cloud flow as Configure
       console.log('[RedeployHelper] Initiating cloud deployment...');
@@ -107,7 +107,7 @@ class RedeployHelper {
         };
       }
 
-      console.log('[RedeployHelper] ✓ Redeploy triggered successfully');
+      console.log('[RedeployHelper] [OK] Redeploy triggered successfully');
       return {
         success: true,
         deploymentId: deployResult.deploymentId,

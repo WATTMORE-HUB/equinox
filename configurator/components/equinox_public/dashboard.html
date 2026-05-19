@@ -1477,7 +1477,7 @@
         const signed = signedCheckbox.checked ? 1 : 0;
         
         if (!port || !register) {
-          addChatMessage('⚠ Please select a port and enter a register', false);
+          addChatMessage('[WARNING] Please select a port and enter a register', false);
           return;
         }
         
@@ -1506,7 +1506,7 @@
             } catch (e) {
               errMsg = `HTTP ${response.status}: ${response.statusText}`;
             }
-            addChatMessage(`❌ Test failed: ${errMsg}`, false);
+            addChatMessage(`[ERROR] Test failed: ${errMsg}`, false);
             return;
           }
           
@@ -1515,17 +1515,17 @@
             result = await response.json();
           } catch (e) {
             console.error('Failed to parse response as JSON:', e);
-            addChatMessage(`⚠ Server returned invalid response`, false);
+            addChatMessage(`[WARNING] Server returned invalid response`, false);
             return;
           }
           
           if (!result.success) {
-            addChatMessage(`❌ Test failed: ${result.error || 'Unknown error'}`, false);
+            addChatMessage(`[ERROR] Test failed: ${result.error || 'Unknown error'}`, false);
             return;
           }
           
-          // Build result message
-          let resultMsg = `✅ **Modbus Register Test Result**\n\n`;
+          // Build result message with JSON download option
+          let resultMsg = `[OK] **Modbus Register Test Result**\n\n`;
           resultMsg += `**Configuration:**\n`;
           resultMsg += `- Port: ${port}\n`;
           resultMsg += `- Slave ID: ${slaveId}\n`;
@@ -1540,14 +1540,48 @@
             resultMsg += `- 32-bit Integer: ${result.data['32 bit int data']}\n\n`;
           }
           
-          if (result.resultFile) {
-            resultMsg += `📥 Results: ${result.resultFile}`;
+          // Create custom result display with download button
+          const resultEl = document.createElement('div');
+          resultEl.className = 'text-left';
+          const resultBubble = document.createElement('div');
+          resultBubble.className = 'inline-block bg-white/10 text-slate-200 rounded-2xl px-4 py-4 w-full max-w-2xl text-sm';
+          
+          let jsonContent = JSON.stringify(result.data || result, null, 2);
+          let filename = `modbus-test-${Date.now()}.json`;
+          
+          resultBubble.innerHTML = `
+            <div class="space-y-3">
+              <div>
+                <div class="text-slate-100 font-medium">Modbus Register Test Result</div>
+                <div class="text-xs text-slate-400 mt-1">Register: ${register} | Slave ID: ${slaveId}</div>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="modbusDownloadBtn flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg text-xs transition" style="cursor: pointer; user-select: none;">Download JSON</button>
+              </div>
+              <details class="rounded-xl border border-white/10 bg-black/20" open>
+                <summary class="cursor-pointer px-4 py-3 text-slate-300" style="user-select: none;">View JSON payload</summary>
+                <div class="border-t border-white/10 px-4 py-4">
+                  <pre class="max-h-[28rem] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-200 hide-scrollbar" style="user-select: text; -webkit-user-select: text;">${escapeHtml(jsonContent)}</pre>
+                </div>
+              </details>
+            </div>
+          `;
+          resultEl.appendChild(resultBubble);
+          
+          const downloadBtn = resultBubble.querySelector('.modbusDownloadBtn');
+          if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              downloadJsonFile(jsonContent, filename);
+            });
           }
           
-          addChatMessage(resultMsg, false);
+          chatMessages.appendChild(resultEl);
+          chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
         } catch (err) {
           console.error('Test error:', err);
-          addChatMessage(`⚠ Error testing register: ${err.message}`, false);
+          addChatMessage(`[ERROR] Error testing register: ${err.message}`, false);
         } finally {
           testBtn.disabled = false;
           testBtn.textContent = 'Test Register';
@@ -1674,7 +1708,7 @@
         console.error('Chat error:', error);
         const loadingEl = document.getElementById('chatLoading');
         if (loadingEl) loadingEl.remove();
-        addChatMessage('⚠ Unable to process question. Try again.', false);
+        addChatMessage('[WARNING] Unable to process question. Try again.', false);
       } finally {
         chatLoading = false;
         chatSendBtn.disabled = false;

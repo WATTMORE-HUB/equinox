@@ -221,11 +221,11 @@ class SystemReportGenerator {
 
     // Overall status
     if (report.overall_health === 'critical') {
-      parts.push('⚠️ Your system is in CRITICAL condition and requires immediate attention.');
+      parts.push('[WARNING] Your system is in CRITICAL condition and requires immediate attention.');
     } else if (report.overall_health === 'degraded') {
-      parts.push('⚠️ Your system is DEGRADED with some issues detected.');
+      parts.push('[WARNING] Your system is DEGRADED with some issues detected.');
     } else {
-      parts.push('✅ Your system is operating normally.');
+      parts.push('[OK] Your system is operating normally.');
     }
 
     // CPU and Memory
@@ -241,7 +241,7 @@ class SystemReportGenerator {
 
     // Container status
     if (report.containers.failed_count > 0) {
-      parts.push(`⚠️ ${report.containers.failed_count} container(s) are not running: ${report.containers.failed_names.join(', ')}.`);
+      parts.push(`[WARNING] ${report.containers.failed_count} container(s) are not running: ${report.containers.failed_names.join(', ')}.`);
     } else {
       parts.push(`All ${report.containers.running_count} containers are running.`);
     }
