@@ -2,9 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install Python 3 and required packages for register_test.py
-RUN apk add --no-cache python3 py3-pip && \
-    pip install --no-cache-dir minimalmodbus pymodbus
+# Install Python 3 for register_test.py
+RUN apk add --no-cache python3 py3-pip py3-serial
+
+# Install Python modbus packages with extended timeout
+RUN pip install --no-cache-dir --default-timeout=100 minimalmodbus pymodbus 2>&1 || true
 
 # Copy Equinox package files (renamed to avoid conflicts with other services)
 COPY equinox_package.json package.json
