@@ -2,11 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install Python and dependencies
+RUN apk add --no-cache python3 py3-pip
+
 # Copy package files
 COPY package*.json ./
 
 # Install production dependencies only
 RUN npm ci --only=production
+
+# Install Python dependencies for Modbus
+RUN pip3 install --no-cache-dir pymodbus
 
 # Copy application code
 COPY . .
