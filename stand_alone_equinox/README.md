@@ -1,130 +1,122 @@
-# Equinox Standalone Package
+# Equinox: Location-Aware Device Deployment System
 
-This directory contains all files needed to add Equinox to an existing Balena project.
+Intelligent deployment dashboard for Balena devices with automatic geolocation detection, hardware discovery, and one-click deployment. Includes advanced chat interface for system monitoring and operational insights. Powered by Wattmore.
 
-## What's Included
+## Documentation
 
-- **src/** — Complete Equinox application code (Node.js)
-  - Routes (chat, deployment, status)
-  - Services (intent matching, response formatting, log analysis, etc.)
-  - State management and utilities
-  
-- **public/** — Frontend dashboard
-  - Single-page application (dashboard.html)
-  - Chat interface and deployment forms
-  
-- **configurator/** — Service deployment configuration system
-  - Project creator for generating docker-compose from component blueprints
-  - Service templates
-  
-- **Dockerfile** — Container image for Equinox
-  - Node 18 Alpine base
-  - Includes health check
-  
-- **package.json** — Node.js dependencies
-  - Express, Docker client, AWS SDK, cron scheduling
-  - Development: nodemon for hot reload
-  
-- **docker-compose.yml** — Orchestration for Equinox service
-  - Already configured for Balena deployment
-  - Mounts Docker socket and data volumes
-  
-- **SETUP_GUIDE.md** — Detailed setup instructions
-  - Environment variable reference
-  - Merging with existing docker-compose files
-  - Troubleshooting guide
+All documentation is in the [`docs/`](docs/) directory:
 
-## Quick Start for Existing Projects
+| Document | Purpose |
+|----------|----------|
+| [`docs/AWS_SETUP.md`](docs/AWS_SETUP.md) | **START HERE** — 8-step AWS provisioning guide (console-based, ~30 min) |
+| [`docs/README_SETUP.md`](docs/README_SETUP.md) | Quick start overview with architecture and environment setup |
+| [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | Complete project layout and file organization reference |
+| [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) | Implementation checklist and configuration details |
+| [`docs/EC2_IMPLEMENTATION_COMPLETE.md`](docs/EC2_IMPLEMENTATION_COMPLETE.md) | Architecture details and testing checklist |
+| [`docs/AWS_INTEGRATION_SUMMARY.md`](docs/AWS_INTEGRATION_SUMMARY.md) | AWS infrastructure and cost breakdown |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | CM4 deployment procedures |
+| [`docs/TESTING.md`](docs/TESTING.md) | Test procedures and validation |
+| [`docs/PROJECT_SUMMARY.md`](docs/PROJECT_SUMMARY.md) | Original project summary |
 
-### 1. Copy Files
-```bash
-# Copy all contents of this directory into your Balena project root
-cp -r stand_alone_equinox/* your-balena-project/
+## Dashboard Screenshots
+
+**Auto-detection in progress**
+![Equinox Dashboard - Locating](equinox1.png)
+
+**Confirmation with hardware details and site selection fallback**
+![Equinox Dashboard - Confirm](equinox2.png)
+
+## Project Structure
+
+```
+/Users/drb/documents/equinox/
+├── docs/                    # All markdown documentation
+├── ec2/                     # Cloud deployment runner scripts
+├── src/                     # Application code (CM4 dashboard, deployer)
+├── components/              # Golden masters (200MB service blueprints)
+├── package.json
+└── Dockerfile
 ```
 
-### 2. Merge docker-compose.yml
-If you already have a `docker-compose.yml`, add the `equinox` service to it (don't replace it). See SETUP_GUIDE.md for details.
+## Key Components
 
-### 3. No Additional Setup Needed
+- **`src/services/deployer.js`** — Dual-mode deployment (local or cloud)
+- **`src/services/monitor.py`** — System metrics collection and AWS IoT publishing
+- **`src/services/systemReportGenerator.js`** — Health report aggregation and narrative generation
+- **`src/routes/chat.js`** — Chat API with environment variable upload and system reports
+- **`src/routes/modbus-test.js`** — Modbus register read/write API endpoints
+- **`src/services/serialPortDetector.js`** — Serial port discovery for Modbus tools
+- **`ec2/runner.js`** — Runs on EC2 via Systems Manager
+- **`ec2/lambda-handler.js`** — Lambda entry point
+- **`ec2/bootstrap.sh`** — EC2 automatic setup
 
-All credentials are pre-configured in `docker-compose.yml`. It will work immediately.
+## Chat Interface Capabilities
 
-### 4. Deploy
-```bash
-balena push your-device-name-or-ip
-```
+### Container Log Monitoring
+- Query container logs in natural language
+- Automatic error and warning extraction
+- Real-time status updates from Docker
 
-### 5. Verify
-```bash
-curl http://<device-ip>/health
-# Should return: {"status":"ok"}
-```
+### Data Directory Monitoring
+- Track file freshness across monitored directories
+- Monitor activity in /collect_data/meter, /collect_data/tracker, and other key paths
+- View human-readable timestamps for most recent files
 
-## Environment Variables
+### Environment Variable Management
+- Upload CSV files with KEY,VALUE pairs
+- Apply variables to device via Balena API
+- Handle variables with embedded commas
+- Trigger the environment variable upload workflow from chat
 
-**Pre-configured in `docker-compose.yml`:**
-- `BALENA_API_TOKEN` — Balena API token (already set)
-- `EQUINOX_TOKEN_BUCKET` — S3 bucket name (already set)
-- `EQUINOX_TOKEN_KEY` — S3 object key (already set)
-- `CLOUD_API_URL` — Lambda/EC2 deployment endpoint (already set)
+### System Health Reports
+- Ask "How is my system doing?" to get comprehensive report
+- Reports include:
+  - CPU usage and trend analysis
+  - Memory usage and allocation
+  - Storage utilization
+  - Container health (running vs. failed)
+  - Recent errors and warnings
+  - Data freshness across all monitored directories
+  - System temperature (if available)
+- Reports automatically published to AWS IoT Core on 10-minute schedule
+### Data Upload Freshness Checks
+- Ask whether data is being uploaded to check AWS Timestream freshness
+- Follow up with a timespan such as "5 minutes" or "10 minutes"
+- Table-by-table results show which data streams are fresh or stale
 
-**No additional configuration needed.** The provided files work as-is, just like on OfficeLab.
+### Modbus Register Testing
+- Ask to test Modbus registers from chat to open a guided form
+- Automatically detects available serial ports
+- Supports custom slave ID, baud rate, function code, register address, and signed/unsigned interpretation
+- Accepts register addresses in decimal or hex format
+- Returns structured results with raw register values and decoded values
 
-See **SETUP_GUIDE.md** for optional customization and reference.
+### Modbus Register Writing
+- Ask to write to a Modbus register from chat to open a guided write form
+- Supports serial port, baud rate, register address, and target value input
+- Uses the same async Modbus client pattern as the working device configuration flow
+- Waits after writes to allow the device to process updates
+- Reads the register back after writing so success is only reported when the value persists on the device
+- Provides detailed debug output for Modbus communication troubleshooting
 
-## Modes
+### Device Redeploy from Monitor Mode
+- Ask to redeploy from the monitor chat interface
+- Uses the current stored device configuration to trigger a deployment
+- Enables operational redeploys without returning to the initial configuration dashboard
 
-### Configuration Mode (default)
-- Shows dashboard for device setup
-- Allows deploying services to other devices
-- Required: BALENA_API_TOKEN
+### JSON Data Access
+- Structured API endpoints for programmatic access
+- System metrics available at `/api/chat/system-report`
+- Raw monitoring data cached for quick retrieval
 
-### Monitor Mode
-- Chat interface for system monitoring
-- Real-time container logs and metrics
-- AWS IoT Core integration (optional)
+## Status
 
-Switch mode by setting: `EQUINOX_MODE=monitor`
+[COMPLETE] Code complete and ready for AWS provisioning
+- IAM roles: Already created
+- EC2 + Lambda + API Gateway: Ready to provision
+- S3 archival: Enabled for project history
+- Chat interface: Fully operational with system monitoring
+- AWS IoT publishing: Active and scheduled
+- Modbus register testing and writing: Integrated into chat workflow with form-based UI
+- Monitor-mode redeploy: Available from chat using stored configuration
 
-## Port Usage
-
-Equinox uses **port 80** for the web interface. Make sure this port isn't in use by other services.
-
-## Volume Mounts
-
-- `/var/run/docker.sock` — Docker daemon access (read-only)
-- `/collect_data` — Persistent storage for state and collected data
-
-These are already configured in `docker-compose.yml`.
-
-## Troubleshooting
-
-**Dashboard won't load?**
-- Check port 80 is open: `curl http://device-ip/`
-- Verify container is running: `balena logs device-name equinox`
-
-**Deployment fails?**
-- Ensure `BALENA_API_TOKEN` is set on device
-- Check Docker socket is mounted properly
-
-**State file keeps resetting?**
-- Verify `/collect_data` volume persists in docker-compose.yml
-
-See **SETUP_GUIDE.md** for more troubleshooting steps.
-
-## Next Steps
-
-1. Read **SETUP_GUIDE.md** for detailed configuration options
-2. After deployment, access dashboard at: `http://<device-ip>/`
-3. Set `BALENA_API_TOKEN` before attempting deployments
-4. Monitor logs: `balena logs device-name equinox`
-
-## File Size
-
-This package is ~5 MB (excluding node_modules, which are installed during build).
-
-## Support
-
-For detailed setup instructions, environment variable reference, and troubleshooting, see **SETUP_GUIDE.md**.
-
-For general Balena help: https://www.balena.io/docs/
