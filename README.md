@@ -44,6 +44,8 @@ All documentation is in the [`docs/`](docs/) directory:
 - **`src/services/monitor.py`** — System metrics collection and AWS IoT publishing
 - **`src/services/systemReportGenerator.js`** — Health report aggregation and narrative generation
 - **`src/routes/chat.js`** — Chat API with environment variable upload and system reports
+- **`src/routes/modbus-test.js`** — Modbus register read/write API endpoints
+- **`src/services/serialPortDetector.js`** — Serial port discovery for Modbus tools
 - **`ec2/runner.js`** — Runs on EC2 via Systems Manager
 - **`ec2/lambda-handler.js`** — Lambda entry point
 - **`ec2/bootstrap.sh`** — EC2 automatic setup
@@ -64,6 +66,7 @@ All documentation is in the [`docs/`](docs/) directory:
 - Upload CSV files with KEY,VALUE pairs
 - Apply variables to device via Balena API
 - Handle variables with embedded commas
+- Trigger the environment variable upload workflow from chat
 
 ### System Health Reports
 - Ask "How is my system doing?" to get comprehensive report
@@ -76,6 +79,30 @@ All documentation is in the [`docs/`](docs/) directory:
   - Data freshness across all monitored directories
   - System temperature (if available)
 - Reports automatically published to AWS IoT Core on 10-minute schedule
+### Data Upload Freshness Checks
+- Ask whether data is being uploaded to check AWS Timestream freshness
+- Follow up with a timespan such as "5 minutes" or "10 minutes"
+- Table-by-table results show which data streams are fresh or stale
+
+### Modbus Register Testing
+- Ask to test Modbus registers from chat to open a guided form
+- Automatically detects available serial ports
+- Supports custom slave ID, baud rate, function code, register address, and signed/unsigned interpretation
+- Accepts register addresses in decimal or hex format
+- Returns structured results with raw register values and decoded values
+
+### Modbus Register Writing
+- Ask to write to a Modbus register from chat to open a guided write form
+- Supports serial port, baud rate, register address, and target value input
+- Uses the same async Modbus client pattern as the working device configuration flow
+- Waits after writes to allow the device to process updates
+- Reads the register back after writing so success is only reported when the value persists on the device
+- Provides detailed debug output for Modbus communication troubleshooting
+
+### Device Redeploy from Monitor Mode
+- Ask to redeploy from the monitor chat interface
+- Uses the current stored device configuration to trigger a deployment
+- Enables operational redeploys without returning to the initial configuration dashboard
 
 ### JSON Data Access
 - Structured API endpoints for programmatic access
@@ -90,6 +117,8 @@ All documentation is in the [`docs/`](docs/) directory:
 - S3 archival: Enabled for project history
 - Chat interface: Fully operational with system monitoring
 - AWS IoT publishing: Active and scheduled
+- Modbus register testing and writing: Integrated into chat workflow with form-based UI
+- Monitor-mode redeploy: Available from chat using stored configuration
 
 
 ---
