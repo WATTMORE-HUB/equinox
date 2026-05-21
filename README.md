@@ -120,8 +120,3 @@ All documentation is in the [`docs/`](docs/) directory:
 - Modbus register testing and writing: Integrated into chat workflow with form-based UI
 - Monitor-mode redeploy: Available from chat using stored configuration
 
-
----
-
-**Repository**: https://github.com/WATTMORE-HUB/equinox  
-**Project Status**: Production-ready, AWS infrastructure ready for deployment

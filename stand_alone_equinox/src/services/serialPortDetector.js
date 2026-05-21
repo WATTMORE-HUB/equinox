@@ -15,31 +15,56 @@ async function getAvailablePorts() {
   try {
     const ports = [];
     
-    // On macOS and Linux, check /dev for tty devices
-    const devPath = '/dev';
-    if (fs.existsSync(devPath)) {
-      const devices = fs.readdirSync(devPath);
-      const serialDevices = devices.filter(device => 
-        device.startsWith('tty.') ||
-        device.startsWith('ttyUSB') ||
-        device.startsWith('ttyACM') ||
-        device.startsWith('cu.')
-      );
+    // Check multiple possible /dev paths for device files
+    const devPaths = ['/dev', '/dev/serial/by-id', '/dev/serial/by-path'];
+    
+    for (const devPath of devPaths) {
+      if (!fs.existsSync(devPath)) continue;
       
-      serialDevices.forEach(device => {
-        const fullPath = path.join(devPath, device);
-        ports.push({
-          path: fullPath,
-          name: device,
-          type: getPortType(device)
+      try {
+        const devices = fs.readdirSync(devPath);
+        const serialDevices = devices.filter(device => {
+          // Match common serial port patterns
+          return device.startsWith('tty.') ||
+                 device.startsWith('ttyUSB') ||
+                 device.startsWith('ttyACM') ||
+                 device.startsWith('ttyS') ||
+                 device.startsWith('cu.') ||
+                 device.startsWith('COM') ||
+                 (devPath.includes('serial') && !device.startsWith('.'));
         });
-      });
+        
+        serialDevices.forEach(device => {
+          const fullPath = devPath === '/dev' ? path.join(devPath, device) : path.join(devPath, device);
+          // Check if path is actually accessible (avoid duplicates/broken links)
+          try {
+            fs.statSync(fullPath);
+            ports.push({
+              path: fullPath,
+              name: device,
+              type: getPortType(device)
+            });
+          } catch (e) {
+            // Skip inaccessible ports
+          }
+        });
+      } catch (e) {
+        // Skip paths that can't be read
+      }
     }
     
-    // Sort by name for consistent ordering
-    ports.sort((a, b) => a.path.localeCompare(b.path));
+    // Remove duplicates and sort by name for consistent ordering
+    const uniquePorts = [];
+    const seen = new Set();
+    ports.forEach(port => {
+      if (!seen.has(port.path)) {
+        seen.add(port.path);
+        uniquePorts.push(port);
+      }
+    });
+    uniquePorts.sort((a, b) => a.path.localeCompare(b.path));
     
-    return ports;
+    return uniquePorts;
   } catch (error) {
     console.error('[Serial Port Detector] Error listing ports:', error.message);
     return [];

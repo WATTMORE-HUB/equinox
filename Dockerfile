@@ -12,7 +12,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Install Python dependencies for Modbus
-RUN pip3 install --no-cache-dir pymodbus
+RUN pip3 install --break-system-packages --no-cache-dir minimalmodbus==2.1.1 pymodbus==3.9.2 pyserial==3.5
 
 # Copy application code
 COPY . .

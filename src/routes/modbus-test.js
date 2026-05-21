@@ -134,7 +134,7 @@ router.post('/test', async (req, res) => {
     console.log(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    const registerTestPath = path.join(__dirname, '../register_test.py');
     
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
@@ -308,7 +308,7 @@ router.post('/test-form', async (req, res) => {
     console.log(`Modbus form test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    const registerTestPath = path.join(__dirname, '../register_test.py');
     
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
@@ -487,7 +487,7 @@ router.post('/write-form', async (req, res) => {
     console.log(`Modbus write initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}, value=${value}`);
 
     // Prepare environment variables for register_write.py
-    const registerWritePath = path.join(__dirname, '../../register_write.py');
+    const registerWritePath = path.join(__dirname, '../register_write.py');
     
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);

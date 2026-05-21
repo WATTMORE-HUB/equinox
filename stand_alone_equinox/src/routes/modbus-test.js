@@ -134,7 +134,7 @@ router.post('/test', async (req, res) => {
     console.log(`Modbus test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    const registerTestPath = path.join(__dirname, '../register_test.py');
     
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
@@ -308,7 +308,7 @@ router.post('/test-form', async (req, res) => {
     console.log(`Modbus form test initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}`);
 
     // Prepare environment variables for register_test.py
-    const registerTestPath = path.join(__dirname, '../../register_test.py');
+    const registerTestPath = path.join(__dirname, '../register_test.py');
     
     // Parse register - support both hex (0x) and decimal
     let registerValue = parseInt(register);
@@ -398,6 +398,159 @@ router.post('/test-form', async (req, res) => {
 
   } catch (err) {
     console.error(`Modbus form test error: ${err.message}`);
+    res.status(500).json({
+      success: false,
+      error: `Internal server error: ${err.message}`
+    });
+  }
+});
+
+/**
+ * POST /api/modbus/write-form
+ * Form submission endpoint for modbus register writing
+ * 
+ * Request body:
+ * {
+ *   port: "/dev/ttyUSB0",
+ *   slaveId: 1,
+ *   baudRate: 9600,
+ *   register: 546,  // decimal or hex
+ *   value: 100      // 0-65535
+ * }
+ * 
+ * Response:
+ * {
+ *   success: true,
+ *   metadata: {
+ *     port: "/dev/ttyUSB0",
+ *     slaveId: 1,
+ *     baudRate: 9600,
+ *     register: 546,
+ *     value: 100
+ *   }
+ * }
+ */
+router.post('/write-form', async (req, res) => {
+  console.log('[Write-Form] Endpoint hit!');
+  console.log('[Write-Form] Request body:', JSON.stringify(req.body));
+  try {
+    const {
+      port,
+      slaveId,
+      baudRate,
+      register,
+      value
+    } = req.body;
+
+    // Validate required parameters
+    if (!port || slaveId === undefined || !baudRate || register === undefined || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters: port, slaveId, baudRate, register, value'
+      });
+    }
+
+    // Validate serial port
+    const portValidation = validateSerialPort(port);
+    if (!portValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: portValidation.message
+      });
+    }
+
+    // Validate other parameters
+    const baudValidation = validateBaudRate(baudRate);
+    if (!baudValidation.valid) {
+      return res.status(400).json({ success: false, error: baudValidation.message });
+    }
+
+    const slaveValidation = validateSlaveId(slaveId);
+    if (!slaveValidation.valid) {
+      return res.status(400).json({ success: false, error: slaveValidation.message });
+    }
+
+    const registerValidation = validateRegister(register);
+    if (!registerValidation.valid) {
+      return res.status(400).json({ success: false, error: registerValidation.message });
+    }
+
+    // Validate value range
+    const val = parseInt(value);
+    if (val < 0 || val > 65535) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid value ${value}. Must be between 0-65535.`
+      });
+    }
+
+    console.log(`Modbus write initiated: port=${port}, slave=${slaveId}, baud=${baudRate}, register=${register}, value=${value}`);
+
+    // Prepare environment variables for register_write.py
+    const registerWritePath = path.join(__dirname, '../register_write.py');
+    
+    // Parse register - support both hex (0x) and decimal
+    let registerValue = parseInt(register);
+    if (typeof register === 'string' && register.startsWith('0x')) {
+      registerValue = parseInt(register, 16);
+    }
+
+    const env = {
+      ...process.env,
+      TEST_USB: port,
+      MODBUS_SLAVE_ID: slaveId.toString(),
+      INVERTER_BAUD_RATE: baudRate.toString(),
+      TEST_REG: registerValue.toString(),
+      TEST_BASE: '10',
+      TEST_VALUE: val.toString()
+    };
+
+    // Spawn register_write.py
+    const python = spawn('python3', [registerWritePath], { env });
+    let stdout = '';
+    let stderr = '';
+
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    python.on('close', (code) => {
+      console.log(`[Write] Process closed with code ${code}`);
+      console.log(`[Write] stdout: ${stdout}`);
+      console.log(`[Write] stderr: ${stderr}`);
+      
+      if (code === 0 && stdout.includes('Write successful')) {
+        console.log(`Modbus write successful: register=${registerValue}, value=${val}`);
+        return res.json({
+          success: true,
+          output: stdout,
+          metadata: {
+            port,
+            slaveId: parseInt(slaveId),
+            baudRate: parseInt(baudRate),
+            register: registerValue,
+            value: val
+          }
+        });
+      } else {
+        console.error(`Modbus write failed: code=${code}, stderr=${stderr}, stdout=${stdout}`);
+        const errorMsg = stderr || stdout || 'Unknown error';
+        console.log(`[Write] Returning error: ${errorMsg}`);
+        return res.status(400).json({
+          success: false,
+          error: errorMsg,
+          output: stdout,
+          code
+        });
+      }
+    });
+
+  } catch (err) {
+    console.error(`Modbus write error: ${err.message}`);
     res.status(500).json({
       success: false,
       error: `Internal server error: ${err.message}`
