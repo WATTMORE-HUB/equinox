@@ -1882,10 +1882,29 @@
           e.stopPropagation();
           console.log('Button clicked:', suggestion.action);
           
+          // Map action names to natural language triggers
+          const actionToTrigger = {
+            system_health: 'system health',
+            list_containers: 'list containers',
+            check_errors: 'show errors',
+            check_warnings: 'show warnings',
+            check_memory: 'memory usage',
+            check_cpu: 'cpu usage',
+            get_latest_file: 'show latest files',
+            check_data_flow: 'check data uploads',
+            modbus_test: 'test register',
+            modbus_write: 'write register',
+            redeploy: 'redeploy',
+            environment_variables: 'update environment',
+            help: 'what can you do'
+          };
+          
           // Handle special file actions like get_latest_file_meter
           if (suggestion.action && suggestion.action.startsWith('get_latest_file_')) {
             const dir = suggestion.action.replace('get_latest_file_', '');
             chatInput.value = `show me latest /${dir}`;
+          } else if (actionToTrigger[suggestion.action]) {
+            chatInput.value = actionToTrigger[suggestion.action];
           } else if (suggestion.action) {
             chatInput.value = suggestion.action;
           } else {
